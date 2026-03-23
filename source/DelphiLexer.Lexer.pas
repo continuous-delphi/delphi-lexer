@@ -1,0 +1,645 @@
+unit DelphiLexer.Lexer;
+
+// TDelphiLexer -- stateless Object Pascal source lexer.
+//
+// Usage:
+//   Lexer := TDelphiLexer.Create;
+//   Tokens := Lexer.Tokenize(SourceText);
+//   // ... use Tokens ...
+//   Tokens.Free;
+//   Lexer.Free;
+//
+// Guarantees:
+//   - Every character of Source appears in exactly one token's Text field.
+//   - Concatenating Text across all tokens reconstructs Source exactly
+//     (round-trip guarantee).
+//   - The final token is always tkEOF with Text = ''.
+//   - Token.StartOffset is the 0-based character index of the first character
+//     of the token in Source. Token.Length = System.Length(Token.Text).
+//   - Keywords are classified case-insensitively (BEGIN -> tkKeyword).
+//   - &ident escaped identifiers are always tkIdentifier, never tkKeyword.
+
+interface
+
+uses
+  System.Generics.Collections,
+  DelphiLexer.Token;
+
+type
+  // Stateless lexer: create, call Tokenize (or TokenizeInto), free.
+  TDelphiLexer = class
+  public
+    function Tokenize(const Source: string): TList<TToken>;
+    procedure TokenizeInto(const Source: string; const OutTokens: TList<TToken>);
+  end;
+
+// Returns a string of Count single-quote characters.
+// This helper exists because ''' cannot be written as a string literal in
+// Delphi source (three single quotes open a multiline string). Use it to
+// build expected values in tests: RuntimeQuotes(3) produces '''.
+function RuntimeQuotes(const Count: Integer): string; inline;
+
+implementation
+
+uses
+  System.SysUtils,
+  System.Character,
+  DelphiLexer.Keywords,
+  DelphiLexer.Scanner;
+
+
+// =========================================================================
+// RuntimeQuotes
+// =========================================================================
+
+function RuntimeQuotes(const Count: Integer): string;
+begin
+  Result := StringOfChar(CHAR_SINGLE_QUOTE, Count);
+end;
+
+
+// =========================================================================
+// MakeToken
+// =========================================================================
+
+function MakeToken(AKind: TTokenKind; const AText: string; ALine, ACol, AStartOffset: Integer): TToken;
+begin
+  Result.Kind        := AKind;
+  Result.Text        := AText;
+  Result.Line        := ALine;
+  Result.Col         := ACol;
+  Result.StartOffset := AStartOffset;
+  Result.Length      := System.Length(AText);
+end;
+
+
+// =========================================================================
+// Read helpers
+// =========================================================================
+
+function ReadStringLiteral(var Sc: TScanner): string;
+var
+  Start: Integer;
+begin
+  // Precondition: at opening single quote.
+  // Single-quoted strings do not cross line boundaries. If no closing quote
+  // appears before the end of the current line, the string token ends at the
+  // EOL and the EOL is left unconsumed for the normal EOL dispatch. This
+  // prevents a malformed string from silently swallowing subsequent lines.
+  Start := Sc.I;
+  IncI(Sc); // consume opening '
+  while Sc.I <= Sc.N do
+  begin
+    if Peek(Sc) = #0 then Break;
+    if (Peek(Sc) = #13) or (Peek(Sc) = #10) then Break; // stop at EOL
+    if Peek(Sc) = CHAR_SINGLE_QUOTE then
+    begin
+      if Peek(Sc, 1) = CHAR_SINGLE_QUOTE then
+      begin
+        IncI(Sc, 2); // doubled quote inside string
+        Continue;
+      end
+      else
+      begin
+        IncI(Sc); // closing '
+        Break;
+      end;
+    end
+    else
+      IncI(Sc);
+  end;
+  Result := Copy(Sc.S, Start, Sc.I - Start);
+end;
+
+
+// Returns the number of single quotes forming a multiline string delimiter
+// at the current scanner position, or 0 if the position is not the start of
+// a multiline delimiter.
+//
+// A multiline delimiter is an odd number of single quotes >= 3, followed by
+// nothing but optional spaces/tabs and then an EOL (or EOF). Supported widths:
+// 3 (standard), 5, 7, ... Each width N allows the body to contain runs of up
+// to N-2 consecutive quotes at the start of a line. To embed a triple-quote
+// sequence inside a multiline string, use a 5-quote delimiter; to embed five
+// consecutive quotes, use a 7-quote delimiter, and so on.
+//
+// Even quote counts (2, 4, 6, ...) are not delimiters -- they are runs of
+// escaped quotes inside a regular single-quoted string.
+function DetectMultilineDelimiterLength(var Sc: TScanner): Integer;
+var
+  Q:        Integer;
+  PosAfter: Integer;
+  NextChar: Char;
+begin
+  Result := 0;
+
+  // Count consecutive single quotes starting at current position.
+  Q := 0;
+  while Peek(Sc, Q) = CHAR_SINGLE_QUOTE do
+    Inc(Q);
+
+  // Must be odd and >= 3.
+  if (Q < 3) or ((Q mod 2) = 0) then
+    Exit;
+
+  // Everything between the end of the quote run and the next EOL must be
+  // spaces or tabs (the opening delimiter line may have trailing whitespace).
+  PosAfter := Sc.I + Q; // 1-based index of first char after the quote run
+  while PosAfter <= Sc.N do
+  begin
+    NextChar := Sc.S[PosAfter];
+    if (NextChar = #13) or (NextChar = #10) then
+      Break;                    // EOL found -- valid opener
+    if not IsWhitespaceChar(NextChar) then
+      Exit;                     // non-whitespace before EOL -- not a delimiter
+    Inc(PosAfter);
+  end;
+
+  Result := Q;
+end;
+
+
+(*
+  ReadMultiLineString: consume a Delphi multiline (triple-or-wider-quoted) string.
+
+  Opening: DelimLen single quotes (3, 5, 7, ...) optionally followed by
+  trailing whitespace and then an EOL. The body may span any number of lines.
+  Closing: a line containing optional leading whitespace and then exactly
+  DelimLen quotes where the character after them is not another quote.
+
+  Using a wider delimiter allows the body to contain runs of fewer than
+  DelimLen consecutive quotes at the start of a line. For example, a 5-quote
+  delimiter allows ''' to appear on its own body line without closing the string.
+
+  The closing delimiter may be followed by other tokens (e.g. ';') on the
+  same line -- those are left unconsumed for the caller.
+
+  Precondition: Sc positioned at the first quote of the opening delimiter.
+  DelimLen is the value returned by DetectMultilineDelimiterLength.
+*)
+function ReadMultiLineString(var Sc: TScanner; DelimLen: Integer): string;
+var
+  Start:           Integer;
+  SaveI:           Integer;
+  SaveLine:        Integer;
+  SaveCol:         Integer;
+  SaveAtLineStart: Boolean;
+begin
+  Start := Sc.I;
+
+  // Consume opening delimiter (DelimLen quotes) and the optional EOL.
+  IncI(Sc, DelimLen);
+  ReadEOLIfPresent(Sc);
+
+  // Scan lines until a line that begins with optional whitespace then exactly
+  // DelimLen quotes followed by a non-quote character (closing delimiter).
+  while Sc.I <= Sc.N do
+  begin
+    if Sc.AtLineStart then
+    begin
+      // Save full scanner state before probing for the closing delimiter.
+      SaveI           := Sc.I;
+      SaveLine        := Sc.Line;
+      SaveCol         := Sc.Col;
+      SaveAtLineStart := Sc.AtLineStart;
+
+      // Skip any leading spaces/tabs on this line.
+      while (Sc.I <= Sc.N) and IsWhitespaceChar(Peek(Sc)) do
+        IncI(Sc);
+
+      // Check for exactly DelimLen quotes followed by a non-quote.
+      if (PeekSeq(Sc, DelimLen) = RuntimeQuotes(DelimLen)) and
+         (Peek(Sc, DelimLen) <> CHAR_SINGLE_QUOTE) then
+      begin
+        IncI(Sc, DelimLen); // consume closing delimiter
+        Exit(Copy(Sc.S, Start, Sc.I - Start));
+      end;
+
+      // Not a terminator -- restore full state and continue.
+      Sc.I           := SaveI;
+      Sc.Line        := SaveLine;
+      Sc.Col         := SaveCol;
+      Sc.AtLineStart := SaveAtLineStart;
+    end;
+
+    IncI(Sc);
+  end;
+
+  // Unterminated multiline string: return everything up to EOF.
+  Result := Copy(Sc.S, Start, Sc.I - Start);
+end;
+
+
+// Reads a single #nn or #$hex character literal token.
+// Precondition: at '#'; next char is a digit or '$'.
+function ReadCharLiteral(var Sc: TScanner): string;
+var
+  Start: Integer;
+begin
+  Start := Sc.I;
+  IncI(Sc); // consume '#'
+  if Peek(Sc) = '$' then
+  begin
+    IncI(Sc); // consume '$'
+    while CharInSet(Peek(Sc), ['0'..'9', 'A'..'F', 'a'..'f']) do
+      IncI(Sc);
+  end
+  else
+  begin
+    while CharInSet(Peek(Sc), ['0'..'9']) do
+      IncI(Sc);
+  end;
+  Result := Copy(Sc.S, Start, Sc.I - Start);
+end;
+
+
+// Reads a binary integer literal %0101...
+// Precondition: at '%'; next char is '0' or '1'.
+function ReadBinaryLiteral(var Sc: TScanner): string;
+var
+  Start: Integer;
+begin
+  Start := Sc.I;
+  IncI(Sc); // consume '%'
+  while CharInSet(Peek(Sc), ['0', '1', '_']) do
+    IncI(Sc);
+  Result := Copy(Sc.S, Start, Sc.I - Start);
+end;
+
+
+function ReadBraceComment(var Sc: TScanner): string;
+var
+  Start: Integer;
+begin
+  Start := Sc.I; // at '{'
+  IncI(Sc);      // consume '{'
+  while (Sc.I <= Sc.N) and (Peek(Sc) <> '}') do
+    IncI(Sc);
+  if Peek(Sc) = '}' then IncI(Sc); // consume '}'
+  Result := Copy(Sc.S, Start, Sc.I - Start);
+end;
+
+
+function ReadParenStarComment(var Sc: TScanner): string;
+var
+  Start: Integer;
+begin
+  Start := Sc.I; // at '(' with '*' following
+  IncI(Sc, 2);   // consume '(*'
+  while Sc.I <= Sc.N do
+  begin
+    if (Peek(Sc) = '*') and (Peek(Sc, 1) = ')') then
+    begin
+      IncI(Sc, 2); // consume '*)'
+      Break;
+    end;
+    IncI(Sc);
+  end;
+  Result := Copy(Sc.S, Start, Sc.I - Start);
+end;
+
+
+function ReadSlashSlashComment(var Sc: TScanner): string;
+var
+  Start: Integer;
+begin
+  Start := Sc.I; // at first '/'
+  IncI(Sc, 2);   // consume '//'
+  while (Sc.I <= Sc.N) and (Peek(Sc) <> #13) and (Peek(Sc) <> #10) do
+    IncI(Sc);
+  Result := Copy(Sc.S, Start, Sc.I - Start);
+end;
+
+
+function ReadWhile(var Sc: TScanner; const Func: TFunc<Char, Boolean>): string;
+var
+  Start: Integer;
+begin
+  Start := Sc.I;
+  while (Sc.I <= Sc.N) and Func(Peek(Sc)) do
+    IncI(Sc);
+  Result := Copy(Sc.S, Start, Sc.I - Start);
+end;
+
+
+function ReadWhitespace(var Sc: TScanner): string;
+begin
+  Result := ReadWhile(
+    Sc,
+    function(C: Char): Boolean
+    begin
+      Result := IsWhitespaceChar(C); // spaces and tabs only; EOL handled separately
+    end
+  );
+end;
+
+
+function ReadIdentifierOrNumber(var Sc: TScanner): string;
+var
+  Start:           Integer;
+  SaveI:           Integer;
+  SaveLine:        Integer;
+  SaveCol:         Integer;
+  SaveAtLineStart: Boolean;
+begin
+  Start := Sc.I;
+
+  // Identifier: starts with letter or underscore.
+  if IsIdentStart(Peek(Sc)) then
+  begin
+    IncI(Sc);
+    while IsIdentChar(Peek(Sc)) do
+      IncI(Sc);
+    Exit(Copy(Sc.S, Start, Sc.I - Start));
+  end;
+
+  // Hex literal: $HH...
+  if Peek(Sc) = '$' then
+  begin
+    IncI(Sc); // consume '$'
+    while CharInSet(Peek(Sc), ['0'..'9', 'A'..'F', 'a'..'f', '_']) do
+      IncI(Sc);
+    Exit(Copy(Sc.S, Start, Sc.I - Start));
+  end;
+
+  // Decimal integer or float (3  42  3.14  1.5e10  2.0e-3  1e6).
+  // Underscores are allowed as digit separators in all three parts
+  // (e.g. 1_000, 3.14_15, 1e1_0), matching the rule for hex/binary/octal.
+  if CharInSet(Peek(Sc), ['0'..'9']) then
+  begin
+    // Integer part.
+    while CharInSet(Peek(Sc), ['0'..'9', '_']) do
+      IncI(Sc);
+    // Fractional part: .digits -- guard against '..' range operator.
+    // The char after '.' must be a digit (not '_') to enter this branch.
+    if (Peek(Sc) = '.') and (Peek(Sc, 1) <> '.') and
+       CharInSet(Peek(Sc, 1), ['0'..'9']) then
+    begin
+      IncI(Sc); // consume '.'
+      while CharInSet(Peek(Sc), ['0'..'9', '_']) do
+        IncI(Sc);
+    end;
+    // Exponent: e or E, optional +/-, one-or-more digits.
+    // Save full scanner state before consuming 'e'/'E': if no digits follow
+    // (with or without a sign), restore so the 'e' is left for the identifier
+    // path. This gives '1exit' -> tkNumber('1') + tkKeyword('exit') rather
+    // than tkNumber('1e') or tkInvalid('1e') + tkIdentifier('xit').
+    if CharInSet(Peek(Sc), ['e', 'E']) then
+    begin
+      SaveI           := Sc.I;
+      SaveLine        := Sc.Line;
+      SaveCol         := Sc.Col;
+      SaveAtLineStart := Sc.AtLineStart;
+      IncI(Sc); // consume 'e'/'E'
+      if CharInSet(Peek(Sc), ['+', '-']) then
+        IncI(Sc); // consume sign (tentative)
+      if CharInSet(Peek(Sc), ['0'..'9', '_']) then
+      begin
+        while CharInSet(Peek(Sc), ['0'..'9', '_']) do
+          IncI(Sc);
+      end
+      else
+      begin
+        // No digits after 'e' (or after 'e+/-'): backtrack to before 'e'.
+        Sc.I           := SaveI;
+        Sc.Line        := SaveLine;
+        Sc.Col         := SaveCol;
+        Sc.AtLineStart := SaveAtLineStart;
+      end;
+    end;
+    Exit(Copy(Sc.S, Start, Sc.I - Start));
+  end;
+
+  // Fallback: consume one character.
+  // Unreachable under current dispatch: the caller only enters this function
+  // when Peek(Sc) is a letter, underscore, '$' with a following hex digit/
+  // underscore, or '0'..'9' -- all of which are handled by the branches above.
+  // Retained as a defensive safety net in case the dispatch changes.
+  IncI(Sc);
+  Result := Copy(Sc.S, Start, 1);
+end;
+
+
+function ReadSymbol(var Sc: TScanner): string;
+var
+  C1, C2: Char;
+begin
+  C1 := Peek(Sc);
+  C2 := Peek(Sc, 1);
+  // Multi-char operators MUST be tested before their single-char prefixes
+  // (invariant I-13). If single chars were checked first, ':=' would produce
+  // tkSymbol(':') + tkSymbol('=') rather than a single tkSymbol(':=').
+  if (C1 = ':') and (C2 = '=') then begin Result := ':='; IncI(Sc, 2); Exit; end;
+  if (C1 = '<') and (C2 = '=') then begin Result := '<='; IncI(Sc, 2); Exit; end;
+  if (C1 = '>') and (C2 = '=') then begin Result := '>='; IncI(Sc, 2); Exit; end;
+  if (C1 = '<') and (C2 = '>') then begin Result := '<>'; IncI(Sc, 2); Exit; end;
+  if (C1 = '.') and (C2 = '.') then begin Result := '..'; IncI(Sc, 2); Exit; end;
+  // Single-char.
+  Result := C1;
+  IncI(Sc);
+end;
+
+
+// =========================================================================
+// TDelphiLexer
+// =========================================================================
+
+function TDelphiLexer.Tokenize(const Source: string): TList<TToken>;
+begin
+  Result := TList<TToken>.Create;
+  TokenizeInto(Source, Result);
+end;
+
+procedure TDelphiLexer.TokenizeInto(const Source: string; const OutTokens: TList<TToken>);
+var
+  Sc:        TScanner;
+  C:         Char;
+  TokText:   string;
+  TokLine:   Integer; // start line of current token (captured before Read*)
+  TokCol:    Integer; // start column of current token
+  TokOffset: Integer; // 0-based start offset of current token
+  TokStartI: Integer; // 1-based start position for Copy() (= TokOffset + 1)
+  DelimLen:  Integer; // multiline string delimiter length (3, 5, 7, ...)
+
+  procedure Add(AKind: TTokenKind; const Text: string);
+  var
+    T: TToken;
+  begin
+    T := MakeToken(AKind, Text, TokLine, TokCol, TokOffset);
+    OutTokens.Add(T);
+  end;
+
+begin
+  Sc.S           := Source;
+  Sc.I           := 1;
+  Sc.N           := Length(Source);
+  Sc.Line        := 1;
+  Sc.Col         := 1;
+  Sc.AtLineStart := True;
+
+  while Sc.I <= Sc.N do
+  begin
+    C         := Peek(Sc);
+    TokLine   := Sc.Line;
+    TokCol    := Sc.Col;
+    TokOffset := Sc.I - 1; // 0-based
+    TokStartI := Sc.I;     // 1-based; use for direct Copy()
+
+    // --- EOL: CRLF, LF, or bare CR ---
+    if (C = #13) or (C = #10) then
+    begin
+      if (C = #13) and (Peek(Sc, 1) = #10) then
+      begin
+        Add(tkEOL, #13#10);
+        IncI(Sc, 2);
+      end
+      else
+      begin
+        Add(tkEOL, C);
+        IncI(Sc);
+      end;
+      Continue;
+    end;
+
+    // --- Whitespace (space/tab) ---
+    if (C = CHAR_SPACE) or (C = CHAR_TAB) then
+    begin
+      TokText := ReadWhitespace(Sc);
+      if TokText <> '' then
+        Add(tkWhitespace, TokText);
+      Continue;
+    end;
+
+    // --- Comments and compiler directives ---
+    // The '$' lookahead must be checked before dispatching to the reader.
+    // Both the directive and comment branches call the same reader function
+    // (ReadBraceComment / ReadParenStarComment); the difference is only which
+    // token kind is emitted. Checking for '$' here -- rather than inside the
+    // reader -- is what distinguishes tkDirective from tkComment.
+    if C = '{' then
+    begin
+      if Peek(Sc, 1) = '$' then
+        Add(tkDirective, ReadBraceComment(Sc))
+      else
+        Add(tkComment, ReadBraceComment(Sc));
+      Continue;
+    end;
+
+    if (C = '(') and (Peek(Sc, 1) = '*') then
+    begin
+      if Peek(Sc, 2) = '$' then
+        Add(tkDirective, ReadParenStarComment(Sc))
+      else
+        Add(tkComment, ReadParenStarComment(Sc));
+      Continue;
+    end;
+
+    if (C = '/') and (Peek(Sc, 1) = '/') then
+    begin
+      Add(tkComment, ReadSlashSlashComment(Sc));
+      Continue;
+    end;
+
+    // --- String literals ---
+    if C = CHAR_SINGLE_QUOTE then
+    begin
+      DelimLen := DetectMultilineDelimiterLength(Sc);
+      if DelimLen > 0 then
+        Add(tkString, ReadMultiLineString(Sc, DelimLen))
+      else
+        Add(tkString, ReadStringLiteral(Sc));
+      Continue;
+    end;
+
+    // --- Character literal: #nn or #$hex ---
+    // For the #$hex form, require at least one hex digit after '$' so that
+    // bare '#$' (no digits) falls through to tkInvalid rather than producing
+    // a tkCharLiteral with no code point.
+    if (C = '#') and
+       (CharInSet(Peek(Sc, 1), ['0'..'9']) or
+        ((Peek(Sc, 1) = '$') and
+         CharInSet(Peek(Sc, 2), ['0'..'9', 'A'..'F', 'a'..'f']))) then
+    begin
+      Add(tkCharLiteral, ReadCharLiteral(Sc));
+      Continue;
+    end;
+
+    // --- Binary literal: %0101... ---
+    if (C = '%') and CharInSet(Peek(Sc, 1), ['0', '1']) then
+    begin
+      Add(tkNumber, ReadBinaryLiteral(Sc));
+      Continue;
+    end;
+
+    // --- Octal literal: &0377, &07, etc.
+    //     Must come before the escaped-identifier check. ---
+    if (C = '&') and CharInSet(Peek(Sc, 1), ['0'..'7']) then
+    begin
+      IncI(Sc); // consume '&'
+      while CharInSet(Peek(Sc), ['0'..'7', '_']) do
+        IncI(Sc);
+      Add(tkNumber, Copy(Sc.S, TokStartI, Sc.I - TokStartI));
+      Continue;
+    end;
+
+    // --- Escaped identifier: &begin, &unit, etc.
+    //     Produced as tkIdentifier so keyword-casing rules never touch them. ---
+    if (C = '&') and IsIdentStart(Peek(Sc, 1)) then
+    begin
+      IncI(Sc); // consume '&'
+      while IsIdentChar(Peek(Sc)) do
+        IncI(Sc);
+      Add(tkIdentifier, Copy(Sc.S, TokStartI, Sc.I - TokStartI));
+      Continue;
+    end;
+
+    // --- Identifier / keyword / decimal+hex+float number ---
+    // '$' is only dispatched here when at least one hex digit (or underscore)
+    // follows, so that bare '$' falls through to tkInvalid below.
+    if IsIdentStart(C) or
+       ((C = '$') and CharInSet(Peek(Sc, 1), ['0'..'9', 'A'..'F', 'a'..'f', '_'])) or
+       CharInSet(C, ['0'..'9']) then
+    begin
+      TokText := ReadIdentifierOrNumber(Sc);
+      if (TokText <> '') and IsIdentStart(TokText[1]) then
+      begin
+        if IsDelphiKeyword(TokText) then
+          Add(tkKeyword, TokText)
+        else
+          Add(tkIdentifier, TokText);
+      end
+      else
+        Add(tkNumber, TokText);
+      Continue;
+    end;
+
+    // --- Symbols (operators and punctuation) ---
+    // Only genuine Delphi operators and punctuation are tkSymbol.
+    // Everything else (bare &, #, %, unmatched }, \, ~, !, ?, etc.) is
+    // tkInvalid so callers can identify malformed input clearly.
+    //
+    // Multi-char operators (:=, <=, >=, <>, ..) are handled first inside
+    // ReadSymbol and return a 2-char string; TokText[1] still routes them
+    // to the correct case branch below.
+    //
+    // Characters that should never reach here because they were dispatched
+    // earlier: #13, #10 (EOL), space, tab, {, (, followed by *, //, ', #
+    // with digit/$, % with 0/1, & with ident/digit, letters, digits, $.
+    TokText := ReadSymbol(Sc);
+    case TokText[1] of
+      '+', '-', '*', '/', '=', '<', '>', ':',
+      '.', '(', ')', '[', ']', ',', ';', '@', '^':
+        Add(tkSymbol, TokText);
+    else
+      Add(tkInvalid, TokText);
+    end;
+  end;
+
+  TokLine   := Sc.Line;
+  TokCol    := Sc.Col;
+  TokOffset := Sc.I - 1; // = Sc.N; one past the last character (0-based)
+  Add(tkEOF, '');
+end;
+
+
+end.
