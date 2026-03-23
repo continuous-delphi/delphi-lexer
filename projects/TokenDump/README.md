@@ -3,9 +3,18 @@
 Utility project from `delphi-lexer`
 [https://github.com/continuous-delphi/delphi-lexer/](https://github.com/continuous-delphi/delphi-lexer/)
 
-Usage: `DelphiLexer.TokenDump <file.pas>`
+Usage:
 
-Outputs a token table including:
+```text
+DelphiLexer.TokenDump <file.pas> [--encoding <name>]
+
+Options:
+  --encoding <name>   Source file encoding (default: utf-8)
+                      Supported: utf-8, utf-16, utf-16be, ansi, ascii, default
+
+```
+
+Outputs a token table to stdout, including:
 
 - token kind
 - line/column
