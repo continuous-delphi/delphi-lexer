@@ -29,6 +29,33 @@ type
     Length:      Integer;   // character count of Text: equals `System.Length(Text)`
   end;
 
+
+const
+
+  TokenKindNames: array[TTokenKind] of string = (
+    'tkIdentifier',
+    'tkKeyword',
+    'tkNumber',
+    'tkString',
+    'tkCharLiteral',
+    'tkComment',
+    'tkDirective',
+    'tkSymbol',
+    'tkWhitespace',
+    'tkEOL',
+    'tkEOF',
+    'tkInvalid'
+  );
+
+  function TokenKindName(K: TTokenKind): string;
+
 implementation
+
+function TokenKindName(K: TTokenKind): string;
+begin
+  Result := TokenKindNames[K];
+end;
+
+
 
 end.

@@ -9,7 +9,6 @@ uses
 type
   TTokenDumper = record
   private
-    class function KindName(K: TTokenKind): string; static;
     class function SafeText(const S: string): string; static;
     class function ResolveEncoding(const AName: string): TEncoding; static;
   public
@@ -22,26 +21,6 @@ uses
   System.IOUtils,
   System.Generics.Collections,
   DelphiLexer.Lexer;
-
-class function TTokenDumper.KindName(K: TTokenKind): string;
-begin
-  case K of
-    tkIdentifier:  Result := 'tkIdentifier';
-    tkKeyword:     Result := 'tkKeyword';
-    tkNumber:      Result := 'tkNumber';
-    tkString:      Result := 'tkString';
-    tkCharLiteral: Result := 'tkCharLiteral';
-    tkComment:     Result := 'tkComment';
-    tkDirective:   Result := 'tkDirective';
-    tkSymbol:      Result := 'tkSymbol';
-    tkWhitespace:  Result := 'tkWhitespace';
-    tkEOL:         Result := 'tkEOL';
-    tkEOF:         Result := 'tkEOF';
-    tkInvalid:     Result := 'tkInvalid';
-  else
-    Result := '(unknown)';
-  end;
-end;
 
 
 // Return a printable, single-line representation of S.
@@ -232,7 +211,7 @@ begin
         Inc(InvalidCount);
       LC := IntToStr(Tok.Line) + ':' + IntToStr(Tok.Col);
       WriteLn(Format('  %5d  %-17s  %7s  %6d  %5d  %s',
-        [I, KindName(Tok.Kind), LC, Tok.StartOffset, Tok.Length,
+        [I, TokenKindName(Tok.Kind), LC, Tok.StartOffset, Tok.Length,
          SafeText(Tok.Text)]));
     end;
 
