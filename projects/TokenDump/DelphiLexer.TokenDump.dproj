@@ -50,6 +50,7 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
+        <DCCReference Include="TokenDump.pas"/>
         <DCCReference Include="..\..\source\DelphiLexer.Token.pas"/>
         <DCCReference Include="..\..\source\DelphiLexer.Keywords.pas"/>
         <DCCReference Include="..\..\source\DelphiLexer.Scanner.pas"/>
