@@ -6,11 +6,14 @@ Utility project from `delphi-lexer`
 Usage:
 
 ```text
-DelphiLexer.TokenDump <file.pas> [--encoding <name>]
+DelphiLexer.TokenDump <file.pas> [--encoding <name>] [--format <name>]
 
 Options:
   --encoding <name>   Source file encoding (default: utf-8)
                       Supported: utf-8, utf-16, utf-16be, ansi, ascii, default
+
+  --format <name>     Output format (default: text)
+                      Supported: text, json
 
 ```
 
