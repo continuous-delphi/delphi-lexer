@@ -1,5 +1,8 @@
 # DelphiLexer.TokenDump project
 
+Utility project from `delphi-lexer`
+[https://github.com/continuous-delphi/delphi-lexer/](https://github.com/continuous-delphi/delphi-lexer/)
+
 Usage: `DelphiLexer.TokenDump <file.pas>`
 
 Outputs a token table including:

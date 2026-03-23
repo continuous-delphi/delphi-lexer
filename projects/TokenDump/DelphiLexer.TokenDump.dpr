@@ -1,6 +1,7 @@
-﻿program DelphiLexer.TokenDump;
+program DelphiLexer.TokenDump;
 
 {$APPTYPE CONSOLE}
+
 
 // Token dump utility for DelphiLexer.
 //
@@ -40,9 +41,19 @@
 //     ...
 //   Tokens: 16  Source: 54 chars  Invalid: 0  Round-trip: OK
 
+
+{$R *.res}
+
 uses
-  TokenDump in 'TokenDump.pas';
+  System.SysUtils,
+  TokenDump in 'TokenDump.pas',
+  DelphiLexer.Lexer in '..\..\source\DelphiLexer.Lexer.pas',
+  DelphiLexer.Scanner in '..\..\source\DelphiLexer.Scanner.pas',
+  DelphiLexer.Token in '..\..\source\DelphiLexer.Token.pas',
+  DelphiLexer.Keywords in '..\..\source\DelphiLexer.Keywords.pas';
 
 begin
+
   ExitCode := TTokenDumper.Run;
+
 end.
