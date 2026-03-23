@@ -7,7 +7,12 @@ program DelphiLexer.TokenDump;
 //
 // Usage:
 //   DelphiLexer.TokenDump <file.pas>
+//   DelphiLexer.TokenDump <file.pas> --encoding <name>
 //   DelphiLexer.TokenDump --help
+//
+// Options:
+//   --encoding <name>   Source file encoding (default: utf-8)
+//                       Supported: utf-8, utf-16, utf-16be, ansi, ascii, default
 //
 // Tokenizes a Delphi source file and writes a line-per-token table to
 // stdout. Intended for debugging and for exploring what TDelphiLexer

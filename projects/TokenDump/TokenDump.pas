@@ -1,8 +1,9 @@
-﻿unit TokenDump;
+unit TokenDump;
 
 interface
 
 uses
+  System.SysUtils,
   DelphiLexer.Token;
 
 type
@@ -10,6 +11,7 @@ type
   private
     class function KindName(K: TTokenKind): string; static;
     class function SafeText(const S: string): string; static;
+    class function ResolveEncoding(const AName: string): TEncoding; static;
   public
     class function Run: Integer; static;
   end;
@@ -17,7 +19,6 @@ type
 implementation
 
 uses
-  System.SysUtils,
   System.IOUtils,
   System.Generics.Collections,
   DelphiLexer.Lexer;
@@ -90,9 +91,36 @@ begin
 end;
 
 
+// Map a case-insensitive encoding name to a TEncoding singleton.
+// Returns nil if the name is not recognised.
+class function TTokenDumper.ResolveEncoding(const AName: string): TEncoding;
+var
+  Requested: string;
+begin
+  Requested := LowerCase(Trim(AName));
+
+  if (Requested = 'utf-8') or (Requested = 'utf8') then
+    Result := TEncoding.UTF8
+  else if (Requested = 'utf-16') or (Requested = 'utf16') or (Requested = 'unicode') then
+    Result := TEncoding.Unicode
+  else if (Requested = 'utf-16be') or (Requested = 'utf16be') then
+    Result := TEncoding.BigEndianUnicode
+  else if Requested = 'ansi' then
+    Result := TEncoding.ANSI
+  else if Requested = 'ascii' then
+    Result := TEncoding.ASCII
+  else if Requested = 'default' then
+    Result := TEncoding.Default
+  else
+    Result := nil;
+end;
+
+
 class function TTokenDumper.Run: Integer;
 var
   FileName:     string;
+  EncodingName: string;
+  Encoding:     TEncoding;
   Source:       string;
   Lexer:        TDelphiLexer;
   Tokens:       TList<TToken>;
@@ -103,18 +131,67 @@ var
   SB:           TStringBuilder;
   RoundTripOK:  Boolean;
 begin
-  Result := 0;
+  Result       := 0;
+  FileName     := '';
+  EncodingName := 'utf-8';
 
-  if (ParamCount <> 1) or (ParamStr(1) = '--help') or (ParamStr(1) = '-h') then
+  // Parse arguments.
+  I := 1;
+  while I <= ParamCount do
   begin
-    WriteLn('Usage: DelphiLexer.TokenDump <file.pas>');
-    WriteLn;
-    WriteLn('Tokenizes a Delphi source file and writes the token stream to stdout.');
-    WriteLn('Columns: Idx  Kind  L:C  Offset  Len  Text');
+    if (ParamStr(I) = '--help') or (ParamStr(I) = '-h') then
+    begin
+      WriteLn('Usage: DelphiLexer.TokenDump <file.pas> [--encoding <name>]');
+      WriteLn;
+      WriteLn('Tokenizes a Delphi source file and writes the token stream to stdout.');
+      WriteLn('Columns: Idx  Kind  L:C  Offset  Len  Text');
+      WriteLn;
+      WriteLn('Options:');
+      WriteLn('  --encoding <name>   Source file encoding (default: utf-8)');
+      WriteLn('                      Supported: utf-8, utf-16, utf-16be, ansi, ascii, default');
+      Exit(1);
+    end
+    else if ParamStr(I) = '--encoding' then
+    begin
+      Inc(I);
+      if I > ParamCount then
+      begin
+        WriteLn('error: --encoding requires a value');
+        Exit(1);
+      end;
+      EncodingName := ParamStr(I);
+    end
+    else if (System.Length(ParamStr(I)) > 0) and (ParamStr(I)[1] <> '-') then
+    begin
+      if FileName <> '' then
+      begin
+        WriteLn('error: unexpected argument: ', ParamStr(I));
+        Exit(1);
+      end;
+      FileName := ParamStr(I);
+    end
+    else
+    begin
+      WriteLn('error: unknown option: ', ParamStr(I));
+      Exit(1);
+    end;
+    Inc(I);
+  end;
+
+  if FileName = '' then
+  begin
+    WriteLn('Usage: DelphiLexer.TokenDump <file.pas> [--encoding <name>]');
     Exit(1);
   end;
 
-  FileName := ParamStr(1);
+  Encoding := ResolveEncoding(EncodingName);
+  if Encoding = nil then
+  begin
+    WriteLn('error: unknown encoding: ', EncodingName);
+    WriteLn('Supported: utf-8, utf-16, utf-16be, ansi, ascii, default');
+    Exit(1);
+  end;
+
   if not TFile.Exists(FileName) then
   begin
     WriteLn('error: file not found: ', FileName);
@@ -122,8 +199,7 @@ begin
   end;
 
   try
-    //todo: Need to pass an encoding parameter.  If not provided, assume UTF8
-    Source := TFile.ReadAllText(FileName, TEncoding.UTF8);
+    Source := TFile.ReadAllText(FileName, Encoding);
   except
     on E: Exception do
     begin
