@@ -1,108 +1,33 @@
-﻿unit TokenDump;
+unit TokenDump;
 
 interface
 
 uses
-  System.SysUtils,
   System.Generics.Collections,
   DelphiLexer.Token;
 
 type
-  TTokenDumper = record
+
+  TTokenDump = record
   private
-    class function SafeText(const S: string): string; static;
-    class function ResolveEncoding(const AName: string): TEncoding; static;
     class function WriteTextOutput(Tokens: TList<TToken>; const ASource: string): Integer; static;
     class function WriteJsonOutput(const AFileName, AEncodingName: string; Tokens: TList<TToken>; const ASource: string): Integer; static;
   public
     class function Run: Integer; static;
   end;
 
+
 implementation
 
 uses
+  System.SysUtils,
   System.IOUtils,
   System.JSON,
+  DelphiLexer.Utils,
   DelphiLexer.Lexer;
 
-type
-  TOutputFormat = (ofText, ofJson);
 
-
-// Return a printable, single-line representation of S.
-// Control characters are replaced with <TAG> codes.
-// Truncated at 48 visible characters with '...' suffix.
-class function TTokenDumper.SafeText(const S: string): string;
-const
-  MAX_VISIBLE = 48;
-var
-  I:       Integer;
-  Visible: Integer;
-  Ch:      Char;
-  R:       string;
-  Tag:     string;
-begin
-  R       := '';
-  Visible := 0;
-  I       := 1;
-  while (I <= System.Length(S)) and (Visible < MAX_VISIBLE) do
-  begin
-    Ch := S[I];
-    if (Ch = #13) and (I < System.Length(S)) and (S[I + 1] = #10) then
-    begin
-      Tag := '<CRLF>';
-      Inc(I);
-    end
-    else if Ch = #13 then
-      Tag := '<CR>'
-    else if Ch = #10 then
-      Tag := '<LF>'
-    else if Ch = #9 then
-      Tag := '<TAB>'
-    else
-    begin
-      R := R + Ch;
-      Inc(Visible);
-      Inc(I);
-      Continue;
-    end;
-    R       := R + Tag;
-    Visible := Visible + System.Length(Tag);
-    Inc(I);
-  end;
-  if I <= System.Length(S) then
-    R := R + '...';
-  Result := R;
-end;
-
-
-// Map a case-insensitive encoding name to a TEncoding singleton.
-// Returns nil if the name is not recognised.
-// Callers must not free the returned instance.
-class function TTokenDumper.ResolveEncoding(const AName: string): TEncoding;
-var
-  Lower: string;
-begin
-  Lower := LowerCase(AName);
-  if (Lower = 'utf-8') or (Lower = 'utf8') then
-    Result := TEncoding.UTF8
-  else if (Lower = 'utf-16') or (Lower = 'utf16') or (Lower = 'unicode') then
-    Result := TEncoding.Unicode
-  else if (Lower = 'utf-16be') or (Lower = 'utf16be') then
-    Result := TEncoding.BigEndianUnicode
-  else if Lower = 'ansi' then
-    Result := TEncoding.ANSI
-  else if Lower = 'ascii' then
-    Result := TEncoding.ASCII
-  else if Lower = 'default' then
-    Result := TEncoding.Default
-  else
-    Result := nil;
-end;
-
-
-class function TTokenDumper.WriteTextOutput(Tokens: TList<TToken>;
-  const ASource: string): Integer;
+class function TTokenDump.WriteTextOutput(Tokens: TList<TToken>; const ASource: string): Integer;
 var
   Tok:          TToken;
   I:            Integer;
@@ -111,7 +36,13 @@ var
   SB:           TStringBuilder;
   RoundTripOK:  Boolean;
 begin
-  // Header.
+
+  // Header
+  WriteLn('');
+  WriteLn('DelphiLexer.TokenDump');
+  WriteLn('formatVersion: ', '1.0.0');
+  WriteLn('');
+
   WriteLn(Format('  %5s  %-17s  %-7s  %6s  %5s  %s',
     ['Idx', 'Kind', 'L:C', 'Offset', 'Len', 'Text']));
   WriteLn('  ', StringOfChar('-', 5), '  ',
@@ -131,7 +62,7 @@ begin
     LC := IntToStr(Tok.Line) + ':' + IntToStr(Tok.Col);
     WriteLn(Format('  %5d  %-17s  %7s  %6d  %5d  %s',
       [I, TokenKindName(Tok.Kind), LC, Tok.StartOffset, Tok.Length,
-       SafeText(Tok.Text)]));
+       TLexerUtils.SafeText(Tok.Text)]));
   end;
 
   // Round-trip check.
@@ -146,12 +77,12 @@ begin
 
   // Summary.
   WriteLn;
-  Write(Format('Tokens: %d  Source: %d chars',
+  Write(Format('Tokens: %d; Source: %d chars;',
     [Tokens.Count, System.Length(ASource)]));
   if InvalidCount > 0 then
-    Write(Format('  Invalid: %d ***', [InvalidCount]))
+    Write(Format('  Invalid: %d ***;', [InvalidCount]))
   else
-    Write('  Invalid: 0');
+    Write('  Invalid: 0;');
   if RoundTripOK then
     WriteLn('  Round-trip: OK')
   else
@@ -161,10 +92,11 @@ begin
     Result := 2
   else
     Result := 0;
+
 end;
 
 
-class function TTokenDumper.WriteJsonOutput(const AFileName, AEncodingName: string; Tokens: TList<TToken>; const ASource: string): Integer;
+class function TTokenDump.WriteJsonOutput(const AFileName, AEncodingName: string; Tokens: TList<TToken>; const ASource: string): Integer;
 var
   I:            Integer;
   InvalidCount: Integer;
@@ -238,7 +170,7 @@ begin
 end;
 
 
-class function TTokenDumper.Run: Integer;
+class function TTokenDump.Run: Integer;
 var
   FileName:     string;
   EncodingName: string;
@@ -259,17 +191,22 @@ begin
   I := 1;
   while I <= ParamCount do
   begin
-    if (ParamStr(I) = '--help') or (ParamStr(I) = '-h') then
+    if (ParamStr(I) = '--help') or (ParamStr(I) = '-h') or (ParamStr(I) = '-?') then
     begin
+      WriteLn;
+      WriteLn;
       WriteLn('Usage: DelphiLexer.TokenDump <file.pas> [--encoding <name>] [--format <name>]');
       WriteLn;
-      WriteLn('Tokenizes a Delphi source file and writes the token stream to stdout.');
+      WriteLn('A command-line utility for inspecting the token stream produced by delphi-lexer,');
+      WriteLn('providing a lossless, position-accurate view of the source.');
       WriteLn;
       WriteLn('Options:');
       WriteLn('  --encoding <name>   Source file encoding (default: utf-8)');
       WriteLn('                      Supported: utf-8, utf-16, utf-16be, ansi, ascii, default');
       WriteLn('  --format <name>     Output format (default: text)');
       WriteLn('                      Supported: text, json');
+      WriteLn('');
+      WriteLn('DelphiLexer.TokenDump ', TWinUtils.GetModuleVersion);
       Exit(1);
     end
     else if ParamStr(I) = '--encoding' then
@@ -315,7 +252,7 @@ begin
     Exit(1);
   end;
 
-  Encoding := ResolveEncoding(EncodingName);
+  Encoding := TLexerUtils.ResolveEncoding(EncodingName);
   if Encoding = nil then
   begin
     WriteLn('error: unknown encoding: ', EncodingName);

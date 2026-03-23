@@ -66,7 +66,9 @@ test/               DUnitX test project
   golden/           Representative .pas files for round-trip tests
 
 projects
-  TokenDump/        Debugging aid / token dump utility
+  TokenDump/        Inspect tokens within a file
+  TokenStats/       Analyze tokens within a file
+  TokenCompare/     Verify token changes between two files
 
 tools/              build & run tools
 docs/               Architecture notes
@@ -192,7 +194,7 @@ preserving all whitespace.
 
 ### Numeric literal policy
 
---- 
+---
 
 #### Bases supported
 
@@ -204,7 +206,7 @@ preserving all whitespace.
 | Binary | `%10110011` | Leading `%`, digits `0` and `1` |
 | Octal | `&0377` | Leading `&`, digits `0-7` |
 
---- 
+---
 
 #### Digit separators
 
@@ -212,11 +214,11 @@ Underscore (`_`) is allowed as a digit separator in all bases and in all
 parts of a decimal literal (integer part, fractional part, exponent part).
 One or more consecutive underscores are accepted.
 
-```
+```text
 $FF_FF      1__000___000    3.14___15__    1e1_0    %101_0___0101
 ```
 
---- 
+---
 
 #### Float exponent backtracking
 
@@ -225,13 +227,13 @@ If `e` or `E` appears after a decimal integer but is not followed by digits
 `e`. The digit run up to that point becomes `tkNumber`; the `e` begins the
 next token (typically `tkIdentifier` or `tkKeyword`).
 
-```
+```text
 1e6    ->  tkNumber('1e6')       // exponent digits present
 1e     ->  tkNumber('1') + tkIdentifier('e')   // no digits after e
 1exit  ->  tkNumber('1') + tkKeyword('exit')   // e starts keyword
 ```
 
---- 
+---
 
 #### Range operator guard
 
@@ -261,7 +263,7 @@ plain identifiers without `&`-escaping.
 without validation. Whether the code point is a valid Unicode scalar value
 is the compiler's concern, not the lexer's.
 
--  `Col` is in UTF-16 code units.
+- `Col` is in UTF-16 code units.
 `TToken.Col` counts UTF-16 code units from the start of the line, which is
 consistent with Delphi's own `string` type and with the default position
 encoding in the Language Server Protocol. For source containing characters
@@ -281,7 +283,6 @@ after a comment" should look at the token immediately following the
 `tkComment`.
 
 ---
-
 
 ### Current non-goals
 
@@ -314,7 +315,6 @@ It will graduate to `stable` once:
 - No breaking API changes expected.
 
 Until graduation, breaking changes may occur.
-
 
 ---
 
