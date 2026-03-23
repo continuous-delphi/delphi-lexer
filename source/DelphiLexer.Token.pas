@@ -22,11 +22,11 @@ type
 
   TToken = record
     Kind:        TTokenKind;
-    Text:        string;
-    Line:        Integer;   // 1-based; set by lexer
-    Col:         Integer;   // 1-based; set by lexer
-    StartOffset: Integer;   // 0-based absolute character index into source; set by lexer
-    Length:      Integer;   // character count of Text; set by lexer
+    Text:        string;    // Characters of this token, as they appear in the source
+    Line:        Integer;   // 1-based line number of the first character
+    Col:         Integer;   // 1-based column number of the first character
+    StartOffset: Integer;   // 0-based absolute character index into source
+    Length:      Integer;   // character count of Text: equals `System.Length(Text)`
   end;
 
 implementation

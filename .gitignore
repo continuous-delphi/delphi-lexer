@@ -107,3 +107,4 @@ modules/
 # TestInsight
 TestInsightSettings.ini
 
+/tools/*.ps1
