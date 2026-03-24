@@ -4,6 +4,7 @@ interface
 uses
   System.SysUtils,
   System.Generics.Collections,
+  GpCommandLineParser,
   DelphiLexer.Token;
 
 type
@@ -27,9 +28,52 @@ type
   TOutputFormat = (ofText, ofJson);
 
 
+
+  // For GpCommandLineParser: base set of command-line options for delphi-lexer utilities
+  TFileTokenizerCLI = class
+  private
+    FInputFile: string;
+    FEncoding:  string;
+    FFormat:    string;
+    FHelp:      Boolean;
+    FVersion:   Boolean;
+  public
+    [CLPPosition(1), CLPLongName('file'), CLPDescription('Delphi source file to tokenize')]
+    property InputFile: string read FInputFile write FInputFile;
+
+    [CLPLongNameAttribute('encoding'), CLPDescription('Source file encoding (utf-8, utf-16, utf-16be, ansi, ascii, default)', 'name'), CLPDefault('utf-8')]
+    property Encoding: string read FEncoding write FEncoding;
+
+    [CLPLongNameAttribute('format'), CLPDescription('Output format: text or json', 'name'), CLPDefault('text')]
+    property Format: string read FFormat write FFormat;
+
+    [CLPLongNameAttribute('help'), CLPName('?'), CLPDescription('Show this help and exit')]
+    property Help: Boolean read FHelp write FHelp;
+
+    [CLPLongNameAttribute('version'), CLPName('v'), CLPDescription('Show tool version and exit')]
+    property Version: Boolean read FVersion write FVersion;
+  end;
+
+
+  TConfigOptions = record
+    AbortProgram: Boolean;
+    ExitCode: Integer;
+    FileName: string;
+    FileContents: string;
+    Encoding: TEncoding;
+    OutputFormat: TOutputFormat;
+  end;
+
+  TCommandLineParser = class
+  public
+    class function Parse(const Line1, Line2:string):TConfigOptions;
+  end;
+
+
 implementation
 uses
   System.Classes,
+  System.IOUtils,
   WinAPI.Windows;
 
 
@@ -155,6 +199,98 @@ begin
     Result := TEncoding.Default
   else
     Result := nil;
+end;
+
+
+class function TCommandLineParser.Parse(const Line1, Line2:string):TConfigOptions;
+var
+  Opts: TFileTokenizerCLI;
+  Parser: IGpCommandLineParser;
+  Line: string;
+begin
+  Result := Default(TConfigOptions);
+  Result.AbortProgram := True;
+
+  Opts := TFileTokenizerCLI.Create;
+  try
+    Parser := CreateCommandLineParser;
+    Parser.Options := [opAllowInherited];
+
+    if not Parser.Parse(Opts) then
+    begin
+      WriteLn('error: ', Parser.ErrorInfo.Text);
+      Result.ExitCode := 1;
+      Exit;
+    end;
+
+    if Opts.Help or (Opts.InputFile = '') then  // inputfile is the one required parameter
+    begin
+      WriteLn(Line1);
+      WriteLn(Line2);
+      WriteLn('A command-line utility for delphi-lexer from Continuous-Delphi');
+      WriteLn('https://github.com/continuous-delphi/delphi-lexer');
+      WriteLn('MIT Licensed.  Copyright (C) 2026, Darian Miller');
+      WriteLn('Version: ', TWinUtils.GetModuleVersion);
+      WriteLn;
+      for Line in Parser.Usage do
+        WriteLn(Line);
+      WriteLn;
+      if Opts.InputFile = ''  then Result.ExitCode := 1;
+      Exit;
+    end;
+
+    if Opts.Version then
+    begin
+      WriteLn(TWinUtils.GetModuleVersion);
+      Exit;
+    end;
+
+    Result.FileName := Opts.InputFile;
+    if not TFile.Exists(Result.FileName) then
+    begin
+      WriteLn('error: file not found: ', Result.FileName);
+      Result.ExitCode := 1;
+      Exit;
+    end;
+
+    Result.Encoding := TLexerUtils.ResolveEncoding(Opts.Encoding);
+    if Result.Encoding = nil then
+    begin
+      WriteLn('error: unknown encoding: ', Opts.Encoding);
+      WriteLn('Supported: utf-8, utf-16, utf-16be, ansi, ascii, default');
+      Result.ExitCode := 1;
+      Exit;
+    end;
+
+    if SameText(Opts.Format, 'json') then
+      Result.OutputFormat := TOutputFormat.ofJson
+    else if SameText(Opts.Format, 'text') then
+      Result.OutputFormat := TOutputFormat.ofText
+    else
+    begin
+      WriteLn('error: unknown format: ', Opts.Format);
+      WriteLn('Supported formats: text, json');
+      Result.ExitCode := 1;
+      Exit;
+    end;
+
+
+    try
+      Result.FileContents := TFile.ReadAllText(Result.FileName, Result.Encoding);
+    except
+      on E: Exception do
+      begin
+        WriteLn('error: could not read file: ', E.Message);
+        Result.ExitCode := 1;
+        Exit;
+      end;
+    end;
+
+  finally
+    Opts.Free;
+  end;
+
+  Result.AbortProgram := False;
 end;
 
 

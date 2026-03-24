@@ -6,6 +6,7 @@ program DelphiLexer.TokenDump;
 
 uses
   TokenDump in 'TokenDump.pas',
+  GpCommandLineParser in '..\..\shared\GpCommandLineParser.pas',
   DelphiLexer.Lexer in '..\..\source\DelphiLexer.Lexer.pas',
   DelphiLexer.Scanner in '..\..\source\DelphiLexer.Scanner.pas',
   DelphiLexer.Token in '..\..\source\DelphiLexer.Token.pas',

@@ -2,7 +2,7 @@
     <PropertyGroup>
         <Base>True</Base>
         <AppType>Console</AppType>
-        <Config Condition="'$(Config)'==''">Release</Config>
+        <Config Condition="'$(Config)'==''">Debug</Config>
         <FrameworkType>None</FrameworkType>
         <MainSource>DelphiLexer.TokenDump.dpr</MainSource>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
@@ -75,8 +75,8 @@
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
         <Debugger_RunParams>..\..\tokendump.pas</Debugger_RunParams>
-        <VerInfo_Build>23</VerInfo_Build>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=0.5.0.23;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Build>26</VerInfo_Build>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=0.5.0.26;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_DebugInformation>0</DCC_DebugInformation>
@@ -88,8 +88,8 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <Icon_MainIcon>..\..\assets\source-code-browse.ico</Icon_MainIcon>
-        <VerInfo_Build>56</VerInfo_Build>
-        <VerInfo_Keys>CompanyName=Continuous-Delphi;FileDescription=https://github.com/continuous-delphi/delphi-lexer;FileVersion=1.0.0.56;InternalName=Continuous-Delphi TokenDump utility;LegalCopyright=Copyright (c) 2026, Darian Miller;LegalTrademarks=;OriginalFilename=DelphiLexer.TokenDump.exe;ProgramID=com.continous-delphi.$(MSBuildProjectName);ProductName=delphi-lexer by Continuous-Delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Build>116</VerInfo_Build>
+        <VerInfo_Keys>CompanyName=Continuous-Delphi;FileDescription=https://github.com/continuous-delphi/delphi-lexer;FileVersion=1.0.0.116;InternalName=Continuous-Delphi TokenDump utility;LegalCopyright=Copyright (c) 2026, Darian Miller;LegalTrademarks=;OriginalFilename=DelphiLexer.TokenDump.exe;ProgramID=com.continous-delphi.$(MSBuildProjectName);ProductName=delphi-lexer by Continuous-Delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <VerInfo_MajorVer>1</VerInfo_MajorVer>
         <VerInfo_MinorVer>0</VerInfo_MinorVer>
     </PropertyGroup>
@@ -98,6 +98,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="TokenDump.pas"/>
+        <DCCReference Include="..\..\shared\GpCommandLineParser.pas"/>
         <DCCReference Include="..\..\source\DelphiLexer.Lexer.pas"/>
         <DCCReference Include="..\..\source\DelphiLexer.Scanner.pas"/>
         <DCCReference Include="..\..\source\DelphiLexer.Token.pas"/>

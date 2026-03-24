@@ -3,15 +3,22 @@ unit TokenDump;
 interface
 
 uses
+  System.SysUtils,
   System.Generics.Collections,
+  DelphiLexer.Utils,
   DelphiLexer.Token;
 
 type
 
   TTokenDump = record
+  public const
+    AppName = 'DelphiLexer.TokenDump';
+    ExitCode_Success = 0;
+    ExitCode_InvalidTokens = 2;
+    ExitCode_RoundTripFailed = 3; //tokenization failure
   private
-    class function WriteTextOutput(Tokens: TList<TToken>; const ASource: string): Integer; static;
-    class function WriteJsonOutput(const AFileName, AEncodingName: string; Tokens: TList<TToken>; const ASource: string): Integer; static;
+    class function WriteTextOutput(const Config: TConfigOptions; const Tokens: TList<TToken>): Integer; static;
+    class function WriteJsonOutput(const Config: TConfigOptions; const Tokens: TList<TToken>): Integer; static;
   public
     class function Run: Integer; static;
   end;
@@ -20,25 +27,59 @@ type
 implementation
 
 uses
-  System.SysUtils,
-  System.IOUtils,
   System.JSON,
-  DelphiLexer.Utils,
   DelphiLexer.Lexer;
 
 
-class function TTokenDump.WriteTextOutput(Tokens: TList<TToken>; const ASource: string): Integer;
+class function TTokenDump.Run: Integer;
 var
-  Tok:          TToken;
-  I:            Integer;
-  InvalidCount: Integer;
-  LC:           string;
+  Options: TConfigOptions;
+  Lexer: TDelphiLexer;
+  Tokens: TList<TToken>;
 begin
+
+  {$IFDEF DEBUG}
+  ReportMemoryLeaksOnShutdown := True;
+  {$ENDIF}
+
+  Options := TCommandLineParser.Parse(AppName, 'Provides a lossless, position-accurate view of Object Pascal source code');
+  if Options.AbortProgram then Exit(Options.ExitCode);
+
+  Result := 0;
+
+  Lexer  := TDelphiLexer.Create;
+  Tokens := nil;
+  try
+    Tokens := Lexer.Tokenize(Options.FileContents);
+    case Options.OutputFormat of
+      TOutputFormat.ofText: Result := WriteTextOutput(Options, Tokens);
+      TOutputFormat.ofJson: Result := WriteJsonOutput(Options, Tokens);
+    else
+      Assert(False, 'Invalid output format');
+    end;
+  finally
+    Tokens.Free;
+    Lexer.Free;
+  end;
+end;
+
+
+class function TTokenDump.WriteTextOutput(const Config: TConfigOptions; const Tokens: TList<TToken>): Integer;
+var
+  Tok: TToken;
+  I: Integer;
+  RoundTripOK: Boolean;
+  InvalidCount: Integer;
+  LC: string;
+begin
+
+  RoundTripOk := TLexerUtils.RoundTripCheck(Tokens, Config.FileContents);
 
   // Header
   WriteLn('');
-  WriteLn('DelphiLexer.TokenDump');
-  WriteLn('formatVersion: ', '1.0.0');
+  WriteLn(AppName);
+  WriteLn('inputFile: ', Config.FileName);
+  WriteLn('formatVersion: ', '1.0.0'); // Bump if TEXT output structure changes
   WriteLn('');
 
   WriteLn(Format('  %5s  %-17s  %-7s  %6s  %5s  %s',
@@ -66,62 +107,49 @@ begin
   // Summary.
   WriteLn;
   Write(Format('Tokens: %d; Source: %d chars;',
-    [Tokens.Count, System.Length(ASource)]));
+    [Tokens.Count, System.Length(Config.FileContents)]));
   if InvalidCount > 0 then
-    Write(Format('  Invalid: %d ***;', [InvalidCount]))
+    Write(Format(' Invalid: %d ***;', [InvalidCount]))
   else
-    Write('  Invalid: 0;');
+    Write(' Invalid: 0;');
 
-  if TLexerUtils.RoundTripCheck(Tokens, ASource) then
-    WriteLn('  Round-trip: OK')
+  if RoundTripOk then
+    WriteLn(' Round-trip: OK')
   else
-    WriteLn('  Round-trip: FAIL ***');
+    WriteLn(' Round-trip: FAIL ***');
 
-  if InvalidCount > 0 then
-    Result := 2
+
+  if not RoundTripOk then
+    Result := ExitCode_RoundTripFailed
+  else if InvalidCount > 0 then
+    Result := ExitCode_InvalidTokens
   else
-    Result := 0;
+    Result := ExitCode_Success;
+
+  WriteLn('Exit Code: ', Result);
 
 end;
 
 
-class function TTokenDump.WriteJsonOutput(const AFileName, AEncodingName: string; Tokens: TList<TToken>; const ASource: string): Integer;
-var
-  I:            Integer;
-  InvalidCount: Integer;
-  RoundTripOK:  Boolean;
-  Root:         TJSONObject;
-  Options:      TJSONObject;
-  Summary:      TJSONObject;
-  TokensArr:    TJSONArray;
-  TokenObj:     TJSONObject;
-  Tok:          TToken;
-begin
-  // Count invalids.
-  InvalidCount := 0;
-  for I := 0 to Tokens.Count - 1 do
-    if Tokens[I].Kind = tkInvalid then
-      Inc(InvalidCount);
 
-  RoundTripOK := TLexerUtils.RoundTripCheck(Tokens, ASource);
+class function TTokenDump.WriteJsonOutput(const Config: TConfigOptions; const Tokens: TList<TToken>): Integer;
+var
+  I: Integer;
+  InvalidCount: Integer;
+  RoundTripOK: Boolean;
+  Root: TJSONObject;
+  Options: TJSONObject;
+  Summary: TJSONObject;
+  TokensArr: TJSONArray;
+  TokenObj: TJSONObject;
+  Tok: TToken;
+begin
+
+  InvalidCount := 0;
+  RoundTripOK := TLexerUtils.RoundTripCheck(Tokens, Config.FileContents);
 
   Root := TJSONObject.Create;
   try
-    Root.AddPair('tool', 'DelphiLexer.TokenDump');
-    Root.AddPair('formatVersion', '1.0.0');
-    Root.AddPair('sourceFile', AFileName);
-
-    Options := TJSONObject.Create;
-    Options.AddPair('encoding', AEncodingName);
-    Root.AddPair('options', Options);
-
-    Summary := TJSONObject.Create;
-    Summary.AddPair('totalTokens',      TJSONNumber.Create(Tokens.Count));
-    Summary.AddPair('sourceLength',     TJSONNumber.Create(System.Length(ASource)));
-    Summary.AddPair('invalidTokenCount', TJSONNumber.Create(InvalidCount));
-    Summary.AddPair('roundTripMatches',  TJSONBool.Create(RoundTripOK));
-    Root.AddPair('summary', Summary);
-
     TokensArr := TJSONArray.Create;
     for I := 0 to Tokens.Count - 1 do
     begin
@@ -135,155 +163,43 @@ begin
       TokenObj.AddPair('length', TJSONNumber.Create(Tok.Length));
       TokenObj.AddPair('text',   Tok.Text);
       TokensArr.Add(TokenObj);
+
+      if Tokens[I].Kind = tkInvalid then
+        Inc(InvalidCount);
     end;
+
+    if not RoundTripOK then
+      Result := ExitCode_RoundTripFailed
+    else if InvalidCount > 0 then
+      Result := ExitCode_InvalidTokens
+    else
+      Result := ExitCode_Success;
+
+
+    Root.AddPair('toolName', AppName);
+    Root.AddPair('inputFile', Config.FileName);
+    Root.AddPair('formatVersion', '1.0.0');  // Bump if JSON output structure changes
+
+    Options := TJSONObject.Create;
+    Options.AddPair('encoding', Config.Encoding.EncodingName);
+    Root.AddPair('options', Options);
+
+    Summary := TJSONObject.Create;
+    Summary.AddPair('totalTokens',      TJSONNumber.Create(Tokens.Count));
+    Summary.AddPair('sourceLength',     TJSONNumber.Create(System.Length(Config.FileContents)));
+    Summary.AddPair('invalidTokenCount', TJSONNumber.Create(InvalidCount));
+    Summary.AddPair('roundTripMatches',  TJSONBool.Create(RoundTripOK));
+    Summary.AddPair('exitCode',  TJSONNumber.Create(Result));
+    Root.AddPair('summary', Summary);
+
     Root.AddPair('tokens', TokensArr);
 
-    WriteLn(Root.Format(2));
+    WriteLn(Root.Format({Indentation=} 2));
   finally
     Root.Free;
   end;
 
-  if InvalidCount > 0 then
-    Result := 2
-  else
-    Result := 0;
 end;
 
-
-class function TTokenDump.Run: Integer;
-var
-  FileName:     string;
-  EncodingName: string;
-  FormatName:   string;
-  OutputFmt:    TOutputFormat;
-  Encoding:     TEncoding;
-  Source:       string;
-  Lexer:        TDelphiLexer;
-  Tokens:       TList<TToken>;
-  I:            Integer;
-begin
-  Result       := 0;
-  FileName     := '';
-  EncodingName := 'utf-8';
-  FormatName   := 'text';
-
-  // Parse arguments.
-  I := 1;
-  while I <= ParamCount do
-  begin
-    if (ParamStr(I) = '--help') or (ParamStr(I) = '-h') or (ParamStr(I) = '-?') then
-    begin
-      WriteLn;
-      WriteLn;
-      WriteLn('Usage: DelphiLexer.TokenDump <file.pas> [--encoding <name>] [--format <name>]');
-      WriteLn;
-      WriteLn('A command-line utility for inspecting the token stream produced by delphi-lexer,');
-      WriteLn('providing a lossless, position-accurate view of the source.');
-      WriteLn;
-      WriteLn('Options:');
-      WriteLn('  --encoding <name>   Source file encoding (default: utf-8)');
-      WriteLn('                      Supported: utf-8, utf-16, utf-16be, ansi, ascii, default');
-      WriteLn('  --format <name>     Output format (default: text)');
-      WriteLn('                      Supported: text, json');
-      WriteLn('');
-      WriteLn('DelphiLexer.TokenDump ', TWinUtils.GetModuleVersion);
-      Exit(1);
-    end
-    else if ParamStr(I) = '--version' then
-    begin
-      Writeln(TWinUtils.GetModuleVersion);
-      Exit;
-    end
-    else if ParamStr(I) = '--encoding' then
-    begin
-      Inc(I);
-      if I > ParamCount then
-      begin
-        WriteLn('error: --encoding requires a value');
-        Exit(1);
-      end;
-      EncodingName := ParamStr(I);
-    end
-    else if ParamStr(I) = '--format' then
-    begin
-      Inc(I);
-      if I > ParamCount then
-      begin
-        WriteLn('error: --format requires a value');
-        Exit(1);
-      end;
-      FormatName := ParamStr(I);
-    end
-    else if (System.Length(ParamStr(I)) > 0) and (ParamStr(I)[1] <> '-') then
-    begin
-      if FileName <> '' then
-      begin
-        WriteLn('error: unexpected argument: ', ParamStr(I));
-        Exit(1);
-      end;
-      FileName := ParamStr(I);
-    end
-    else
-    begin
-      WriteLn('error: unknown option: ', ParamStr(I));
-      Exit(1);
-    end;
-    Inc(I);
-  end;
-
-  if FileName = '' then
-  begin
-    WriteLn('Usage: DelphiLexer.TokenDump <file.pas> [--encoding <name>] [--format <name>]');
-    Exit(1);
-  end;
-
-  Encoding := TLexerUtils.ResolveEncoding(EncodingName);
-  if Encoding = nil then
-  begin
-    WriteLn('error: unknown encoding: ', EncodingName);
-    WriteLn('Supported: utf-8, utf-16, utf-16be, ansi, ascii, default');
-    Exit(1);
-  end;
-
-  if LowerCase(FormatName) = 'json' then
-    OutputFmt := TOutputFormat.ofJson
-  else if LowerCase(FormatName) = 'text' then
-    OutputFmt := TOutputFormat.ofText
-  else
-  begin
-    WriteLn('error: unknown format: ', FormatName);
-    WriteLn('Supported formats: text, json');
-    Exit(1);
-  end;
-
-  if not TFile.Exists(FileName) then
-  begin
-    WriteLn('error: file not found: ', FileName);
-    Exit(1);
-  end;
-
-  try
-    Source := TFile.ReadAllText(FileName, Encoding);
-  except
-    on E: Exception do
-    begin
-      WriteLn('error: could not read file: ', E.Message);
-      Exit(1);
-    end;
-  end;
-
-  Lexer  := TDelphiLexer.Create;
-  Tokens := nil;
-  try
-    Tokens := Lexer.Tokenize(Source);
-    case OutputFmt of
-      TOutputFormat.ofText: Result := WriteTextOutput(Tokens, Source);
-      TOutputFormat.ofJson: Result := WriteJsonOutput(FileName, EncodingName, Tokens, Source);
-    end;
-  finally
-    Tokens.Free;
-    Lexer.Free;
-  end;
-end;
 
 end.
