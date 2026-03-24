@@ -113,7 +113,7 @@ Summary line contains delimited values:
 ## Format 'json' output
 
 - When `--format:json` is specified, the tool emits a machine-readable
-representation of the token stream as produced by `delphi-lexer`
+representation of the token stream as produced by `delphi-lexer`.
 
 - The JSON format is intended for use in automated testing, CI pipelines,
 and tooling integrations.
@@ -331,12 +331,32 @@ You are encouraged to submit feature requests or bug reports.
 
 ---
 
+## Example Unit Tokenized
+
+Found in: `test/golden/minimal.pas`
+
+```pascal
+unit Minimal;
+
+interface
+
+implementation
+
+end.
+```
+
+---
+
 ![continuous-delphi logo](../../assets/continuous-delphi-480x270.png)
 
 Part of the [Continuous-Delphi](https://github.com/continuous-delphi) ecosystem including:
 
 - `delphi-lexer` -- core tokenizer
-- `DelphiLexer.TokenDump` -- token inspection
-- `DelphiLexer.TokenStats` -- token analysis
-- `DelphiLexer.TokenCompare` -- token comparison
+  - `DelphiLexer.TokenDump` -- token inspection
+  - `DelphiLexer.TokenStats` -- token analysis
+  - `DelphiLexer.TokenCompare` -- token comparison
+- `delphi-compiler-versions` -- Canonical list of versions with aliases and toolchain metadata
+- `delphi-inspect` -- Delphi toolchain discovery and normalization for assisting with automated builds
+- `delphi-powershell-ci` -- Automate clean, build, test and other steps for reliable pre-commit verification
+
 

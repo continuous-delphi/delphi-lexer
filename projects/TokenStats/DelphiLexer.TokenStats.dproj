@@ -4,10 +4,10 @@
         <AppType>Console</AppType>
         <Config Condition="'$(Config)'==''">Release</Config>
         <FrameworkType>None</FrameworkType>
-        <MainSource>DelphiLexer.TokenDump.dpr</MainSource>
+        <MainSource>DelphiLexer.TokenStats.dpr</MainSource>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
-        <ProjectGuid>{233BAE1E-8530-4864-853C-5A028EE95043}</ProjectGuid>
-        <ProjectName Condition="'$(ProjectName)'==''">DelphiLexer.TokenDump</ProjectName>
+        <ProjectGuid>{F1E2D3C4-B5A6-7890-ABCD-EF1234567891}</ProjectGuid>
+        <ProjectName Condition="'$(ProjectName)'==''">DelphiLexer.TokenStats</ProjectName>
         <ProjectVersion>20.4</ProjectVersion>
         <TargetedPlatforms>1</TargetedPlatforms>
     </PropertyGroup>
@@ -42,7 +42,7 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
-        <SanitizedProjectName>DelphiLexer_TokenDump</SanitizedProjectName>
+        <SanitizedProjectName>DelphiLexer_TokenStats</SanitizedProjectName>
         <DCC_DcuOutput>.\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>
         <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
@@ -75,36 +75,35 @@
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
         <Debugger_RunParams>..\..\tokendump.pas</Debugger_RunParams>
-        <VerInfo_Build>30</VerInfo_Build>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=0.5.0.30;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Build>23</VerInfo_Build>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=0.5.0.23;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_DebugInformation>0</DCC_DebugInformation>
         <DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
-        <DCC_Description>DelphiLexer.TokenDump by Continuous-Delphi</DCC_Description>
+        <DCC_Description>DelphiLexer.TokenStats by Continuous-Delphi</DCC_Description>
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
         <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=0.5.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.continous-delphi.$(MSBuildProjectName);ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
-        <Icon_MainIcon>..\..\assets\source-code-browse.ico</Icon_MainIcon>
-        <VerInfo_Build>130</VerInfo_Build>
-        <VerInfo_Keys>CompanyName=Continuous-Delphi;FileDescription=https://github.com/continuous-delphi/delphi-lexer;FileVersion=1.0.1.130;InternalName=Continuous-Delphi TokenDump utility;LegalCopyright=Copyright (c) 2026, Darian Miller;LegalTrademarks=;OriginalFilename=DelphiLexer.TokenDump.exe;ProgramID=com.continous-delphi.$(MSBuildProjectName);ProductName=delphi-lexer by Continuous-Delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <Icon_MainIcon>..\..\assets\source-code-stats.ico</Icon_MainIcon>
+        <VerInfo_Build>125</VerInfo_Build>
+        <VerInfo_Keys>CompanyName=Continuous-Delphi;FileDescription=https://github.com/continuous-delphi/delphi-lexer;FileVersion=1.0.0.125;InternalName=Continuous-Delphi TokenStats utility;LegalCopyright=Copyright (c) 2026, Darian Miller;LegalTrademarks=;OriginalFilename=DelphiLexer.TokenStats.exe;ProgramID=com.continous-delphi.$(MSBuildProjectName);ProductName=delphi-lexer by Continuous-Delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <VerInfo_MajorVer>1</VerInfo_MajorVer>
         <VerInfo_MinorVer>0</VerInfo_MinorVer>
-        <VerInfo_Release>1</VerInfo_Release>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="TokenDump.pas"/>
-        <DCCReference Include="..\..\shared\GpCommandLineParser.pas"/>
+        <DCCReference Include="TokenStats.pas"/>
         <DCCReference Include="..\..\source\DelphiLexer.Lexer.pas"/>
         <DCCReference Include="..\..\source\DelphiLexer.Scanner.pas"/>
         <DCCReference Include="..\..\source\DelphiLexer.Token.pas"/>
         <DCCReference Include="..\..\source\DelphiLexer.Keywords.pas"/>
         <DCCReference Include="..\..\source\DelphiLexer.Utils.pas"/>
+        <DCCReference Include="..\..\shared\GpCommandLineParser.pas"/>
         <None Include="README.md"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
@@ -124,7 +123,7 @@
         <BorlandProject>
             <Delphi.Personality>
                 <Source>
-                    <Source Name="MainSource">DelphiLexer.TokenDump.dpr</Source>
+                    <Source Name="MainSource">DelphiLexer.TokenStats.dpr</Source>
                 </Source>
                 <Excluded_Packages/>
                 <WelcomePageFile Path="README.md"/>
