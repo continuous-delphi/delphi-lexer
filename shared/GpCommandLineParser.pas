@@ -10,6 +10,14 @@
 ///   Version           : 1.06
 ///</para><para>
 ///   History:
+///
+///     Unpublished/local changes
+///     1.06a: 2026-03-23
+///        Allow inherited configurations - get properties for all parents up to, but not including TObject
+///        Behavior change only if enabled by enabling new option: opAllowInherited
+///        Note: there is an existing 2-year old similar PR (https://github.com/gabr42/GpDelphiUnits/pull/19)
+///        I made notes on the PR similar to these changes
+///
 ///     1.06: 2025-09-13
 ///       - [TommiPrami] Added support for Boolean default values.
 ///     1.05a: 2019-08-18
@@ -216,7 +224,7 @@ type
     Text      : string;
   end; { TCLPErrorInfo }
 
-  TCLPOption = (opIgnoreUnknownSwitches);
+  TCLPOption = (opIgnoreUnknownSwitches, opAllowInherited);
   TCLPOptions = set of TCLPOption;
 
   IGpCommandLineParser = interface ['{C9B729D4-3706-46DB-A8A2-1E07E04F497B}']
@@ -979,6 +987,8 @@ begin
       Exit(SetError(ekMissingNamed, edMissingRequiredSwitch, SRequiredSwitchWasNotProvided, 0, data.LongNames[0].LongForm));
 end; { TGpCommandLineParser.ProcessCommandLine }
 
+//DKM: allow inherited configurations - get properties for all parents up to TObject
+(*
 procedure TGpCommandLineParser.ProcessDefinitionClass(commandData: TObject);
 var
   ctx : TRttiContext;
@@ -989,6 +999,21 @@ begin
   typ := ctx.GetType(commandData.ClassType);
   for prop in typ.GetProperties do
     if prop.Parent = typ then
+      ProcessAttributes(commandData, prop);
+end;
+*)
+procedure TGpCommandLineParser.ProcessDefinitionClass(commandData: TObject);
+var
+  ctx : TRttiContext;
+  prop: TRttiProperty;
+  typ : TRttiType;
+  baseTObject:TRttiType;
+begin
+  ctx := TRttiContext.Create;
+  baseTObject := ctx.GetType(TObject);
+  typ := ctx.GetType(commandData.ClassType);
+  for prop in typ.GetProperties do
+    if ((opAllowInherited in FOptions) and (prop.Parent <> baseTObject)) or (prop.Parent = typ) then
       ProcessAttributes(commandData, prop);
 end; { TGpCommandLineParser.ProcessDefinitionClass }
 
@@ -1031,7 +1056,8 @@ begin
   if delim = '' then
     Result := '-' + Result
   else
-    Result := {$IFDEF MSWINDOWS}'/'{$ELSE}'--'{$ENDIF} + Result;
+    Result := '--' + Result;
+    //Result := {$IFDEF MSWINDOWS}'/'{$ELSE}'--'{$ENDIF} + Result;
 end; { TGpUsageFormatter.AddParameter }
 
 procedure TGpUsageFormatter.AlignAndWrap(sl: TStringList; wrapAtColumn: integer);
