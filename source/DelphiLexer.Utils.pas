@@ -2,7 +2,9 @@ unit DelphiLexer.Utils;
 
 interface
 uses
-  System.SysUtils;
+  System.SysUtils,
+  System.Generics.Collections,
+  DelphiLexer.Token;
 
 type
 
@@ -18,6 +20,8 @@ type
     // Map a case-insensitive encoding name to a TEncoding singleton.
     // Returns nil if the name is not recognised.
     class function ResolveEncoding(const AName: string): TEncoding;
+
+    class function RoundTripCheck(const ATokens: TList<TToken>; const ASource: string):Boolean;
   end;
 
   TOutputFormat = (ofText, ofJson);
@@ -71,6 +75,21 @@ begin
     Result := 'Version Info Not Available';
   end;
 
+end;
+
+class function TLexerUtils.RoundTripCheck(const ATokens: TList<TToken>; const ASource: string): Boolean;
+var
+  SB: TStringBuilder;
+  I: Integer;
+begin
+  SB := TStringBuilder.Create(System.Length(ASource));
+  try
+    for I := 0 to ATokens.Count - 1 do
+      SB.Append(ATokens[I].Text);
+    Result := (SB.ToString = ASource);
+  finally
+    SB.Free;
+  end;
 end;
 
 class function TLexerUtils.SafeText(const S: string): string;

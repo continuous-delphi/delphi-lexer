@@ -34,40 +34,7 @@ Options:
 
 ```
 
-## Format: `text` output
-
-The output is stable across runs for identical input, making it suitable for
-regression testing and snapshot comparison.
-
-Outputs consist of a header followed by a line-per-token table and then a one-line summary.
-
-```text
-Header Lines:
-
-  App Name (DelphiLexer.TokenDump)
-  App Version
-  Text Format Version
-
-Token Table Columns:
-
-  Idx    -- 0-based token index
-  Kind   -- TTokenKind name (tkKeyword, tkSymbol, ...)
-  L:C    -- 1-based line:column of the token's first character
-  Offset -- 0-based character offset into the source string
-  Len    -- character count of the token (= System.Length(Token.Text))
-  Text   -- token text; control characters replaced with angle-bracket
-            tags (<CRLF>, <LF>, <CR>, <TAB>); truncated at 48 printable
-            characters with a trailing '...' if longer
-
- Summary line contains delimited values:
-
-   - total token count
-   - source character count
-   - count of invalid tokens
-   - round-trip verification result  (OK|FAIL)
-```
-
-#### Example Command
+## Example Command
 
 `DelphiLexer.TokenDump.exe test\golden\minimal.pas`
 
@@ -97,12 +64,45 @@ formatVersion: 1.0.0
 Tokens: 16; Source: 54 chars; Invalid: 0; Round-trip: OK
 ```
 
-## JSON output
+## Format 'text' output (default)
 
-When `--format json` is specified, the tool emits a machine-readable
+- The output is deterministic and stable across runs for identical input,
+  making it suitable for regression testing and snapshot comparison.
+
+- Outputs consist of a header followed by a line-per-token table and then a one-line summary.
+
+```text
+Header Lines:
+
+  App Name (DelphiLexer.TokenDump)
+  App Version
+  Text Format Version
+
+Token Table Columns:
+
+  Idx    -- 0-based token index
+  Kind   -- TTokenKind name (tkKeyword, tkSymbol, ...)
+  L:C    -- 1-based line:column of the token's first character
+  Offset -- 0-based character offset into the source string
+  Len    -- character count of the token (= System.Length(Token.Text))
+  Text   -- token text; control characters replaced with angle-bracket
+            tags (<CRLF>, <LF>, <CR>, <TAB>); truncated at 48 printable
+            characters with a trailing '...' if longer
+
+Summary line contains delimited values:
+
+   - total token count
+   - source character count
+   - count of invalid tokens
+   - round-trip verification result  (OK|FAIL)
+```
+
+## Format 'json' output
+
+- When `--format json` is specified, the tool emits a machine-readable
 representation of the token stream.
 
-The JSON format is versioned (`formatVersion`) and intended for use in
+- The JSON format is versioned (`formatVersion`) and intended for use in
 automated testing, CI pipelines, and tooling integrations.
 
 Example (truncated):

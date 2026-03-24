@@ -5,7 +5,6 @@ program DelphiLexer.TokenDump;
 {$R *.res}
 
 uses
-  System.SysUtils,
   TokenDump in 'TokenDump.pas',
   DelphiLexer.Lexer in '..\..\source\DelphiLexer.Lexer.pas',
   DelphiLexer.Scanner in '..\..\source\DelphiLexer.Scanner.pas',

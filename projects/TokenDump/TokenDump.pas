@@ -33,8 +33,6 @@ var
   I:            Integer;
   InvalidCount: Integer;
   LC:           string;
-  SB:           TStringBuilder;
-  RoundTripOK:  Boolean;
 begin
 
   // Header
@@ -65,16 +63,6 @@ begin
        TLexerUtils.SafeText(Tok.Text)]));
   end;
 
-  // Round-trip check.
-  SB := TStringBuilder.Create(System.Length(ASource));
-  try
-    for I := 0 to Tokens.Count - 1 do
-      SB.Append(Tokens[I].Text);
-    RoundTripOK := (SB.ToString = ASource);
-  finally
-    SB.Free;
-  end;
-
   // Summary.
   WriteLn;
   Write(Format('Tokens: %d; Source: %d chars;',
@@ -83,7 +71,8 @@ begin
     Write(Format('  Invalid: %d ***;', [InvalidCount]))
   else
     Write('  Invalid: 0;');
-  if RoundTripOK then
+
+  if TLexerUtils.RoundTripCheck(Tokens, ASource) then
     WriteLn('  Round-trip: OK')
   else
     WriteLn('  Round-trip: FAIL ***');
@@ -100,7 +89,6 @@ class function TTokenDump.WriteJsonOutput(const AFileName, AEncodingName: string
 var
   I:            Integer;
   InvalidCount: Integer;
-  SB:           TStringBuilder;
   RoundTripOK:  Boolean;
   Root:         TJSONObject;
   Options:      TJSONObject;
@@ -115,15 +103,7 @@ begin
     if Tokens[I].Kind = tkInvalid then
       Inc(InvalidCount);
 
-  // Round-trip check.
-  SB := TStringBuilder.Create(System.Length(ASource));
-  try
-    for I := 0 to Tokens.Count - 1 do
-      SB.Append(Tokens[I].Text);
-    RoundTripOK := (SB.ToString = ASource);
-  finally
-    SB.Free;
-  end;
+  RoundTripOK := TLexerUtils.RoundTripCheck(Tokens, ASource);
 
   Root := TJSONObject.Create;
   try
@@ -209,6 +189,11 @@ begin
       WriteLn('DelphiLexer.TokenDump ', TWinUtils.GetModuleVersion);
       Exit(1);
     end
+    else if ParamStr(I) = '--version' then
+    begin
+      Writeln(TWinUtils.GetModuleVersion);
+      Exit;
+    end
     else if ParamStr(I) = '--encoding' then
     begin
       Inc(I);
@@ -261,9 +246,9 @@ begin
   end;
 
   if LowerCase(FormatName) = 'json' then
-    OutputFmt := ofJson
+    OutputFmt := TOutputFormat.ofJson
   else if LowerCase(FormatName) = 'text' then
-    OutputFmt := ofText
+    OutputFmt := TOutputFormat.ofText
   else
   begin
     WriteLn('error: unknown format: ', FormatName);
@@ -292,8 +277,8 @@ begin
   try
     Tokens := Lexer.Tokenize(Source);
     case OutputFmt of
-      ofText: Result := WriteTextOutput(Tokens, Source);
-      ofJson: Result := WriteJsonOutput(FileName, EncodingName, Tokens, Source);
+      TOutputFormat.ofText: Result := WriteTextOutput(Tokens, Source);
+      TOutputFormat.ofJson: Result := WriteJsonOutput(FileName, EncodingName, Tokens, Source);
     end;
   finally
     Tokens.Free;
