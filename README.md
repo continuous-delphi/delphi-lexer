@@ -67,8 +67,8 @@ test/               DUnitX test project
 
 projects
   TokenDump/        Inspect tokens within a file
-  TokenStats/       Analyze tokens within a file
-  TokenCompare/     Verify token changes between two files
+  TokenStats/       Analyze token metrics within a file
+  TokenCompare/     Verify tokens between two files
 
 tools/              build & run tools
 docs/               Architecture notes
@@ -84,6 +84,20 @@ docs/               Architecture notes
 - Minimal assumptions about downstream usage
 - Clear handling of malformed input
 - see also: [Dev Note - Design Invariants.md](/docs/Dev%20Note%20-%20Design%20Invariants.md)
+
+---
+
+## Token Utilities
+
+In addition to the core lexer, this repository provides three command-line tools
+for working with token streams:
+
+- **DelphiLexer.TokenDump** – inspect tokens
+- **DelphiLexer.TokenStats** – analyze token metrics
+- **DelphiLexer.TokenCompare** – compare token streams
+
+These utilities are intended for debugging, regression testing, and validating
+source transformations using deterministic token-level output.
 
 ---
 
