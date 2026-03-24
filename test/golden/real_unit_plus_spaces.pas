@@ -7,21 +7,21 @@ type
   ///<summary> Custom TIntArray summary </summary>
   TIntArray = array of Integer;
 
-function Sum(const Values: TIntArray): Integer;
-function Max(A, B: Integer): Integer;
+function Sum(   const Values:   TIntArray  ): Integer;
+function Max(  A,   B: Integer  ): Integer;
 
 implementation
 
-function Sum(const Values: TIntArray): Integer;  {EOL Comment}
+function Sum(const Values:   TIntArray): Integer;  {EOL Comment}
 var
-  I: Integer;
+  I:Integer;
 begin
   Result := 0;
-  for I := Low(Values) to High(Values) do
+  for I := Low(  Values  ) to High(  Values ) do
     Result := Result + Values[I];
 end;
 
-function Max(A, B: Integer): Integer;
+function Max(A , B: Integer): Integer;
 begin
   (*
     extra comments

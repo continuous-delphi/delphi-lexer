@@ -51,8 +51,8 @@ inputFile: test\golden\real_unit.pas
 formatVersion: 1.0.0
 
 File               : test\golden\real_unit.pas
-Tokens             : 192
-Lines              : 30
+Tokens             : 201
+Lines              : 36
 Invalid            : 0
 RoundTrip          : PASS
 
@@ -62,11 +62,11 @@ By Kind:
   tkNumber         : 1
   tkString         : 0
   tkCharLiteral    : 0
-  tkComment        : 0
+  tkComment        : 3
   tkDirective      : 0
   tkSymbol         : 46
-  tkWhitespace     : 51
-  tkEOL            : 30
+  tkWhitespace     : 54
+  tkEOL            : 33
   tkEOF            : 1
   tkInvalid        : 0
 
@@ -152,13 +152,13 @@ and tooling integrations.
     "encoding": "65001 (UTF-8)"
   },
   "summary": {
-    "totalTokens": 192,
-    "totalTokensExcludingEOF": 191,
-    "totalTokensExcludingTrivia": 110,
+    "totalTokens": 201,
+    "totalTokensExcludingEOF": 200,
+    "totalTokensExcludingTrivia": 113,
     "invalidTokenCount": 0,
     "eofTokenCount": 1,
     "roundTripMatches": true,
-    "lineCountEstimate": 30,
+    "lineCountEstimate": 36,
     "exitCode": 0
   },
   "countsByKind": {
@@ -167,11 +167,11 @@ and tooling integrations.
     "tkNumber": 1,
     "tkString": 0,
     "tkCharLiteral": 0,
-    "tkComment": 0,
+    "tkComment": 3,
     "tkDirective": 0,
     "tkSymbol": 46,
-    "tkWhitespace": 51,
-    "tkEOL": 30,
+    "tkWhitespace": 54,
+    "tkEOL": 33,
     "tkEOF": 1,
     "tkInvalid": 0
   },

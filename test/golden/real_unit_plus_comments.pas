@@ -4,7 +4,8 @@ interface
 
 type
 
-  ///<summary> Custom TIntArray summary </summary>
+  ///<summary> Custom TIntArray summary 
+  /// additional</summary>
   TIntArray = array of Integer;
 
 function Sum(const Values: TIntArray): Integer;
@@ -12,7 +13,7 @@ function Max(A, B: Integer): Integer;
 
 implementation
 
-function Sum(const Values: TIntArray): Integer;  {EOL Comment}
+function Sum(const Values: TIntArray): Integer;  {EOL Comment extended}
 var
   I: Integer;
 begin
@@ -25,7 +26,7 @@ function Max(A, B: Integer): Integer;
 begin
   (*
     extra comments
-    here
+    added here
   *)
   if A >= B then
     Result := A
