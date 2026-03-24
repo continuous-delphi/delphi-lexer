@@ -30,13 +30,13 @@ type
 
 
   // For GpCommandLineParser: base set of command-line options for delphi-lexer utilities
-  TFileTokenizerCLI = class
+  TFileTokenizerCLOptions = class
   private
     FInputFile: string;
-    FEncoding:  string;
-    FFormat:    string;
-    FHelp:      Boolean;
-    FVersion:   Boolean;
+    FEncoding: string;
+    FFormat: string;
+    FHelp: Boolean;
+    FVersion: Boolean;
   public
     [CLPPosition(1), CLPLongName('file'), CLPDescription('Delphi source file to tokenize')]
     property InputFile: string read FInputFile write FInputFile;
@@ -55,6 +55,40 @@ type
   end;
 
 
+  TFileComparerCLOptions = class(TFileTokenizerCLOptions)
+  private
+    FSecondFile: string;
+    FIgnoreTrivia: Boolean;
+    FIgnoreWhitespace: Boolean;
+    FIgnoreEOL: Boolean;
+    FIgnoreComments: Boolean;
+    FStopAfterFirstDiff: Boolean;
+    FMaxDiffs: Integer;
+  public
+    [CLPPosition(2), CLPLongName('file2'), CLPDescription('Second source file to tokenize')]
+    property SecondFile: string read FSecondFile write FSecondFile;
+
+
+    [CLPLongNameAttribute('ignore-trivia'), CLPName('t'), CLPDescription('Ignore whitespace and EOL tokens')]
+    property IgnoreTrivia: Boolean read FIgnoreTrivia write FIgnoreTrivia;
+
+    [CLPLongNameAttribute('ignore-whitespace'), CLPName('w'), CLPDescription('Ignore Whitespace tokens')]
+    property IgnoreWhitespace: Boolean read FIgnoreWhitespace write FIgnoreWhitespace;
+
+    [CLPLongNameAttribute('ignore-eol'), CLPName('e'), CLPDescription('Ignore EOL tokens')]
+    property IgnoreEOL: Boolean read FIgnoreEOL write FIgnoreEOL;
+
+    [CLPLongNameAttribute('ignore-comments'), CLPName('c'), CLPDescription('Ignore Comment tokens')]
+    property IgnoreComments: Boolean read FIgnoreComments write FIgnoreComments;
+
+    [CLPLongNameAttribute('stop-after-first-diff'), CLPName('x'), CLPDescription('Stop after the first difference is found')]
+    property StopAfterFirstDiff: Boolean read FStopAfterFirstDiff write FStopAfterFirstDiff;
+
+    [CLPLongNameAttribute('max-diffs'), CLPDescription('Limit reported differences to N (0 = unlimited)'), CLPDefault('0')]
+    property MaxDiffs: Integer read FMaxDiffs write FMaxDiffs;
+  end;
+
+
   TConfigOptions = record
     AbortProgram: Boolean;
     ExitCode: Integer;
@@ -64,9 +98,23 @@ type
     OutputFormat: TOutputFormat;
   end;
 
+  TFileCompareConfigOptions = record
+    BaseOptions: TConfigOptions;
+    SecondFile: string;
+    SecondContents: string;
+    IgnoreWhitespace: Boolean;
+    IgnoreEOL: Boolean;
+    IgnoreComments: Boolean;
+    MaxDiffs: Integer;
+    StopAfterFirstDiff: Boolean;
+  end;
+
   TCommandLineParser = class
+  protected
+    class function ParseSharedOptions(const Opts:TFileTokenizerCLOptions; const Line1, Line2:string):TConfigOptions;
   public
-    class function Parse(const Line1, Line2:string):TConfigOptions;
+    class function ParseSingleFile(const Line1, Line2:string):TConfigOptions;
+    class function ParseFileCompare(const Line1, Line2:string):TFileCompareConfigOptions;
   end;
 
 
@@ -202,95 +250,172 @@ begin
 end;
 
 
-class function TCommandLineParser.Parse(const Line1, Line2:string):TConfigOptions;
+class function TCommandLineParser.ParseSingleFile(const Line1, Line2:string):TConfigOptions;
 var
-  Opts: TFileTokenizerCLI;
+  Opts: TFileTokenizerCLOptions;
+begin
+  Opts := TFileTokenizerCLOptions.Create;
+  try
+    Result := ParseSharedOptions(Opts, Line1, Line2);
+  finally
+    Opts.Free;
+  end;
+end;
+
+class function TCommandLineParser.ParseSharedOptions(const Opts:TFileTokenizerCLOptions; const Line1, Line2:string):TConfigOptions;
+var
   Parser: IGpCommandLineParser;
   Line: string;
 begin
   Result := Default(TConfigOptions);
   Result.AbortProgram := True;
 
-  Opts := TFileTokenizerCLI.Create;
+  Parser := CreateCommandLineParser;
+  Parser.Options := [opAllowInherited];
+
+  if not Parser.Parse(Opts) then
+  begin
+    WriteLn('error: ', Parser.ErrorInfo.Text);
+    Result.ExitCode := 1;
+    Exit;
+  end;
+
+  if Opts.Version then
+  begin
+    WriteLn(TWinUtils.GetModuleVersion);
+    Exit;
+  end;
+
+  if Opts.Help or (Opts.InputFile = '') then  // inputfile is the one required parameter
+  begin
+    WriteLn(Line1);
+    WriteLn(Line2);
+    WriteLn('A command-line utility for delphi-lexer from Continuous-Delphi');
+    WriteLn('https://github.com/continuous-delphi/delphi-lexer');
+    WriteLn('MIT Licensed.  Copyright (C) 2026, Darian Miller');
+    WriteLn('Version: ', TWinUtils.GetModuleVersion);
+    WriteLn;
+    for Line in Parser.Usage do
+      WriteLn(Line);
+    WriteLn;
+    if Opts.InputFile = ''  then Result.ExitCode := 1;
+    Exit;
+  end;
+
+  Result.FileName := Opts.InputFile;
+  if not TFile.Exists(Result.FileName) then
+  begin
+    WriteLn('error: file not found: ', Result.FileName);
+    Result.ExitCode := 1;
+    Exit;
+  end;
+
+  Result.Encoding := TLexerUtils.ResolveEncoding(Opts.Encoding);
+  if Result.Encoding = nil then
+  begin
+    WriteLn('error: unknown encoding: ', Opts.Encoding);
+    WriteLn('Supported: utf-8, utf-16, utf-16be, ansi, ascii, default');
+    Result.ExitCode := 1;
+    Exit;
+  end;
+
+  if SameText(Opts.Format, 'json') then
+    Result.OutputFormat := TOutputFormat.ofJson
+  else if SameText(Opts.Format, 'text') then
+    Result.OutputFormat := TOutputFormat.ofText
+  else
+  begin
+    WriteLn('error: unknown format: ', Opts.Format);
+    WriteLn('Supported formats: text, json');
+    Result.ExitCode := 1;
+    Exit;
+  end;
+
+
   try
-    Parser := CreateCommandLineParser;
-    Parser.Options := [opAllowInherited];
-
-    if not Parser.Parse(Opts) then
+    Result.FileContents := TFile.ReadAllText(Result.FileName, Result.Encoding);
+  except
+    on E: Exception do
     begin
-      WriteLn('error: ', Parser.ErrorInfo.Text);
+      WriteLn('error: could not read file: ', E.Message);
       Result.ExitCode := 1;
       Exit;
     end;
+  end;
 
-    if Opts.Help or (Opts.InputFile = '') then  // inputfile is the one required parameter
+  Result.AbortProgram := False;
+end;
+
+class function TCommandLineParser.ParseFileCompare(const Line1, Line2:string):TFileCompareConfigOptions;
+var
+  Opts: TFileComparerCLOptions;
+begin
+  Result := Default(TFileCompareConfigOptions);
+
+  Opts := TFileComparerCLOptions.Create;
+  try
+    //TokenDump+TokenStats+TokenCompare share a handful of options
+    Result.BaseOptions := ParseSharedOptions(Opts, Line1, Line2);
+    if Result.BaseOptions.AbortProgram then Exit(Result);
+
+    //TokenCompare offers additional options:
+
+    if Opts.IgnoreTrivia then
     begin
-      WriteLn(Line1);
-      WriteLn(Line2);
-      WriteLn('A command-line utility for delphi-lexer from Continuous-Delphi');
-      WriteLn('https://github.com/continuous-delphi/delphi-lexer');
-      WriteLn('MIT Licensed.  Copyright (C) 2026, Darian Miller');
-      WriteLn('Version: ', TWinUtils.GetModuleVersion);
-      WriteLn;
-      for Line in Parser.Usage do
-        WriteLn(Line);
-      WriteLn;
-      if Opts.InputFile = ''  then Result.ExitCode := 1;
-      Exit;
-    end;
-
-    if Opts.Version then
-    begin
-      WriteLn(TWinUtils.GetModuleVersion);
-      Exit;
-    end;
-
-    Result.FileName := Opts.InputFile;
-    if not TFile.Exists(Result.FileName) then
-    begin
-      WriteLn('error: file not found: ', Result.FileName);
-      Result.ExitCode := 1;
-      Exit;
-    end;
-
-    Result.Encoding := TLexerUtils.ResolveEncoding(Opts.Encoding);
-    if Result.Encoding = nil then
-    begin
-      WriteLn('error: unknown encoding: ', Opts.Encoding);
-      WriteLn('Supported: utf-8, utf-16, utf-16be, ansi, ascii, default');
-      Result.ExitCode := 1;
-      Exit;
-    end;
-
-    if SameText(Opts.Format, 'json') then
-      Result.OutputFormat := TOutputFormat.ofJson
-    else if SameText(Opts.Format, 'text') then
-      Result.OutputFormat := TOutputFormat.ofText
+      Result.IgnoreWhitespace := True;
+      Result.IgnoreEOL := True;
+    end
     else
     begin
-      WriteLn('error: unknown format: ', Opts.Format);
-      WriteLn('Supported formats: text, json');
-      Result.ExitCode := 1;
+      Result.IgnoreWhitespace := Opts.IgnoreWhitespace;
+      Result.IgnoreEOL := Opts.IgnoreEOL;
+    end;
+    Result.IgnoreComments := Opts.IgnoreComments;
+    Result.StopAfterFirstDiff := Opts.StopAfterFirstDiff;
+    if Result.StopAfterFirstDiff then
+    begin
+      Result.MaxDiffs := 1; //effective max diffs is 1, regardless of setting
+    end
+    else
+    begin
+      Result.MaxDiffs := Opts.MaxDiffs;
+      if Result.MaxDiffs <= 0 then
+      begin
+        Result.MaxDiffs := MaxInt;
+      end;
+    end;
+
+    Result.SecondFile := Opts.SecondFile;
+    if Result.SecondFile.IsEmpty then
+    begin
+      WriteLn('error: second file not specified');
+      Result.BaseOptions.ExitCode := 1;
+      Result.BaseOptions.AbortProgram := True;
+      Exit;
+    end;
+    if not TFile.Exists(Result.SecondFile) then
+    begin
+      WriteLn('error: file not found: ', Result.SecondFile);
+      Result.BaseOptions.ExitCode := 1;
+      Result.BaseOptions.AbortProgram := True;
       Exit;
     end;
 
-
     try
-      Result.FileContents := TFile.ReadAllText(Result.FileName, Result.Encoding);
+      // toconsider: offer 2nd file encoding?  (They would be automatically be 'different' if so)
+      Result.SecondContents := TFile.ReadAllText(Result.SecondFile, Result.BaseOptions.Encoding);
     except
       on E: Exception do
       begin
         WriteLn('error: could not read file: ', E.Message);
-        Result.ExitCode := 1;
+        Result.BaseOptions.ExitCode := 1;
+        Result.BaseOptions.AbortProgram := True;
         Exit;
       end;
     end;
-
   finally
     Opts.Free;
   end;
-
-  Result.AbortProgram := False;
 end;
 
 

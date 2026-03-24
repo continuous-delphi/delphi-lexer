@@ -11,7 +11,7 @@ uses
 type
 
   TTokenStats = record
-  public const
+  private const
     AppName = 'DelphiLexer.TokenStats';
     ExitCode_Success = 0;
     ExitCode_InvalidTokens = 2;
@@ -44,10 +44,10 @@ begin
   ReportMemoryLeaksOnShutdown := True;
   {$ENDIF}
 
-  Options := TCommandLineParser.Parse(AppName, 'Provides token-level statistics and metrics of Object Pascal source code');
+  Options := TCommandLineParser.ParseSingleFile(AppName, 'Provides token-level statistics and metrics of Object Pascal source code');
   if Options.AbortProgram then Exit(Options.ExitCode);
 
-  Result := 0;
+  Result := ExitCode_Success;
 
   Lexer  := TDelphiLexer.Create;
   Tokens := nil;

@@ -1,0 +1,72 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{DEC63F66-61A8-41AA-926B-84A2FF01CBDE}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="projects\TokenDump\DelphiLexer.TokenDump.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="projects\TokenStats\DelphiLexer.TokenStats.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="projects\TokenCompare\DelphiLexer.TokenCompare.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="test\DelphiLexer.Tests.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="DelphiLexer_TokenDump">
+        <MSBuild Projects="projects\TokenDump\DelphiLexer.TokenDump.dproj"/>
+    </Target>
+    <Target Name="DelphiLexer_TokenDump:Clean">
+        <MSBuild Projects="projects\TokenDump\DelphiLexer.TokenDump.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DelphiLexer_TokenDump:Make">
+        <MSBuild Projects="projects\TokenDump\DelphiLexer.TokenDump.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="DelphiLexer_TokenStats">
+        <MSBuild Projects="projects\TokenStats\DelphiLexer.TokenStats.dproj"/>
+    </Target>
+    <Target Name="DelphiLexer_TokenStats:Clean">
+        <MSBuild Projects="projects\TokenStats\DelphiLexer.TokenStats.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DelphiLexer_TokenStats:Make">
+        <MSBuild Projects="projects\TokenStats\DelphiLexer.TokenStats.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="DelphiLexer_TokenCompare">
+        <MSBuild Projects="projects\TokenCompare\DelphiLexer.TokenCompare.dproj"/>
+    </Target>
+    <Target Name="DelphiLexer_TokenCompare:Clean">
+        <MSBuild Projects="projects\TokenCompare\DelphiLexer.TokenCompare.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DelphiLexer_TokenCompare:Make">
+        <MSBuild Projects="projects\TokenCompare\DelphiLexer.TokenCompare.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="DelphiLexer_Tests">
+        <MSBuild Projects="test\DelphiLexer.Tests.dproj"/>
+    </Target>
+    <Target Name="DelphiLexer_Tests:Clean">
+        <MSBuild Projects="test\DelphiLexer.Tests.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DelphiLexer_Tests:Make">
+        <MSBuild Projects="test\DelphiLexer.Tests.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="DelphiLexer_TokenDump;DelphiLexer_TokenStats;DelphiLexer_TokenCompare;DelphiLexer_Tests"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="DelphiLexer_TokenDump:Clean;DelphiLexer_TokenStats:Clean;DelphiLexer_TokenCompare:Clean;DelphiLexer_Tests:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="DelphiLexer_TokenDump:Make;DelphiLexer_TokenStats:Make;DelphiLexer_TokenCompare:Make;DelphiLexer_Tests:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

@@ -11,7 +11,7 @@ uses
 type
 
   TTokenDump = record
-  public const
+  private const
     AppName = 'DelphiLexer.TokenDump';
     ExitCode_Success = 0;
     ExitCode_InvalidTokens = 2;
@@ -42,10 +42,10 @@ begin
   ReportMemoryLeaksOnShutdown := True;
   {$ENDIF}
 
-  Options := TCommandLineParser.Parse(AppName, 'Provides a lossless, position-accurate view of Object Pascal source code');
+  Options := TCommandLineParser.ParseSingleFile(AppName, 'Provides a lossless, position-accurate view of Object Pascal source code');
   if Options.AbortProgram then Exit(Options.ExitCode);
 
-  Result := 0;
+  Result := ExitCode_Success;
 
   Lexer  := TDelphiLexer.Create;
   Tokens := nil;
