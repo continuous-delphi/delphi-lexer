@@ -47,6 +47,82 @@ type
     TokB:   TToken;   // valid for dkMismatch, dkMissingInA
   end;
 
+
+// Run the sequential comparison over pre-filtered token lists.
+// Returns a new TList<TDiffEntry> owned by the caller.
+// TotalDiffs receives the complete count of differences, which may exceed Result.Count when MaxDiffs truncation is active.
+function BuildDiffList(FilteredA, FilteredB: TList<TToken>; const Config:TFileCompareConfigOptions; out TotalDiffs: Integer): TList<TDiffEntry>;
+var
+  MaxI: Integer;
+  I: Integer;
+  HasA, HasB: Boolean;
+  TokA, TokB: TToken;
+  Entry: TDiffEntry;
+begin
+
+  Result     := TList<TDiffEntry>.Create;
+  TotalDiffs := 0;
+  MaxI       := FilteredA.Count;
+
+  if FilteredB.Count > MaxI then MaxI := FilteredB.Count;
+
+  for I := 0 to MaxI - 1 do
+  begin
+    HasA := I < FilteredA.Count;
+    HasB := I < FilteredB.Count;
+
+    if HasA and HasB then
+    begin
+      TokA := FilteredA[I];
+      TokB := FilteredB[I];
+      if (TokA.Kind <> TokB.Kind) or (TokA.Text <> TokB.Text) then
+      begin
+        Inc(TotalDiffs);
+        if Result.Count < Config.MaxDiffs then
+        begin
+          Entry        := Default(TDiffEntry);
+          Entry.Kind   := dkMismatch;
+          Entry.IndexA := I;
+          Entry.IndexB := I;
+          Entry.TokA   := TokA;
+          Entry.TokB   := TokB;
+          Result.Add(Entry);
+        end;
+        if Config.StopAfterFirstDiff then Break;
+      end;
+    end
+    else if HasA then  // A has extra token; missing in B
+    begin
+      Inc(TotalDiffs);
+      if Result.Count < Config.MaxDiffs then
+      begin
+        Entry        := Default(TDiffEntry);
+        Entry.Kind   := dkMissingInB;
+        Entry.IndexA := I;
+        Entry.IndexB := -1;
+        Entry.TokA   := FilteredA[I];
+        Result.Add(Entry);
+      end;
+      if Config.StopAfterFirstDiff then Break;
+    end
+    else  // B has extra token; missing in A
+    begin
+      Inc(TotalDiffs);
+      if Result.Count < Config.MaxDiffs then
+      begin
+        Entry        := Default(TDiffEntry);
+        Entry.Kind   := dkMissingInA;
+        Entry.IndexA := -1;
+        Entry.IndexB := I;
+        Entry.TokB   := FilteredB[I];
+        Result.Add(Entry);
+      end;
+      if Config.StopAfterFirstDiff then Break;
+    end;
+  end;
+end;
+
+
 class function TTokenCompare.Run: Integer;
 var
   Options: TFileCompareConfigOptions;
@@ -131,73 +207,16 @@ end;
 class function TTokenCompare.WriteTextOutput(const Config:TFileCompareConfigOptions; RawA, RawB: TList<TToken>): Integer;
 var
   FilteredA, FilteredB: TList<TToken>;
-  Diffs:       TList<TDiffEntry>;
-  TotalDiffs:  Integer;
-  MaxI:        Integer;
-  I:           Integer;
-  HasA, HasB:  Boolean;
-  TokA, TokB:  TToken;
-  Entry:       TDiffEntry;
-  Equal:       Boolean;
+  Diffs:      TList<TDiffEntry>;
+  TotalDiffs: Integer;
+  I:          Integer;
+  Entry:      TDiffEntry;
+  Equal:      Boolean;
 begin
-
   FilteredA := FilterTokens(Config, RawA);
   FilteredB := FilterTokens(Config, RawB);
-  Diffs     := TList<TDiffEntry>.Create;
+  Diffs     := BuildDiffList(FilteredA, FilteredB, Config, TotalDiffs);
   try
-    // Comparison pass.
-    TotalDiffs := 0;
-    MaxI := FilteredA.Count;
-    if FilteredB.Count > MaxI then MaxI := FilteredB.Count;
-
-    for I := 0 to MaxI - 1 do
-    begin
-      HasA := I < FilteredA.Count;
-      HasB := I < FilteredB.Count;
-
-      if HasA and HasB then
-      begin
-        TokA := FilteredA[I];
-        TokB := FilteredB[I];
-        if (TokA.Kind <> TokB.Kind) or (TokA.Text <> TokB.Text) then
-        begin
-          Inc(TotalDiffs);
-          if (Diffs.Count < Config.MaxDiffs) then
-          begin
-            Entry := Default(TDiffEntry);
-            Entry.Kind := dkMismatch; Entry.IndexA := I; Entry.IndexB := I;
-            Entry.TokA := TokA; Entry.TokB := TokB;
-            Diffs.Add(Entry);
-          end;
-          if Config.StopAfterFirstDiff then Break;
-        end;
-      end
-      else if HasA then  // B is shorter
-      begin
-        Inc(TotalDiffs);
-        if (Diffs.Count < Config.MaxDiffs) then
-        begin
-          Entry := Default(TDiffEntry);
-          Entry.Kind := dkMissingInB; Entry.IndexA := I; Entry.IndexB := -1;
-          Entry.TokA := FilteredA[I];
-          Diffs.Add(Entry);
-        end;
-        if Config.StopAfterFirstDiff then Break;
-      end
-      else  // A is shorter
-      begin
-        Inc(TotalDiffs);
-        if (Diffs.Count < Config.MaxDiffs) then
-        begin
-          Entry := Default(TDiffEntry);
-          Entry.Kind := dkMissingInA; Entry.IndexA := -1; Entry.IndexB := I;
-          Entry.TokB := FilteredB[I];
-          Diffs.Add(Entry);
-        end;
-        if Config.StopAfterFirstDiff then Break;
-      end;
-    end;
-
     Equal := TotalDiffs = 0;
 
     // Header.
@@ -269,78 +288,22 @@ end;
 class function TTokenCompare.WriteJsonOutput(const Config:TFileCompareConfigOptions; RawA, RawB: TList<TToken>): Integer;
 var
   FilteredA, FilteredB: TList<TToken>;
-  Diffs:       TList<TDiffEntry>;
-  TotalDiffs:  Integer;
-  MaxI:        Integer;
-  I:           Integer;
-  HasA, HasB:  Boolean;
-  TokA, TokB:  TToken;
-  Entry:       TDiffEntry;
-  Equal:       Boolean;
-  Root:        TJSONObject;
-  Options:     TJSONObject;
-  Summary:     TJSONObject;
-  DiffsArr:    TJSONArray;
-  DiffObj:     TJSONObject;
-  TokObj:      TJSONObject;
+  Diffs:      TList<TDiffEntry>;
+  TotalDiffs: Integer;
+  I:          Integer;
+  Entry:      TDiffEntry;
+  Equal:      Boolean;
+  Root:       TJSONObject;
+  Options:    TJSONObject;
+  Summary:    TJSONObject;
+  DiffsArr:   TJSONArray;
+  DiffObj:    TJSONObject;
+  TokObj:     TJSONObject;
 begin
   FilteredA := FilterTokens(Config, RawA);
   FilteredB := FilterTokens(Config, RawB);
-  Diffs     := TList<TDiffEntry>.Create;
+  Diffs     := BuildDiffList(FilteredA, FilteredB, Config, TotalDiffs);
   try
-    // Comparison pass.
-    TotalDiffs := 0;
-    MaxI := FilteredA.Count;
-    if FilteredB.Count > MaxI then MaxI := FilteredB.Count;
-
-    for I := 0 to MaxI - 1 do
-    begin
-      HasA := I < FilteredA.Count;
-      HasB := I < FilteredB.Count;
-
-      if HasA and HasB then
-      begin
-        TokA := FilteredA[I];
-        TokB := FilteredB[I];
-        if (TokA.Kind <> TokB.Kind) or (TokA.Text <> TokB.Text) then
-        begin
-          Inc(TotalDiffs);
-          if (Diffs.Count < Config.MaxDiffs) then
-          begin
-            Entry := Default(TDiffEntry);
-            Entry.Kind := dkMismatch; Entry.IndexA := I; Entry.IndexB := I;
-            Entry.TokA := TokA; Entry.TokB := TokB;
-            Diffs.Add(Entry);
-          end;
-          if Config.StopAfterFirstDiff then Break;
-        end;
-      end
-      else if HasA then
-      begin
-        Inc(TotalDiffs);
-        if (Diffs.Count < Config.MaxDiffs) then
-        begin
-          Entry := Default(TDiffEntry);
-          Entry.Kind := dkMissingInB; Entry.IndexA := I; Entry.IndexB := -1;
-          Entry.TokA := FilteredA[I];
-          Diffs.Add(Entry);
-        end;
-        if Config.StopAfterFirstDiff then Break;
-      end
-      else
-      begin
-        Inc(TotalDiffs);
-        if (Diffs.Count < Config.MaxDiffs) then
-        begin
-          Entry := Default(TDiffEntry);
-          Entry.Kind := dkMissingInA; Entry.IndexA := -1; Entry.IndexB := I;
-          Entry.TokB := FilteredB[I];
-          Diffs.Add(Entry);
-        end;
-        if Config.StopAfterFirstDiff then Break;
-      end;
-    end;
-
     Equal := TotalDiffs = 0;
 
     Root := TJSONObject.Create;
@@ -352,12 +315,12 @@ begin
       Root.AddPair('fileB', Config.SecondFile);
 
       Options := TJSONObject.Create;
-      Options.AddPair('encoding',          Config.BaseOptions.Encoding.EncodingName);
-      Options.AddPair('ignoreWhitespace',  TJSONBool.Create(Config.IgnoreWhitespace));
-      Options.AddPair('ignoreEOL',         TJSONBool.Create(Config.IgnoreEOL));
-      Options.AddPair('ignoreComments',    TJSONBool.Create(Config.IgnoreComments));
+      Options.AddPair('encoding',           Config.BaseOptions.Encoding.EncodingName);
+      Options.AddPair('ignoreWhitespace',   TJSONBool.Create(Config.IgnoreWhitespace));
+      Options.AddPair('ignoreEOL',          TJSONBool.Create(Config.IgnoreEOL));
+      Options.AddPair('ignoreComments',     TJSONBool.Create(Config.IgnoreComments));
       Options.AddPair('stopAfterFirstDiff', TJSONBool.Create(Config.StopAfterFirstDiff));
-      Options.AddPair('maxDiffs',          TJSONNumber.Create(Config.MaxDiffs));
+      Options.AddPair('maxDiffs',           TJSONNumber.Create(Config.MaxDiffs));
       Root.AddPair('options', Options);
 
       Summary := TJSONObject.Create;
