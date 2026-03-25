@@ -6,6 +6,9 @@ two Object Pascal source files.
 Comparison is by token Kind and Text. Line, col, and offset are not
 compared but are included in diff output for diagnostics.
 
+The comparison uses a longest common subsequence (LCS) approach to minimize
+diff noise and highlight meaningful token differences.
+
 
 ![delphi-lexer logo](../../assets/delphi-lexer-480x270.png)
 
@@ -64,53 +67,46 @@ Note: named option values use `--key:value` or `--key=value` syntax (not `--key 
 
 `delphilexer.tokencompare test\golden\real_unit.pas test\golden\real_unit_plus_CRLF.pas`
 
-Result (truncated)
+Result (notice LCS comparison reduces noise):
 
 ```text
 DelphiLexer.TokenCompare
-formatVersion: 1.0.0
+formatVersion: 2.0.0
 File A             : test\golden\real_unit.pas
 File B             : test\golden\real_unit_plus_CRLF.pas
 Mode               : exact
 Equal              : no
 Compared Tokens    : 201 / 206
-Diff Count         : 154
+Diff Count         : 5
 
 Differences:
 
   [1]
-  Index A          : 44
-  Index B          : 44
-  A                : tkKeyword "function"
-  B                : tkEOL "<CRLF>"
+    Type           : missing-token-in-a
+    Index B        : 44
+    B              : tkEOL "<CRLF>"
 
   [2]
-  Index A          : 45
-  Index B          : 45
-  A                : tkWhitespace " "
-  B                : tkKeyword "function"
+    Type           : missing-token-in-a
+    Index B        : 66
+    B              : tkEOL "<CRLF>"
 
   [3]
-  Index A          : 46
-  Index B          : 46
-  A                : tkIdentifier "Max"
-  B                : tkWhitespace " "
+    Type           : missing-token-in-a
+    Index B        : 67
+    B              : tkEOL "<CRLF>"
 
   [4]
-  Index A          : 47
-  Index B          : 47
-  A                : tkSymbol "("
-  B                : tkIdentifier "Max"
+    Type           : missing-token-in-a
+    Index B        : 145
+    B              : tkEOL "<CRLF>"
 
-  ...
-
-  [154]
-  Type             : missing-token-in-a
-  Index B          : 205
-  B                : tkEOF ""
+  [5]
+    Type           : missing-token-in-a
+    Index B        : 146
+    B              : tkEOL "<CRLF>"
 
 Exit Code: 10
-
 ```
 
 `delphilexer.tokencompare test\golden\real_unit.pas test\golden\real_unit_plus_CRLF.pas -e`
@@ -119,7 +115,7 @@ Result
 
 ```text
 DelphiLexer.TokenCompare
-formatVersion: 1.0.0
+formatVersion: 2.0.0
 File A             : test\golden\real_unit.pas
 File B             : test\golden\real_unit_plus_CRLF.pas
 Mode               : ignore-eol
@@ -148,7 +144,7 @@ Header Lines:
   File B          -- Second file to compare
   Mode            -- comparison mode derived from ignore-options, or `exact` when no filters are applied
   Equal           -- yes | no
-  Compared Tokens -- number of tokens discovered (if unequal, displayed as A# / B#)
+  Compared Tokens -- number of tokens compared (if unequal, displayed as A# / B#)
   Diff Count      -- Total tokens different based on mode
 
   Followed by each token difference found, limited by effective max-diffs
@@ -170,13 +166,17 @@ representation of token comparison results derived from the `delphi-lexer` token
 - The JSON format is intended for use in automated testing, CI pipelines,
 and tooling integrations.
 
+- `usedFallback` indicates whether sequential comparison algorithm was used.
+This occurs when token count is > 200,000.
+
 `delphilexer.tokencompare test\golden\real_unit.pas test\golden\real_unit_plus_CRLF.pas --format:json`
 
-Result (truncated)
+Result (notice LCS comparison reduces noise):
+
 ```json
 {
   "toolName": "DelphiLexer.TokenCompare",
-  "formatVersion": "1.0.0",
+  "formatVersion": "2.0.0",
   "fileA": "test\\golden\\real_unit.pas",
   "fileB": "test\\golden\\real_unit_plus_CRLF.pas",
   "options": {
@@ -185,7 +185,8 @@ Result (truncated)
     "ignoreEOL": false,
     "ignoreComments": false,
     "stopAfterFirstDiff": false,
-    "maxDiffs": 2147483647
+    "maxDiffs": 2147483647,
+    "usedFallback": false
   },
   "summary": {
     "equal": false,
@@ -194,21 +195,12 @@ Result (truncated)
     "rawTokenCountB": 206,
     "comparedTokenCountA": 201,
     "comparedTokenCountB": 206,
-    "diffCount": 154
+    "diffCount": 5
   },
   "diffs": [
     {
-      "diffType": "token-mismatch",
-      "indexA": 44,
+      "diffType": "missing-token-in-a",
       "indexB": 44,
-      "tokenA": {
-        "kind": "tkKeyword",
-        "text": "function",
-        "line": 11,
-        "col": 1,
-        "startOffset": 178,
-        "length": 8
-      },
       "tokenB": {
         "kind": "tkEOL",
         "text": "\r\n",
@@ -219,41 +211,56 @@ Result (truncated)
       }
     },
     {
-      "diffType": "token-mismatch",
-      "indexA": 45,
-      "indexB": 45,
-      "tokenA": {
-        "kind": "tkWhitespace",
-        "text": " ",
-        "line": 11,
-        "col": 9,
-        "startOffset": 186,
-        "length": 1
-      },
+      "diffType": "missing-token-in-a",
+      "indexB": 66,
       "tokenB": {
-        "kind": "tkKeyword",
-        "text": "function",
-        "line": 12,
+        "kind": "tkEOL",
+        "text": "\r\n",
+        "line": 16,
         "col": 1,
-        "startOffset": 180,
-        "length": 8
+        "startOffset": 239,
+        "length": 2
       }
     },
-    ...
     {
       "diffType": "missing-token-in-a",
-      "indexB": 205,
+      "indexB": 67,
       "tokenB": {
-        "kind": "tkEOF",
-        "text": "",
-        "line": 42,
+        "kind": "tkEOL",
+        "text": "\r\n",
+        "line": 17,
         "col": 1,
-        "startOffset": 603,
-        "length": 0
+        "startOffset": 241,
+        "length": 2
+      }
+    },
+    {
+      "diffType": "missing-token-in-a",
+      "indexB": 145,
+      "tokenB": {
+        "kind": "tkEOL",
+        "text": "\r\n",
+        "line": 27,
+        "col": 1,
+        "startOffset": 436,
+        "length": 2
+      }
+    },
+    {
+      "diffType": "missing-token-in-a",
+      "indexB": 146,
+      "tokenB": {
+        "kind": "tkEOL",
+        "text": "\r\n",
+        "line": 28,
+        "col": 1,
+        "startOffset": 438,
+        "length": 2
       }
     }
   ]
 }
+
 ```
 
 ## Encoding

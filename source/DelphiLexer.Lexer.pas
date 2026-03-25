@@ -324,6 +324,8 @@ end;
 
 function ReadWhitespace(var Sc: TScanner): string;
 begin
+  //todo: rework.  Overly clever, future use didn't materialize
+
   Result := ReadWhile(
     Sc,
     function(C: Char): Boolean
