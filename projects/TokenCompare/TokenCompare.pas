@@ -16,6 +16,7 @@ type
     ExitCode_Success = 0;
     ExitCode_OpFailure = 1;
     ExitCode_Difference = 10;
+    ExitCode_TooManyDiffs = 11;  // comparison aborted: edit distance exceeded threshold
   private
     // Derive the comparison mode name from the active ignore flags for display in output.
     class function ComparisonModeName(const Config:TFileCompareConfigOptions): string; static;
@@ -122,21 +123,22 @@ end;
 class function TTokenCompare.WriteTextOutput(const Config:TFileCompareConfigOptions; RawA, RawB: TList<TToken>): Integer;
 var
   FilteredA, FilteredB: TList<TToken>;
-  Diffs:       TList<TDiffEntry>;
-  TotalDiffs:  Integer;
-  UsedFallback: Boolean;
-  I:           Integer;
-  DisplayIdx:  Integer;
-  Entry, Next: TDiffEntry;
-  Equal:       Boolean;
+  Diffs:              TList<TDiffEntry>;
+  TotalDiffs:         Integer;
+  UsedFallback:       Boolean;
+  AbortedTooManyDiffs: Boolean;
+  I:                  Integer;
+  DisplayIdx:         Integer;
+  Entry, Next:        TDiffEntry;
+  Equal:              Boolean;
 begin
   FilteredA := FilterTokens(Config, RawA);
   FilteredB := FilterTokens(Config, RawB);
   Diffs     := BuildDiffList(FilteredA, FilteredB,
                  Config.MaxDiffs, Config.StopAfterFirstDiff,
-                 TotalDiffs, UsedFallback);
+                 TotalDiffs, UsedFallback, AbortedTooManyDiffs);
   try
-    Equal := TotalDiffs = 0;
+    Equal := (TotalDiffs = 0) and not AbortedTooManyDiffs;
 
     // Header.
     WriteLn('');
@@ -150,8 +152,14 @@ begin
       WriteLn(Format('%-18s : %d',     ['Compared Tokens', FilteredA.Count]))
     else
       WriteLn(Format('%-18s : %d / %d', ['Compared Tokens', FilteredA.Count, FilteredB.Count]));
-    WriteLn(Format('%-18s : %d', ['Diff Count', TotalDiffs]));
+    if AbortedTooManyDiffs then
+      WriteLn(Format('%-18s : %s', ['Diff Count', '(unknown; aborted)']))
+    else
+      WriteLn(Format('%-18s : %d', ['Diff Count', TotalDiffs]));
 
+    if AbortedTooManyDiffs then
+      WriteLn(Format('(aborted: edit distance exceeds %d%% of token count; are these the right files?)',
+        [MAX_MYERS_EDIT_DISTANCE_PCT]));
     if UsedFallback then
       WriteLn('(warning: input too large for Myers diff; sequential algorithm used)');
     if Config.StopAfterFirstDiff and (TotalDiffs >= 1) then
@@ -214,7 +222,12 @@ begin
     Diffs.Free;
   end;
 
-  if Equal then Result := ExitCode_Success else Result := ExitCode_Difference;
+  if AbortedTooManyDiffs then
+    Result := ExitCode_TooManyDiffs
+  else if Equal then
+    Result := ExitCode_Success
+  else
+    Result := ExitCode_Difference;
 
   WriteLn('');
   WriteLn('Exit Code: ', Result);
@@ -224,26 +237,27 @@ end;
 class function TTokenCompare.WriteJsonOutput(const Config:TFileCompareConfigOptions; RawA, RawB: TList<TToken>): Integer;
 var
   FilteredA, FilteredB: TList<TToken>;
-  Diffs:       TList<TDiffEntry>;
-  TotalDiffs:  Integer;
-  UsedFallback: Boolean;
-  I:           Integer;
-  Entry, Next: TDiffEntry;
-  Equal:       Boolean;
-  Root:        TJSONObject;
-  Options:     TJSONObject;
-  Summary:     TJSONObject;
-  DiffsArr:    TJSONArray;
-  DiffObj:     TJSONObject;
-  TokObj:      TJSONObject;
+  Diffs:               TList<TDiffEntry>;
+  TotalDiffs:          Integer;
+  UsedFallback:        Boolean;
+  AbortedTooManyDiffs: Boolean;
+  I:                   Integer;
+  Entry, Next:         TDiffEntry;
+  Equal:               Boolean;
+  Root:                TJSONObject;
+  Options:             TJSONObject;
+  Summary:             TJSONObject;
+  DiffsArr:            TJSONArray;
+  DiffObj:             TJSONObject;
+  TokObj:              TJSONObject;
 begin
   FilteredA := FilterTokens(Config, RawA);
   FilteredB := FilterTokens(Config, RawB);
   Diffs     := BuildDiffList(FilteredA, FilteredB,
                  Config.MaxDiffs, Config.StopAfterFirstDiff,
-                 TotalDiffs, UsedFallback);
+                 TotalDiffs, UsedFallback, AbortedTooManyDiffs);
   try
-    Equal := TotalDiffs = 0;
+    Equal := (TotalDiffs = 0) and not AbortedTooManyDiffs;
 
     Root := TJSONObject.Create;
     try
@@ -260,7 +274,8 @@ begin
       Options.AddPair('ignoreComments',     TJSONBool.Create(Config.IgnoreComments));
       Options.AddPair('stopAfterFirstDiff', TJSONBool.Create(Config.StopAfterFirstDiff));
       Options.AddPair('maxDiffs',           TJSONNumber.Create(Config.MaxDiffs));
-      Options.AddPair('usedFallback',       TJSONBool.Create(UsedFallback));
+      Options.AddPair('usedFallback',         TJSONBool.Create(UsedFallback));
+      Options.AddPair('abortedTooManyDiffs', TJSONBool.Create(AbortedTooManyDiffs));
       Root.AddPair('options', Options);
 
       Summary := TJSONObject.Create;
@@ -270,6 +285,7 @@ begin
       Summary.AddPair('rawTokenCountB',      TJSONNumber.Create(RawB.Count));
       Summary.AddPair('comparedTokenCountA', TJSONNumber.Create(FilteredA.Count));
       Summary.AddPair('comparedTokenCountB', TJSONNumber.Create(FilteredB.Count));
+      // diffCount is -1 (unknown) when AbortedTooManyDiffs is true.
       Summary.AddPair('diffCount',           TJSONNumber.Create(TotalDiffs));
       Root.AddPair('summary', Summary);
 
@@ -362,7 +378,12 @@ begin
     Diffs.Free;
   end;
 
-  if Equal then Result := ExitCode_Success else Result := ExitCode_Difference;
+  if AbortedTooManyDiffs then
+    Result := ExitCode_TooManyDiffs
+  else if Equal then
+    Result := ExitCode_Success
+  else
+    Result := ExitCode_Difference;
 end;
 
 end.

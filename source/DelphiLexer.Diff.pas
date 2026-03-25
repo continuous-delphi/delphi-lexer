@@ -32,10 +32,27 @@ const
   // See LCS_Limit.md for the memory analysis behind this value.
   MAX_MYERS_TOKENS = 200000;
 
+  // If the Myers edit distance grows beyond this percentage of (N + M),
+  // the comparison is aborted and BuildDiffList sets AbortedTooManyDiffs.
+  // At 30%, files that differ by more than a third are almost certainly
+  // unrelated (wrong files compared by accident).  The abort protects
+  // against runaway computation: for two completely different 100K-token
+  // files the forward pass would otherwise require ~10^10 inner-loop steps.
+  MAX_MYERS_EDIT_DISTANCE_PCT = 30;
+
+  // Minimum threshold applied when MAX_MYERS_EDIT_DISTANCE_PCT yields a
+  // value smaller than this.  Prevents spurious aborts on tiny inputs where
+  // performance is irrelevant and the loop terminates at N + M anyway.
+  MAX_MYERS_EDIT_DISTANCE_FLOOR = 100;
+
 // Compare two pre-filtered token lists using the Myers diff algorithm.
 //
 // Falls back to sequential comparison when either list exceeds
 // MAX_MYERS_TOKENS tokens; UsedFallback is set to True in that case.
+//
+// Sets AbortedTooManyDiffs to True and returns an empty list when the Myers
+// edit distance exceeds MAX_MYERS_EDIT_DISTANCE_PCT% of (N + M).  TotalDiffs
+// is set to -1 (unknown) in this case.
 //
 // MaxDiffs caps the number of entries collected (pass MaxInt for unlimited).
 // StopAfterFirstDiff stops collection after the first entry.
@@ -44,17 +61,19 @@ const
 // TotalDiffs receives the complete edit distance (Myers) or equivalent count
 // (fallback); it may exceed Result.Count when MaxDiffs truncation is active.
 function BuildDiffList(
-  FilteredA, FilteredB : TList<TToken>;
-  MaxDiffs             : Integer;
-  StopAfterFirstDiff   : Boolean;
-  out TotalDiffs       : Integer;
-  out UsedFallback     : Boolean): TList<TDiffEntry>;
+  FilteredA, FilteredB   : TList<TToken>;
+  MaxDiffs               : Integer;
+  StopAfterFirstDiff     : Boolean;
+  out TotalDiffs         : Integer;
+  out UsedFallback       : Boolean;
+  out AbortedTooManyDiffs: Boolean): TList<TDiffEntry>;
 
 
 implementation
 
 uses
-  System.SysUtils;
+  System.SysUtils,
+  System.Math;
 
 
 // ---------------------------------------------------------------------------
@@ -71,16 +90,18 @@ uses
 //
 // Returns the edit distance (>= 0) on success.
 // Returns -1 if either input exceeds MAX_MYERS_TOKENS; Trace is set to nil.
+// Returns -2 if edit distance exceeds the threshold; Trace is set to nil.
 function MyersForward(
   A, B      : TList<TToken>;
   out Trace : TArray<TArray<Integer>>): Integer;
 var
-  N, M   : Integer;
-  Offset : Integer;
-  VSize  : Integer;
-  V      : TArray<Integer>;
-  D, K   : Integer;
-  X, Y   : Integer;
+  N, M            : Integer;
+  Offset          : Integer;
+  VSize           : Integer;
+  V               : TArray<Integer>;
+  D, K            : Integer;
+  X, Y            : Integer;
+  MaxEditDistance : Integer;
 begin
   N := A.Count;
   M := B.Count;
@@ -90,6 +111,13 @@ begin
     Trace := nil;
     Exit(-1);
   end;
+
+  // Compute the edit distance threshold.  If the forward pass reaches this
+  // many steps without finding a solution, the files are too different to
+  // be useful to compare and the pass aborts.
+  MaxEditDistance := (N + M) * MAX_MYERS_EDIT_DISTANCE_PCT div 100;
+  if MaxEditDistance < MAX_MYERS_EDIT_DISTANCE_FLOOR then
+    MaxEditDistance := MAX_MYERS_EDIT_DISTANCE_FLOOR;
 
   // Offset maps diagonal k to a zero-based index: index = k + Offset.
   // Minimum 1 ensures V[1 + Offset] is in bounds for the both-empty case.
@@ -146,6 +174,15 @@ begin
       end;
 
       Inc(K, 2);
+    end;
+
+    // This d-step found no solution.  If the edit distance has grown past
+    // the threshold the files are almost certainly unrelated; abort the
+    // forward pass rather than spending potentially billions of iterations.
+    if D >= MaxEditDistance then
+    begin
+      Trace := nil;
+      Exit(-2);
     end;
   end;
 
@@ -252,11 +289,12 @@ end;
 // ---------------------------------------------------------------------------
 
 function BuildDiffList(
-  FilteredA, FilteredB : TList<TToken>;
-  MaxDiffs             : Integer;
-  StopAfterFirstDiff   : Boolean;
-  out TotalDiffs       : Integer;
-  out UsedFallback     : Boolean): TList<TDiffEntry>;
+  FilteredA, FilteredB   : TList<TToken>;
+  MaxDiffs               : Integer;
+  StopAfterFirstDiff     : Boolean;
+  out TotalDiffs         : Integer;
+  out UsedFallback       : Boolean;
+  out AbortedTooManyDiffs: Boolean): TList<TDiffEntry>;
 var
   Trace     : TArray<TArray<Integer>>;
   EditDist  : Integer;
@@ -265,11 +303,21 @@ var
   TokA, TokB: TToken;
   Entry     : TDiffEntry;
 begin
-  Result       := TList<TDiffEntry>.Create;
-  TotalDiffs   := 0;
-  UsedFallback := False;
+  Result              := TList<TDiffEntry>.Create;
+  TotalDiffs          := 0;
+  UsedFallback        := False;
+  AbortedTooManyDiffs := False;
 
   EditDist := MyersForward(FilteredA, FilteredB, Trace);
+
+  if EditDist = -2 then
+  begin
+    // Edit distance exceeded MAX_MYERS_EDIT_DISTANCE_PCT% of (N + M).
+    // The files are almost certainly unrelated; return empty with abort flag.
+    AbortedTooManyDiffs := True;
+    TotalDiffs          := -1;  // unknown: forward pass did not complete
+    Exit;
+  end;
 
   if EditDist = -1 then
   begin

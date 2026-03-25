@@ -45,6 +45,7 @@ type
     [Test] procedure BothEmpty_NoDiffs;
     [Test] procedure EofPreserved_MatchedNotInDiffs;
     [Test] procedure EofMismatch_DiffAtEofPosition;
+    [Test] procedure AbortedTooManyDiffs_ReturnsFlag;
   end;
 
 
@@ -71,8 +72,10 @@ end;
 
 function TMeyersDiffTests.Diff(A, B: TList<TToken>;
   out TotalDiffs: Integer; out UsedFallback: Boolean): TList<TDiffEntry>;
+var
+  Aborted: Boolean;
 begin
-  Result := BuildDiffList(A, B, MaxInt, False, TotalDiffs, UsedFallback);
+  Result := BuildDiffList(A, B, MaxInt, False, TotalDiffs, UsedFallback, Aborted);
 end;
 
 
@@ -409,6 +412,40 @@ begin
       Assert.AreEqual(TDiffKind.dkMissingInA, Diffs[1].Kind, 'Entry 1: dkMissingInA (B EOF inserted)');
       Assert.AreEqual(tkEOF, Diffs[0].Tok.Kind, 'Entry 0: token kind is tkEOF');
       Assert.AreEqual(tkEOF, Diffs[1].Tok.Kind, 'Entry 1: token kind is tkEOF');
+    finally
+      Diffs.Free;
+    end;
+  finally
+    A.Free; B.Free;
+  end;
+end;
+
+
+procedure TMeyersDiffTests.AbortedTooManyDiffs_ReturnsFlag;
+// N=M=60, all tokens differ -> edit distance = 120.
+// Threshold = max(120*30 div 100, 100) = 100.  Abort fires at d=100.
+var
+  A, B     : TList<TToken>;
+  Diffs    : TList<TDiffEntry>;
+  Total    : Integer;
+  Fallback : Boolean;
+  Aborted  : Boolean;
+  I        : Integer;
+begin
+  A := TList<TToken>.Create;
+  B := TList<TToken>.Create;
+  try
+    for I := 0 to 59 do
+      A.Add(T(tkIdentifier, 'a' + IntToStr(I)));  // a0..a59
+    for I := 0 to 59 do
+      B.Add(T(tkIdentifier, 'b' + IntToStr(I)));  // b0..b59, none match A
+
+    Diffs := BuildDiffList(A, B, MaxInt, False, Total, Fallback, Aborted);
+    try
+      Assert.IsTrue(Aborted,           'AbortedTooManyDiffs should be True');
+      Assert.AreEqual(-1, Total,       'TotalDiffs should be -1 (unknown)');
+      Assert.AreEqual(NativeInt(0), Diffs.Count, 'Diffs list should be empty');
+      Assert.IsFalse(Fallback,         'UsedFallback should be False');
     finally
       Diffs.Free;
     end;
