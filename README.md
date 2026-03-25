@@ -92,9 +92,9 @@ docs/               Architecture notes
 In addition to the core lexer, this repository provides three command-line tools
 for working with token streams:
 
-- **DelphiLexer.TokenDump** – inspect tokens
-- **DelphiLexer.TokenStats** – analyze token metrics
-- **DelphiLexer.TokenCompare** – compare token streams
+- **DelphiLexer.TokenDump** â€“ inspect tokens
+- **DelphiLexer.TokenStats** â€“ analyze token metrics
+- **DelphiLexer.TokenCompare** â€“ compare token streams
 
 These utilities are intended for debugging, regression testing, and validating
 source transformations using deterministic token-level output.
@@ -263,8 +263,7 @@ character after `.` is also `.`, the decimal point is not consumed.
 - 123 reserved words are classified as `tkStrictKeyword` or `tkContextKeyword`
 All others tokenize as `tkIdentifier`. The list is maintained in
 `DelphiLexer.Keywords.pas` and has been matched to Embarcadero's official
-documentation: [https://docwiki.embarcadero.com/RADStudio/en/Fundamental_Syntactic_Elements_%28Delphi%29]
-(https://docwiki.embarcadero.com/RADStudio/en/Fundamental_Syntactic_Elements_%28Delphi%29).
+documentation: [https://docwiki.embarcadero.com/RADStudio/en/Fundamental_Syntactic_Elements_%28Delphi%29](https://docwiki.embarcadero.com/RADStudio/en/Fundamental_Syntactic_Elements_%28Delphi%29).
 
 ---
 
