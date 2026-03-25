@@ -46,6 +46,7 @@ type
     [Test] procedure EofPreserved_MatchedNotInDiffs;
     [Test] procedure EofMismatch_DiffAtEofPosition;
     [Test] procedure AbortedTooManyDiffs_ReturnsFlag;
+    [Test] procedure MaxDiffs_TruncatesListButPreservesTotalCount;
   end;
 
 
@@ -446,6 +447,34 @@ begin
       Assert.AreEqual(-1, Total,       'TotalDiffs should be -1 (unknown)');
       Assert.AreEqual(NativeInt(0), Diffs.Count, 'Diffs list should be empty');
       Assert.IsFalse(Fallback,         'UsedFallback should be False');
+    finally
+      Diffs.Free;
+    end;
+  finally
+    A.Free; B.Free;
+  end;
+end;
+
+
+procedure TMeyersDiffTests.MaxDiffs_TruncatesListButPreservesTotalCount;
+// [a, b] vs [c, d] -> edit distance = 4.
+// Passing MaxDiffs=2 must return Diffs.Count=2 while TotalDiffs remains 4.
+var
+  A, B     : TList<TToken>;
+  Diffs    : TList<TDiffEntry>;
+  Total    : Integer;
+  Fallback : Boolean;
+  Aborted  : Boolean;
+begin
+  A := L([T(tkIdentifier, 'a'), T(tkIdentifier, 'b')]);
+  B := L([T(tkIdentifier, 'c'), T(tkIdentifier, 'd')]);
+  try
+    Diffs := BuildDiffList(A, B, {MaxDiffs=}2, False, Total, Fallback, Aborted);
+    try
+      Assert.AreEqual(4, Total,            'TotalDiffs should be full edit distance (4)');
+      Assert.AreEqual(NativeInt(2), Diffs.Count, 'Diffs.Count should be capped at MaxDiffs (2)');
+      Assert.IsFalse(Aborted,              'AbortedTooManyDiffs should be False');
+      Assert.IsFalse(Fallback,             'UsedFallback should be False');
     finally
       Diffs.Free;
     end;
