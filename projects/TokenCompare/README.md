@@ -6,8 +6,11 @@ two Object Pascal source files.
 Comparison is by token Kind and Text. Line, col, and offset are not
 compared but are included in diff output for diagnostics.
 
-The comparison uses a longest common subsequence (LCS) approach to minimize
-diff noise and highlight meaningful token differences.
+The comparison uses the Myers diff algorithm to minimize diff noise and
+highlight meaningful token differences. A sequential fallback is used for
+very large files (> 200,000 tokens per file). Comparisons are aborted when
+the edit distance exceeds 30% of the combined token count, which indicates
+the files are almost certainly unrelated.
 
 
 ![delphi-lexer logo](../../assets/delphi-lexer-480x270.png)
@@ -58,7 +61,6 @@ DelphiLexer.TokenCompare.exe [file] [file2] [options]
 [--format:name]                 - Output format: text or json, default: text
 [-?], [--help]                  - Show this help and exit
 [-v], [--version]               - Show tool version and exit
-
 ```
 
 Note: named option values use `--key:value` or `--key=value` syntax (not `--key value`).
@@ -67,7 +69,7 @@ Note: named option values use `--key:value` or `--key=value` syntax (not `--key 
 
 `delphilexer.tokencompare test\golden\real_unit.pas test\golden\real_unit_plus_CRLF.pas`
 
-Result (notice LCS comparison reduces noise):
+Result (notice Myers diff reduces noise):
 
 ```text
 DelphiLexer.TokenCompare
@@ -124,7 +126,7 @@ Compared Tokens    : 168
 Diff Count         : 0
 
 Exit Code: 0
-```
+```
 
 ## Format 'text' output (default)
 
@@ -145,8 +147,9 @@ Header Lines:
   Mode            -- comparison mode derived from ignore-options, or `exact` when no filters are applied
   Equal           -- yes | no
   Compared Tokens -- number of tokens compared (if unequal, displayed as A# / B#)
-  Diff Count      -- Total tokens different based on mode
+  Diff Count      -- total edit distance (or "(unknown; aborted)" if abort threshold triggered)
 
+  Followed by optional warning lines (fallback algorithm used, comparison aborted, truncation active)
   Followed by each token difference found, limited by effective max-diffs
 ```
 
@@ -154,9 +157,9 @@ Header Lines:
 
 Diff entries may include:
 
-- `token-mismatch`       -- tokens differ at the same position
-- `missing-token-in-a`   -- token exists in B but not A
-- `missing-token-in-b`   -- token exists in A but not B
+- `substitution`         -- token replaced: dkMissingInB followed immediately by dkMissingInA at the same position
+- `missing-token-in-a`   -- token exists in B but not A (insertion)
+- `missing-token-in-b`   -- token exists in A but not B (deletion)
 
 ## Format 'json' output
 
@@ -166,12 +169,16 @@ representation of token comparison results derived from the `delphi-lexer` token
 - The JSON format is intended for use in automated testing, CI pipelines,
 and tooling integrations.
 
-- `usedFallback` indicates whether sequential comparison algorithm was used.
-This occurs when token count is > 200,000.
+- `usedFallback` indicates whether the sequential comparison algorithm was used
+  instead of Myers. This occurs when either file exceeds 200,000 tokens.
+
+- `abortedTooManyDiffs` indicates the comparison was aborted because the edit
+  distance exceeded 30% of the combined token count. When true, `diffCount`
+  is `-1` (unknown) and the `diffs` array is empty.
 
 `delphilexer.tokencompare test\golden\real_unit.pas test\golden\real_unit_plus_CRLF.pas --format:json`
 
-Result (notice LCS comparison reduces noise):
+Result (notice Myers diff reduces noise):
 
 ```json
 {
@@ -186,7 +193,8 @@ Result (notice LCS comparison reduces noise):
     "ignoreComments": false,
     "stopAfterFirstDiff": false,
     "maxDiffs": 2147483647,
-    "usedFallback": false
+    "usedFallback": false,
+    "abortedTooManyDiffs": false
   },
   "summary": {
     "equal": false,
@@ -260,7 +268,6 @@ Result (notice LCS comparison reduces noise):
     }
   ]
 }
-
 ```
 
 ## Encoding
@@ -276,9 +283,10 @@ Notes:
 
 ## Exit codes
 
-- `0`  -- success / matched
+- `0`  -- success / files matched
 - `1`  -- operational error (invalid input, file not found, etc.)
-- `10` -- comparison failed
+- `10` -- comparison complete, differences found
+- `11` -- comparison aborted: edit distance exceeded threshold (files likely unrelated)
 
 ## Future
 
