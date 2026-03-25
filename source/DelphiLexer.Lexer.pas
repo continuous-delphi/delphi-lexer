@@ -16,8 +16,8 @@ unit DelphiLexer.Lexer;
 //   - The final token is always tkEOF with Text = ''.
 //   - Token.StartOffset is the 0-based character index of the first character
 //     of the token in Source. Token.Length = System.Length(Token.Text).
-//   - Keywords are classified case-insensitively (BEGIN -> tkKeyword).
-//   - &ident escaped identifiers are always tkIdentifier, never tkKeyword.
+//   - Keywords are classified case-insensitively (BEGIN -> tkStrictKeyword).
+//   - &ident escaped identifiers are always tkIdentifier, never tkStrictKeyword|tkContextKeyword.
 
 interface
 
@@ -384,7 +384,7 @@ begin
     // Exponent: e or E, optional +/-, one-or-more digits.
     // Save full scanner state before consuming 'e'/'E': if no digits follow
     // (with or without a sign), restore so the 'e' is left for the identifier
-    // path. This gives '1exit' -> tkNumber('1') + tkKeyword('exit') rather
+    // path. This gives '1exit' -> tkNumber('1') + tkIdentifier('exit') rather
     // than tkNumber('1e') or tkInvalid('1e') + tkIdentifier('xit').
     if CharInSet(Peek(Sc), ['e', 'E']) then
     begin
