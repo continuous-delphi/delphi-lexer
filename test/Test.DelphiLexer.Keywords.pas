@@ -45,24 +45,24 @@ type
     [Test] procedure Escaped_type_IsIdentifier;
     [Test] procedure Escaped_end_IsIdentifier;
 
-    // Mixed-case forms must still resolve to tkKeyword.
-    [Test] procedure MixedCase_Begin_IsKeyword;
-    [Test] procedure AllUpperCase_BEGIN_IsKeyword;
-    [Test] procedure MixedCase_Function_IsKeyword;
+    // Mixed-case forms must still resolve to Keyword.
+    [Test] procedure MixedCase_Begin_IsStrictKeyword;
+    [Test] procedure AllUpperCase_BEGIN_IsStrictKeyword;
+    [Test] procedure MixedCase_Function_IsStrictKeyword;
 
-    // Contextual keywords must be tkIdentifier and not in IsDelphiKeyword.
-    [Test] procedure Contextual_virtual_IsIdentifier;
-    [Test] procedure Contextual_override_IsIdentifier;
-    [Test] procedure Contextual_operator_IsIdentifier;
-    [Test] procedure Contextual_cdecl_IsIdentifier;
-    [Test] procedure Contextual_abstract_IsIdentifier;
-    [Test] procedure Contextual_deprecated_IsIdentifier;
+    // Contextual Visibility+Directives are tracked as special keywords
+    [Test] procedure Contextual_virtual_IsContextualKeyword;
+    [Test] procedure Contextual_override_IsContextualKeyword;
+    [Test] procedure Contextual_operator_IsContextualKeyword;
+    [Test] procedure Contextual_cdecl_IsContextualKeyword;
+    [Test] procedure Contextual_abstract_IsContextualKeyword;
+    [Test] procedure Contextual_deprecated_IsContextualKeyword;
 
     // Specific decisions: 'at', 'on', 'out', 'inline' are reserved.
-    [Test] procedure Reserved_at_IsKeyword;
-    [Test] procedure Reserved_out_IsKeyword;
-    [Test] procedure Reserved_inline_IsKeyword;
-    [Test] procedure Reserved_on_IsKeyword;
+    [Test] procedure Reserved_at_IsStrictKeyword;
+    [Test] procedure Reserved_out_IsContextualKeyword;
+    [Test] procedure Reserved_inline_IsStrictKeyword;
+    [Test] procedure Reserved_on_IsStrictKeyword;
 
     // Plain identifier is not a keyword.
     [Test] procedure PlainIdentifier_IsNotKeyword;
@@ -72,34 +72,6 @@ implementation
 
 uses
   System.SysUtils;
-
-// The full Delphi reserved-word list (must match DELPHI_KEYWORDS in
-// DelphiLexer.Keywords exactly -- 67 entries, sorted ascending).
-const
-  ALL_KEYWORDS: array[0..66] of string = (
-    'and', 'array', 'as', 'asm', 'at',
-    'begin',
-    'case', 'class', 'const', 'constructor',
-    'destructor', 'dispinterface', 'div', 'do', 'downto',
-    'else', 'end', 'except', 'exports',
-    'file', 'finalization', 'finally', 'for', 'function',
-    'goto',
-    'if', 'implementation', 'in', 'inherited', 'initialization', 'inline',
-    'interface', 'is',
-    'label', 'library',
-    'mod',
-    'nil', 'not',
-    'object', 'of', 'on', 'or', 'out',
-    'packed', 'procedure', 'program', 'property',
-    'raise', 'record', 'repeat', 'resourcestring',
-    'set', 'shl', 'shr', 'string',
-    'then', 'threadvar', 'to', 'try', 'type',
-    'unit', 'until', 'uses',
-    'var',
-    'while', 'with',
-    'xor'
-  );
-
 
 procedure TKeywordTests.Setup;
 begin
@@ -125,9 +97,11 @@ procedure TKeywordTests.IsDelphiKeyword_AllReservedWords_ReturnTrue;
 var
   I: Integer;
 begin
-  for I := 0 to High(ALL_KEYWORDS) do
-    Assert.IsTrue(IsDelphiKeyword(ALL_KEYWORDS[I]),
-      ALL_KEYWORDS[I] + ' must be a reserved word');
+  for I := 0 to High(DELPHI_KEYWORDS) do
+  begin
+    Assert.IsTrue(IsDelphiKeyword(DELPHI_KEYWORDS[I].Name),
+      DELPHI_KEYWORDS[I].Name + ' must be a reserved word');
+  end;
 end;
 
 
@@ -135,15 +109,16 @@ procedure TKeywordTests.AllReservedWords_Tokenize_As_tkKeyword;
 var
   I: Integer;
   T: TList<TToken>;
+  Keyword:string;
 begin
-  for I := 0 to High(ALL_KEYWORDS) do
+  for I := 0 to High(DELPHI_KEYWORDS) do
   begin
-    T := Tok(ALL_KEYWORDS[I]);
+    Keyword := DELPHI_KEYWORDS[I].Name;
+
+    T := Tok(Keyword);
     try
-      Assert.AreEqual(Ord(tkKeyword), Ord(T[0].Kind),
-        ALL_KEYWORDS[I] + ' kind');
-      Assert.AreEqual(ALL_KEYWORDS[I], T[0].Text,
-        ALL_KEYWORDS[I] + ' text');
+      Assert.IsTrue(IsDelphiKeyword(T[0].Text), Keyword + ' kind');
+      Assert.AreEqual(Keyword, T[0].Text, Keyword + ' text');
     finally
       T.Free;
     end;
@@ -197,13 +172,13 @@ end;
 
 // --- Mixed-case ---
 
-procedure TKeywordTests.MixedCase_Begin_IsKeyword;
+procedure TKeywordTests.MixedCase_Begin_IsStrictKeyword;
 var
   T: TList<TToken>;
 begin
   T := Tok('Begin');
   try
-    Assert.AreEqual(Ord(tkKeyword), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), 'kind');
     Assert.AreEqual('Begin', T[0].Text, 'text preserved as-is');
   finally
     T.Free;
@@ -211,13 +186,13 @@ begin
 end;
 
 
-procedure TKeywordTests.AllUpperCase_BEGIN_IsKeyword;
+procedure TKeywordTests.AllUpperCase_BEGIN_IsStrictKeyword;
 var
   T: TList<TToken>;
 begin
   T := Tok('BEGIN');
   try
-    Assert.AreEqual(Ord(tkKeyword), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), 'kind');
     Assert.AreEqual('BEGIN', T[0].Text, 'text preserved as-is');
   finally
     T.Free;
@@ -225,99 +200,99 @@ begin
 end;
 
 
-procedure TKeywordTests.MixedCase_Function_IsKeyword;
+procedure TKeywordTests.MixedCase_Function_IsStrictKeyword;
 var
   T: TList<TToken>;
 begin
   T := Tok('Function');
   try
-    Assert.AreEqual(Ord(tkKeyword), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), 'kind');
   finally
     T.Free;
   end;
 end;
 
 
-// --- Contextual keywords (must be tkIdentifier) ---
+// --- Contextual keywords (must be tkContextKeyword) ---
 
-procedure TKeywordTests.Contextual_virtual_IsIdentifier;
+procedure TKeywordTests.Contextual_virtual_IsContextualKeyword;
 var
   T: TList<TToken>;
 begin
-  Assert.IsFalse(IsDelphiKeyword('virtual'), 'IsDelphiKeyword');
+  Assert.IsTrue(IsDelphiKeyword('virtual'), 'IsDelphiKeyword');
   T := Tok('virtual');
   try
-    Assert.AreEqual(Ord(tkIdentifier), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkContextKeyword), Ord(T[0].Kind), 'kind');
   finally
     T.Free;
   end;
 end;
 
 
-procedure TKeywordTests.Contextual_override_IsIdentifier;
+procedure TKeywordTests.Contextual_override_IsContextualKeyword;
 var
   T: TList<TToken>;
 begin
-  Assert.IsFalse(IsDelphiKeyword('override'), 'IsDelphiKeyword');
+  Assert.IsTrue(IsDelphiKeyword('override'), 'IsDelphiKeyword');
   T := Tok('override');
   try
-    Assert.AreEqual(Ord(tkIdentifier), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkContextKeyword), Ord(T[0].Kind), 'kind');
   finally
     T.Free;
   end;
 end;
 
 
-procedure TKeywordTests.Contextual_operator_IsIdentifier;
+procedure TKeywordTests.Contextual_operator_IsContextualKeyword;
 var
   T: TList<TToken>;
 begin
-  Assert.IsFalse(IsDelphiKeyword('operator'), 'IsDelphiKeyword');
+  Assert.IsTrue(IsDelphiKeyword('operator'), 'IsDelphiKeyword');
   T := Tok('operator');
   try
-    Assert.AreEqual(Ord(tkIdentifier), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkContextKeyword), Ord(T[0].Kind), 'kind');
   finally
     T.Free;
   end;
 end;
 
 
-procedure TKeywordTests.Contextual_cdecl_IsIdentifier;
+procedure TKeywordTests.Contextual_cdecl_IsContextualKeyword;
 var
   T: TList<TToken>;
 begin
-  Assert.IsFalse(IsDelphiKeyword('cdecl'), 'IsDelphiKeyword');
+  Assert.IsTrue(IsDelphiKeyword('cdecl'), 'IsDelphiKeyword');
   T := Tok('cdecl');
   try
-    Assert.AreEqual(Ord(tkIdentifier), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkContextKeyword), Ord(T[0].Kind), 'kind');
   finally
     T.Free;
   end;
 end;
 
 
-procedure TKeywordTests.Contextual_abstract_IsIdentifier;
+procedure TKeywordTests.Contextual_abstract_IsContextualKeyword;
 var
   T: TList<TToken>;
 begin
-  Assert.IsFalse(IsDelphiKeyword('abstract'), 'IsDelphiKeyword');
+  Assert.IsTrue(IsDelphiKeyword('abstract'), 'IsDelphiKeyword');
   T := Tok('abstract');
   try
-    Assert.AreEqual(Ord(tkIdentifier), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkContextKeyword), Ord(T[0].Kind), 'kind');
   finally
     T.Free;
   end;
 end;
 
 
-procedure TKeywordTests.Contextual_deprecated_IsIdentifier;
+procedure TKeywordTests.Contextual_deprecated_IsContextualKeyword;
 var
   T: TList<TToken>;
 begin
-  Assert.IsFalse(IsDelphiKeyword('deprecated'), 'IsDelphiKeyword');
+  Assert.IsTrue(IsDelphiKeyword('deprecated'), 'IsDelphiKeyword');
   T := Tok('deprecated');
   try
-    Assert.AreEqual(Ord(tkIdentifier), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkContextKeyword), Ord(T[0].Kind), 'kind');
   finally
     T.Free;
   end;
@@ -326,14 +301,14 @@ end;
 
 // --- Specific reserved-word decisions ---
 
-procedure TKeywordTests.Reserved_at_IsKeyword;
+procedure TKeywordTests.Reserved_at_IsStrictKeyword;
 var
   T: TList<TToken>;
 begin
   Assert.IsTrue(IsDelphiKeyword('at'), 'IsDelphiKeyword');
   T := Tok('at');
   try
-    Assert.AreEqual(Ord(tkKeyword), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), 'kind');
     Assert.AreEqual('at', T[0].Text, 'text');
   finally
     T.Free;
@@ -341,35 +316,35 @@ begin
 end;
 
 
-procedure TKeywordTests.Reserved_out_IsKeyword;
+procedure TKeywordTests.Reserved_out_IsContextualKeyword;
 var
   T: TList<TToken>;
 begin
   Assert.IsTrue(IsDelphiKeyword('out'), 'IsDelphiKeyword');
   T := Tok('out');
   try
-    Assert.AreEqual(Ord(tkKeyword), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkContextKeyword), Ord(T[0].Kind), 'kind');
   finally
     T.Free;
   end;
 end;
 
 
-procedure TKeywordTests.Reserved_inline_IsKeyword;
+procedure TKeywordTests.Reserved_inline_IsStrictKeyword;
 var
   T: TList<TToken>;
 begin
   Assert.IsTrue(IsDelphiKeyword('inline'), 'IsDelphiKeyword');
   T := Tok('inline');
   try
-    Assert.AreEqual(Ord(tkKeyword), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), 'kind');
   finally
     T.Free;
   end;
 end;
 
 
-procedure TKeywordTests.Reserved_on_IsKeyword;
+procedure TKeywordTests.Reserved_on_IsStrictKeyword;
 // 'on' is in DELPHI_KEYWORDS (used in exception handlers: on E: Exception do).
 var
   T: TList<TToken>;
@@ -377,7 +352,7 @@ begin
   Assert.IsTrue(IsDelphiKeyword('on'), 'IsDelphiKeyword');
   T := Tok('on');
   try
-    Assert.AreEqual(Ord(tkKeyword), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), 'kind');
   finally
     T.Free;
   end;

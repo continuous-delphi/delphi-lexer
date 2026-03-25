@@ -44,14 +44,19 @@ type
     procedure TearDown;
 
     [Test] procedure Golden_Minimal;
-    [Test] procedure Golden_Keywords;
+    [Test] procedure Golden_StrictKeywords;
+    [Test] procedure Golden_DirectiveKeywords;
+    [Test] procedure Golden_VisibilityKeywords;
     [Test] procedure Golden_Literals;
     [Test] procedure Golden_Comments;
     [Test] procedure Golden_Operators;
     [Test] procedure Golden_RealUnit;
   end;
 
+
 implementation
+uses
+  DelphiLexer.Keywords;
 
 
 procedure TGoldenTests.Setup;
@@ -145,25 +150,60 @@ begin
 end;
 
 
-procedure TGoldenTests.Golden_Keywords;
+procedure TGoldenTests.Golden_StrictKeywords;
 var
   Src:    string;
   Tokens: TList<TToken>;
   Count:  Integer;
 begin
-  Src := LoadGolden('keywords.pas');
-  CheckStandard(Src, 'keywords');
+  Src := LoadGolden('keywords_strict.txt');
+  CheckStandard(Src, 'strict keyword list');
 
-  // Exactly 67 reserved words -- one of each in DELPHI_KEYWORDS.
   Tokens := FLexer.Tokenize(Src);
   try
-    Count := CountKind(Tokens, tkKeyword);
-    Assert.AreEqual(67, Count, 'keywords: tkKeyword count');
+    Count := CountKind(Tokens, tkStrictKeyword);
+    Assert.AreEqual(DELPHI_STRICT_KEYWORD_COUNT, Count, 'tkStrictKeyword count');
   finally
     Tokens.Free;
   end;
 end;
 
+
+procedure TGoldenTests.Golden_DirectiveKeywords;
+var
+  Src:    string;
+  Tokens: TList<TToken>;
+  Count:  Integer;
+begin
+  Src := LoadGolden('keywords_directive.txt');
+  CheckStandard(Src, 'directive keyword list');
+
+  Tokens := FLexer.Tokenize(Src);
+  try
+    Count := CountKind(Tokens, tkContextKeyword);
+    Assert.AreEqual(DELPHI_DIRECTIVE_KEYWORD_COUNT, Count, 'keywords: Directive/tkContextKeyword count');
+  finally
+    Tokens.Free;
+  end;
+end;
+
+procedure TGoldenTests.Golden_VisibilityKeywords;
+var
+  Src:    string;
+  Tokens: TList<TToken>;
+  Count:  Integer;
+begin
+  Src := LoadGolden('keywords_visibility.txt');
+  CheckStandard(Src, 'visibility keyword list');
+
+  Tokens := FLexer.Tokenize(Src);
+  try
+    Count := CountKind(Tokens, tkContextKeyword);
+    Assert.AreEqual(DELPHI_VISIBILITY_KEYWORD_COUNT, Count, 'keywords: Visibility/tkContextKeyword count');
+  finally
+    Tokens.Free;
+  end;
+end;
 
 procedure TGoldenTests.Golden_Literals;
 var

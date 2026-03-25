@@ -86,31 +86,29 @@ will misclassify the last real token or crash.
 
 ## I-5: Keyword classification is case-insensitive
 
-**Rule:** A token is `tkKeyword` if and only if its lowercased text matches an
-entry in `DELPHI_KEYWORDS`. `BEGIN`, `Begin`, and `begin` are all `tkKeyword`.
+**Rule:** A token is a `Keyword` if and only if its lowercased text matches an
+entry in `DELPHI_KEYWORDS`. `BEGIN`, `Begin`, and `begin` are all keywords.
 The stored `Text` preserves the original casing from the source.
 
 **Why it exists:** Object Pascal is case-insensitive. A formatter or analyzer
-that checks `Token.Kind = tkKeyword` must not have to normalize case itself.
+that checks `Token.Kind = *Keyword` must not have to normalize case itself.
 Classifying at lex time is cheaper and more reliable than doing it in every
 downstream rule.
 
-**What breaks if violated:** A keyword-casing rule that checks
-`Token.Kind = tkKeyword` will miss `BEGIN` or `Begin`. A structural pass that
-looks for `tkKeyword` with `.Text = 'begin'` will silently skip uppercase
-occurrences.
+**What breaks if violated:** A keyword-casing rule that checks will miss
+`BEGIN` or `Begin`.
 
 ---
 
-## I-6: Escaped identifiers are always tkIdentifier, never tkKeyword
+## I-6: Escaped identifiers are always tkIdentifier, never *Keyword
 
 **Rule:** A token beginning with `&` followed by identifier characters is
 always `tkIdentifier`, regardless of the word that follows the ampersand.
 `&begin`, `&type`, `&end` are all `tkIdentifier`.
 
 **Why it exists:** The `&` prefix is the Delphi escape mechanism for using
-reserved words as identifiers. Classifying `&begin` as `tkKeyword` would cause
-a keyword-casing rule to recase it, changing its meaning. The `&` signals
+reserved words as identifiers. Classifying `&begin` as `tkStrictKeyword` would
+cause a keyword-casing rule to recase it, changing its meaning. The `&` signals
 deliberate escaping.
 
 **What breaks if violated:** A keyword-casing rule touches `&begin` and
@@ -199,7 +197,7 @@ causes binary search to return incorrect results -- words that are present may
 be reported absent, or absent words may be falsely found.
 
 **What breaks if violated:** Keywords are misclassified as `tkIdentifier`, or
-plain identifiers are misclassified as `tkKeyword`. The failure mode is silent
+plain identifiers are misclassified as `*Keyword`. The failure mode is silent
 and test-dependent: only keywords in the affected region of the array are
 misclassified.
 
@@ -238,4 +236,4 @@ information externally (e.g., in an annotation record that wraps `TToken`).
 
 **What breaks if violated:** Two consumers that each reclassify the same token
 differently produce inconsistent views of the stream. The lexer's guarantee
-that `tkKeyword` means "reserved word per the Delphi spec" no longer holds.
+that `*Keyword` means "reserved word per the Delphi spec" no longer holds.

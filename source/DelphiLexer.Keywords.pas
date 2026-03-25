@@ -2,93 +2,277 @@ unit DelphiLexer.Keywords;
 
 // Delphi reserved-word list and binary-search classification.
 //
-// Policy:
-//
-//   Only TRUE reserved words belong here -- words the Delphi compiler
-//   rejects as plain identifiers and which require &-escaping to use as
-//   identifiers (e.g. &begin, &type). Contextual (directive) keywords
-//   tokenize as tkIdentifier and are NOT included.
-//
-// Contextual keywords deliberately absent (tokenize as tkIdentifier):
-//
-//   absolute, abstract, assembler, async, automated, cdecl, contains,
-//   default, delayed, deprecated, dispid, dynamic, experimental, export,
-//   external, far, final, forward, helper, implements, index, local,
-//   message, name, near, nodefault, noreturn, operator, overload, override,
-//   package, pascal, platform, private, protected, public, published, read,
-//   readonly, reference, register, reintroduce, requires, resident,
-//   safecall, sealed, static, stdcall, stored, strict, unsafe, varargs,
-//   virtual, winapi, write, writeonly.
-//
-// Verify DELPHI_KEYWORDS and make final decision on these:
-//
-//   'out'      -- IS a reserved word (function/procedure parameter modifier);
-//                 included.
-//   'on'       -- IS a reserved word (exception handler label in try/except);
-//                 included. Florence docwiki note: "at and on also have
-//                 special meanings, and should be treated as reserved words."
-//   'at'       -- IS a reserved word (address clause in raise...at);
-//                 included. Same docwiki note as 'on' above.
-//   'inline'   -- IS a reserved word; included. Same version note as 'out'.
-//   'operator' -- contextual keyword only; NOT included; tokenizes as
-//                 tkIdentifier.
+// Authoritative list from Embarcadero
+//   https://docwiki.embarcadero.com/RADStudio/en/Fundamental_Syntactic_Elements_%28Delphi%29
 
 interface
 
-// Returns True if S is a Delphi reserved word (case-insensitive).
-function IsDelphiKeyword(const S: string): Boolean;
+type
+
+  TKeywordCategory = (
+    kcStrict,       // true reserved words
+    kcDirective,    // custom directives that are contextually keywords
+    kcVisibility    // class-scope visibility keywords
+  );
+
+
+  TKeywordKind = (
+    kwNone,
+
+    // Strict/HardKeywords : cannot be redefined or used as identifiers
+    // Always reserved, global meaning.
+    // Docwiki Note: the words `at` and `on` also have special meanings, and should be treated as reserved words.
+    kwAnd, kwArray, kwAs, kwAsm, kwAt, kwBegin, kwCase, kwClass, kwConst,
+    kwConstructor, kwDestructor, kwDispinterface, kwDiv, kwDo, kwDownto,
+    kwElse, kwEnd, kwExcept, kwExports, kwFile, kwFinalization, kwFinally,
+    kwFor, kwFunction, kwGoto, kwIf, kwImplementation, kwIn, kwInherited,
+    kwInitialization, kwInline, kwInterface, kwIs, kwLabel, kwLibrary,
+    kwMod, kwNil, kwNot, kwObject, kwOf, kwOn, kwOr, kwPacked, kwProcedure,
+    kwProgram, kwProperty, kwRaise, kwRecord, kwRepeat, kwResourcestring,
+    kwSet, kwShl, kwShr, kwString, kwThen, kwThreadvar, kwTo, kwTry, kwType,
+    kwUnit, kwUntil, kwUses, kwVar, kwWhile, kwWith, kwXor,
+
+    // Contextual / SoftKeywords / DirectiveKeywords: context-dependent, can be identifiers elsewhere
+    (* docwiki:
+       Delphi has more than one type of directive.
+       One meaning for "directive" is a word that is sensitive in specific locations within source code.
+       This type of directive has special meaning in the Delphi language, but, unlike a reserved word,
+       appears only in contexts where user-defined identifiers cannot occur.
+       Hence -- although it is inadvisable to do so -- you can define an identifier that looks exactly
+       like a directive.
+    *)
+    // Note: `align` currently not on official list, but should be
+    //   https://embt.atlassian.net/servicedesk/customer/portal/1/RSS-5167)
+    // Note: inline + library are contextual but already flagged as strict above
+    kwAbsolute, kwAbstract, kwAlign, kwAssembler, kwCdecl, kwContains, kwDefault,
+    kwDelayed, kwDeprecated, kwDispid, kwDynamic, kwExperimental, kwExport,
+    kwExternal, kwFar, kwFinal, kwForward, kwHelper, kwImplements, kwIndex,
+    kwLocal, kwMessage, kwName, kwNear, kwNodefault, kwNoreturn, kwOperator,
+    kwOut, kwOverload, kwOverride, kwPackage, kwPascal, kwPlatform, kwRead,
+    kwReadonly, kwReference, kwRegister, kwReintroduce, kwRequires, kwResident,
+    kwSafecall, kwSealed, kwStatic, kwStdcall, kwStored, kwStrict,
+    kwUnsafe, kwVarargs, kwVirtual, kwWinapi, kwWrite, kwWriteonly,
+
+    // Visibility: class-socpe-only visibility specifiers
+    // otherwise treated as directives
+    kwAutomated, kwPrivate, kwProtected, kwPublic, kwPublished
+  );
+  //Note: The keyword phrase `of object` (and others) are deferred to handling by parser
+
+
+  TKeywordInfo = record
+    Name: PChar;
+    Kind: TKeywordKind;
+    Category: TKeywordCategory;
+  end;
+
+const
+
+  DELPHI_STRICT_KEYWORD_COUNT = 66;
+  DELPHI_DIRECTIVE_KEYWORD_COUNT = 52;
+  DELPHI_VISIBILITY_KEYWORD_COUNT = 5;
+  //123 keywords
+  DELPHI_TOTAL_KEYWORDS = DELPHI_STRICT_KEYWORD_COUNT + DELPHI_DIRECTIVE_KEYWORD_COUNT + DELPHI_VISIBILITY_KEYWORD_COUNT;
+
+
+  // Sorted alphabetically for binary search
+  DELPHI_KEYWORDS: array[0..(DELPHI_TOTAL_KEYWORDS-1)] of TKeywordInfo = (
+    (Name: 'absolute';        Kind: kwAbsolute;         Category: kcDirective),
+    (Name: 'abstract';        Kind: kwAbstract;         Category: kcDirective),
+    (Name: 'align';           Kind: kwAlign;            Category: kcDirective),
+    (Name: 'and';             Kind: kwAnd;              Category: kcStrict),
+    (Name: 'array';           Kind: kwArray;            Category: kcStrict),
+    (Name: 'as';              Kind: kwAs;               Category: kcStrict),
+    (Name: 'asm';             Kind: kwAsm;              Category: kcStrict),
+    (Name: 'assembler';       Kind: kwAssembler;        Category: kcDirective),
+    (Name: 'at';              Kind: kwAt;               Category: kcStrict),
+    (Name: 'automated';       Kind: kwAutomated;        Category: kcVisibility),
+    (Name: 'begin';           Kind: kwBegin;            Category: kcStrict),
+    (Name: 'case';            Kind: kwCase;             Category: kcStrict),
+    (Name: 'cdecl';           Kind: kwCdecl;            Category: kcDirective),
+    (Name: 'class';           Kind: kwClass;            Category: kcStrict),
+    (Name: 'const';           Kind: kwConst;            Category: kcStrict),
+    (Name: 'constructor';     Kind: kwConstructor;      Category: kcStrict),
+    (Name: 'contains';        Kind: kwContains;         Category: kcDirective),
+    (Name: 'default';         Kind: kwDefault;          Category: kcDirective),
+    (Name: 'delayed';         Kind: kwDelayed;          Category: kcDirective),
+    (Name: 'deprecated';      Kind: kwDeprecated;       Category: kcDirective),
+    (Name: 'destructor';      Kind: kwDestructor;       Category: kcStrict),
+    (Name: 'dispid';          Kind: kwDispid;           Category: kcDirective),
+    (Name: 'dispinterface';   Kind: kwDispinterface;    Category: kcStrict),
+    (Name: 'div';             Kind: kwDiv;              Category: kcStrict),
+    (Name: 'do';              Kind: kwDo;               Category: kcStrict),
+    (Name: 'downto';          Kind: kwDownto;           Category: kcStrict),
+    (Name: 'dynamic';         Kind: kwDynamic;          Category: kcDirective),
+    (Name: 'else';            Kind: kwElse;             Category: kcStrict),
+    (Name: 'end';             Kind: kwEnd;              Category: kcStrict),
+    (Name: 'except';          Kind: kwExcept;           Category: kcStrict),
+    (Name: 'experimental';    Kind: kwExperimental;     Category: kcDirective),
+    (Name: 'export';          Kind: kwExport;           Category: kcDirective),
+    (Name: 'exports';         Kind: kwExports;          Category: kcStrict),
+    (Name: 'external';        Kind: kwExternal;         Category: kcDirective),
+    (Name: 'far';             Kind: kwFar;              Category: kcDirective),
+    (Name: 'file';            Kind: kwFile;             Category: kcStrict),
+    (Name: 'final';           Kind: kwFinal;            Category: kcDirective),
+    (Name: 'finalization';    Kind: kwFinalization;     Category: kcStrict),
+    (Name: 'finally';         Kind: kwFinally;          Category: kcStrict),
+    (Name: 'for';             Kind: kwFor;              Category: kcStrict),
+    (Name: 'forward';         Kind: kwForward;          Category: kcDirective),
+    (Name: 'function';        Kind: kwFunction;         Category: kcStrict),
+    (Name: 'goto';            Kind: kwGoto;             Category: kcStrict),
+    (Name: 'helper';          Kind: kwHelper;           Category: kcDirective),
+    (Name: 'if';              Kind: kwIf;               Category: kcStrict),
+    (Name: 'implementation';  Kind: kwImplementation;   Category: kcStrict),
+    (Name: 'implements';      Kind: kwImplements;       Category: kcDirective),
+    (Name: 'in';              Kind: kwIn;               Category: kcStrict),
+    (Name: 'index';           Kind: kwIndex;            Category: kcDirective),
+    (Name: 'inherited';       Kind: kwInherited;        Category: kcStrict),
+    (Name: 'initialization';  Kind: kwInitialization;   Category: kcStrict),
+    (Name: 'inline';          Kind: kwInline;           Category: kcStrict),
+    (Name: 'interface';       Kind: kwInterface;        Category: kcStrict),
+    (Name: 'is';              Kind: kwIs;               Category: kcStrict),
+    (Name: 'label';           Kind: kwLabel;            Category: kcStrict),
+    (Name: 'library';         Kind: kwLibrary;          Category: kcStrict),
+    (Name: 'local';           Kind: kwLocal;            Category: kcDirective),
+    (Name: 'message';         Kind: kwMessage;          Category: kcDirective),
+    (Name: 'mod';             Kind: kwMod;              Category: kcStrict),
+    (Name: 'name';            Kind: kwName;             Category: kcDirective),
+    (Name: 'near';            Kind: kwNear;             Category: kcDirective),
+    (Name: 'nil';             Kind: kwNil;              Category: kcStrict),
+    (Name: 'nodefault';       Kind: kwNodefault;        Category: kcDirective),
+    (Name: 'noreturn';        Kind: kwNoreturn;         Category: kcDirective),
+    (Name: 'not';             Kind: kwNot;              Category: kcStrict),
+    (Name: 'object';          Kind: kwObject;           Category: kcStrict),
+    (Name: 'of';              Kind: kwOf;               Category: kcStrict),
+    (Name: 'on';              Kind: kwOn;               Category: kcStrict),
+    (Name: 'operator';        Kind: kwOperator;         Category: kcDirective),
+    (Name: 'or';              Kind: kwOr;               Category: kcStrict),
+    (Name: 'out';             Kind: kwOut;              Category: kcDirective),
+    (Name: 'overload';        Kind: kwOverload;         Category: kcDirective),
+    (Name: 'override';        Kind: kwOverride;         Category: kcDirective),
+    (Name: 'package';         Kind: kwPackage;          Category: kcDirective),
+    (Name: 'packed';          Kind: kwPacked;           Category: kcStrict),
+    (Name: 'pascal';          Kind: kwPascal;           Category: kcDirective),
+    (Name: 'platform';        Kind: kwPlatform;         Category: kcDirective),
+    (Name: 'private';         Kind: kwPrivate;          Category: kcVisibility),
+    (Name: 'procedure';       Kind: kwProcedure;        Category: kcStrict),
+    (Name: 'program';         Kind: kwProgram;          Category: kcStrict),
+    (Name: 'property';        Kind: kwProperty;         Category: kcStrict),
+    (Name: 'protected';       Kind: kwProtected;        Category: kcVisibility),
+    (Name: 'public';          Kind: kwPublic;           Category: kcVisibility),
+    (Name: 'published';       Kind: kwPublished;        Category: kcVisibility),
+    (Name: 'raise';           Kind: kwRaise;            Category: kcStrict),
+    (Name: 'read';            Kind: kwRead;             Category: kcDirective),
+    (Name: 'readonly';        Kind: kwReadonly;         Category: kcDirective),
+    (Name: 'record';          Kind: kwRecord;           Category: kcStrict),
+    (Name: 'reference';       Kind: kwReference;        Category: kcDirective),
+    (Name: 'register';        Kind: kwRegister;         Category: kcDirective),
+    (Name: 'reintroduce';     Kind: kwReintroduce;      Category: kcDirective),
+    (Name: 'repeat';          Kind: kwRepeat;           Category: kcStrict),
+    (Name: 'requires';        Kind: kwRequires;         Category: kcDirective),
+    (Name: 'resident';        Kind: kwResident;         Category: kcDirective),
+    (Name: 'resourcestring';  Kind: kwResourcestring;   Category: kcStrict),
+    (Name: 'safecall';        Kind: kwSafecall;         Category: kcDirective),
+    (Name: 'sealed';          Kind: kwSealed;           Category: kcDirective),
+    (Name: 'set';             Kind: kwSet;              Category: kcStrict),
+    (Name: 'shl';             Kind: kwShl;              Category: kcStrict),
+    (Name: 'shr';             Kind: kwShr;              Category: kcStrict),
+    (Name: 'static';          Kind: kwStatic;           Category: kcDirective),
+    (Name: 'stdcall';         Kind: kwStdcall;          Category: kcDirective),
+    (Name: 'stored';          Kind: kwStored;           Category: kcDirective),
+    (Name: 'strict';          Kind: kwStrict;           Category: kcDirective),
+    (Name: 'string';          Kind: kwString;           Category: kcStrict),
+    (Name: 'then';            Kind: kwThen;             Category: kcStrict),
+    (Name: 'threadvar';       Kind: kwThreadvar;        Category: kcStrict),
+    (Name: 'to';              Kind: kwTo;               Category: kcStrict),
+    (Name: 'try';             Kind: kwTry;              Category: kcStrict),
+    (Name: 'type';            Kind: kwType;             Category: kcStrict),
+    (Name: 'unit';            Kind: kwUnit;             Category: kcStrict),
+    (Name: 'unsafe';          Kind: kwUnsafe;           Category: kcDirective),
+    (Name: 'until';           Kind: kwUntil;            Category: kcStrict),
+    (Name: 'uses';            Kind: kwUses;             Category: kcStrict),
+    (Name: 'var';             Kind: kwVar;              Category: kcStrict),
+    (Name: 'varargs';         Kind: kwVarargs;          Category: kcDirective),
+    (Name: 'virtual';         Kind: kwVirtual;          Category: kcDirective),
+    (Name: 'while';           Kind: kwWhile;            Category: kcStrict),
+    (Name: 'winapi';          Kind: kwWinapi;           Category: kcDirective),
+    (Name: 'with';            Kind: kwWith;             Category: kcStrict),
+    (Name: 'write';           Kind: kwWrite;            Category: kcDirective),
+    (Name: 'writeonly';       Kind: kwWriteonly;        Category: kcDirective),
+    (Name: 'xor';             Kind: kwXor;              Category: kcStrict)
+  );
+
+  function FindDelphiKeyword(const S: string; out Info: TKeywordInfo): Boolean;
+  function IsDelphiKeyword(const S: string): Boolean;
 
 implementation
 
 uses
   System.SysUtils;
 
-const
-  // Full Delphi reserved-word list, sorted ascending for binary search.
-  // 67 entries (indices 0..66).
-  DELPHI_KEYWORDS: array[0..66] of string = (
-    'and', 'array', 'as', 'asm', 'at',
-    'begin',
-    'case', 'class', 'const', 'constructor',
-    'destructor', 'dispinterface', 'div', 'do', 'downto',
-    'else', 'end', 'except', 'exports',
-    'file', 'finalization', 'finally', 'for', 'function',
-    'goto',
-    'if', 'implementation', 'in', 'inherited', 'initialization', 'inline',
-    'interface', 'is',
-    'label', 'library',
-    'mod',
-    'nil', 'not',
-    'object', 'of', 'on', 'or', 'out',
-    'packed', 'procedure', 'program', 'property',
-    'raise', 'record', 'repeat', 'resourcestring',
-    'set', 'shl', 'shr', 'string',
-    'then', 'threadvar', 'to', 'try', 'type',
-    'unit', 'until', 'uses',
-    'var',
-    'while', 'with',
-    'xor'
-  );
-
-
-function IsDelphiKeyword(const S: string): Boolean;
+function CompareKeywordText(const S: string; P: PChar): Integer;
 var
-  Lo, Hi, Mid, Cmp: Integer;
+  I: Integer;
+  C1, C2: Char;
+begin
+  I := 1;
+  while True do
+  begin
+    if I <= Length(S) then
+      C1 := S[I]
+    else
+      C1 := #0;
+
+    C2 := P^;
+
+    if (C1 = #0) and (C2 = #0) then
+      Exit(0);
+
+    C1 := UpCase(C1);
+    C2 := UpCase(C2);
+
+    if C1 < C2 then
+      Exit(-1);
+    if C1 > C2 then
+      Exit(1);
+
+    if C2 <> #0 then
+      Inc(P);
+    Inc(I);
+  end;
+end;
+
+function FindDelphiKeyword(const S: string; out Info: TKeywordInfo): Boolean;
+var
+  L, H, Mid, Cmp: Integer;
   Lower: string;
 begin
+  Info := Default(TKeywordInfo);
+
   Lower := LowerCase(S);
-  Lo := Low(DELPHI_KEYWORDS);
-  Hi := High(DELPHI_KEYWORDS);
-  while Lo <= Hi do
+  L := Low(DELPHI_KEYWORDS);
+  H := High(DELPHI_KEYWORDS);
+  while L <= H do
   begin
-    Mid := (Lo + Hi) div 2;
-    Cmp := CompareStr(Lower, DELPHI_KEYWORDS[Mid]);
-    if Cmp = 0 then Exit(True)
-    else if Cmp < 0 then Hi := Mid - 1
-    else Lo := Mid + 1;
+    Mid := (L + H) div 2;
+    Cmp := CompareStr(Lower, DELPHI_KEYWORDS[Mid].Name);
+    if Cmp = 0 then
+    begin
+      Info := DELPHI_KEYWORDS[Mid];
+      Exit(True)
+    end
+    else if Cmp < 0 then H := Mid - 1
+    else L := Mid + 1;
   end;
+
   Result := False;
 end;
 
+function IsDelphiKeyword(const S: string): Boolean;
+var
+  Info: TKeywordInfo;
+begin
+  Result := FindDelphiKeyword(S, Info);
+end;
 
 end.

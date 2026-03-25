@@ -32,8 +32,6 @@ type
     [Test] procedure Keywords_AllUpperCaseIsKeyword;
     [Test] procedure Keywords_MixedCaseIsKeyword;
     [Test] procedure Keywords_PlainIdentifierIsNotKeyword;
-    [Test] procedure Keywords_ContextualVirtualIsNotKeyword;
-    [Test] procedure Keywords_ContextualOperatorIsNotKeyword;
 
     // --- Basic tokenization ---
 
@@ -112,16 +110,6 @@ begin
   Assert.IsFalse(IsDelphiKeyword('MyClass'));
 end;
 
-procedure TLexerCoreTests.Keywords_ContextualVirtualIsNotKeyword;
-begin
-  Assert.IsFalse(IsDelphiKeyword('virtual'));
-end;
-
-procedure TLexerCoreTests.Keywords_ContextualOperatorIsNotKeyword;
-begin
-  Assert.IsFalse(IsDelphiKeyword('operator'));
-end;
-
 
 // --- Basic tokenization ---
 
@@ -132,7 +120,7 @@ begin
   T := Tok('begin');
   try
     Assert.AreEqual(NativeInt(2), T.Count, 'count');
-    Assert.AreEqual(Ord(tkKeyword), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), 'kind');
     Assert.AreEqual('begin', T[0].Text, 'text');
     Assert.AreEqual(Ord(tkEOF), Ord(T[1].Kind), 'eof kind');
   finally

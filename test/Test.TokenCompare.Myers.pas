@@ -51,6 +51,8 @@ type
 
 
 implementation
+uses
+  System.SysUtils;
 
 
 function TMeyersDiffTests.T(Kind: TTokenKind; const Text: string): TToken;

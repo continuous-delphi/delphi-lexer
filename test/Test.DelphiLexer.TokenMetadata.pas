@@ -117,8 +117,8 @@ begin
     Assert.AreEqual(Ord(tkWhitespace), Ord(T[0].Kind), 'T[0] kind');
     Assert.AreEqual(0, T[0].StartOffset, 'T[0] StartOffset');
     Assert.AreEqual(2, T[0].Length, 'T[0] Length');
-    // T[1] = tkKeyword 'begin'
-    Assert.AreEqual(Ord(tkKeyword), Ord(T[1].Kind), 'T[1] kind');
+    // T[1] = Keyword 'begin'
+    Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[1].Kind), 'T[1] kind');
     Assert.AreEqual(2, T[1].StartOffset, 'T[1] StartOffset');
     Assert.AreEqual(5, T[1].Length, 'T[1] Length');
   finally

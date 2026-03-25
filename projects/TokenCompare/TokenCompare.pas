@@ -143,7 +143,7 @@ begin
     // Header.
     WriteLn('');
     WriteLn(AppName);
-    WriteLn('formatVersion: ', '2.0.0'); // Bump if TEXT output structure changes
+    WriteLn('formatVersion: ', '2.1.0'); // Bump if TEXT output structure (or logic) changes
     WriteLn(Format('%-18s : %s', ['File A', Config.BaseOptions.FileName]));
     WriteLn(Format('%-18s : %s', ['File B', Config.SecondFile]));
     WriteLn(Format('%-18s : %s', ['Mode',   ComparisonModeName(Config)]));
@@ -263,7 +263,7 @@ begin
     try
 
       Root.AddPair('toolName', AppName);
-      Root.AddPair('formatVersion', '2.0.0');  // Bump if JSON output structure changes
+      Root.AddPair('formatVersion', '2.1.0');  // Bump if JSON output structure (or logic) changes
       Root.AddPair('fileA', Config.BaseOptions.FileName);
       Root.AddPair('fileB', Config.SecondFile);
 

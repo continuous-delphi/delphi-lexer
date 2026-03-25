@@ -4,9 +4,15 @@ interface
 
 type
 
+  //"tkKeyword" split to Strict & Contextual Keywords:
+  // A language word that is globally reserved and cannot normally be used as an identifier.
+  // vs one that has special meaning only in certain syntactic contexts, including visibility words and
+  // directive-like words.
+
   TTokenKind = (
     tkIdentifier,    // plain identifier
-    tkKeyword,       // reserved word (binary-searched against keyword list)
+    tkStrictKeyword, // HardKeyword: Reserved words
+    tkContextKeyword, // SoftKeyword: Directive + visibility
     tkNumber,        // integer, hex ($), binary (%), octal (&digits), float
     tkString,        // 'single-quoted' or '''triple-quoted multiline'''
     tkCharLiteral,   // #nn or #$hex
@@ -34,7 +40,8 @@ const
 
   TokenKindNames: array[TTokenKind] of string = (
     'tkIdentifier',
-    'tkKeyword',
+    'tkStrictKeyword',
+    'tkContextKeyword',
     'tkNumber',
     'tkString',
     'tkCharLiteral',
@@ -49,13 +56,13 @@ const
 
   function TokenKindName(K: TTokenKind): string;
 
+
 implementation
 
 function TokenKindName(K: TTokenKind): string;
 begin
   Result := TokenKindNames[K];
 end;
-
 
 
 end.

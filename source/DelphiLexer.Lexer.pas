@@ -462,6 +462,7 @@ var
   TokOffset: Integer; // 0-based start offset of current token
   TokStartI: Integer; // 1-based start position for Copy() (= TokOffset + 1)
   DelimLen:  Integer; // multiline string delimiter length (3, 5, 7, ...)
+  KeywordInfo: TKeywordInfo;
 
   procedure Add(AKind: TTokenKind; const Text: string);
   var
@@ -470,7 +471,7 @@ var
     T := MakeToken(AKind, Text, TokLine, TokCol, TokOffset);
     OutTokens.Add(T);
   end;
-
+  
 begin
   Sc.S           := Source;
   Sc.I           := 1;
@@ -605,13 +606,27 @@ begin
       TokText := ReadIdentifierOrNumber(Sc);
       if (TokText <> '') and IsIdentStart(TokText[1]) then
       begin
-        if IsDelphiKeyword(TokText) then
-          Add(tkKeyword, TokText)
+        if FindDelphiKeyword(TokText, KeywordInfo) then
+        begin
+          case KeywordInfo.Category of
+            kcStrict:
+              Add(tkStrictKeyword, TokText);  // toconsider: collect KeywordInfo.Kind, KeywordInfo.Category
+            kcDirective,
+            kcVisibility:
+              Add(tkContextKeyword, TokText); // toconsider: collect KeywordInfo.Kind, KeywordInfo.Category
+            else
+              Assert(False, 'Unhandled KeywordInfo.Category');
+          end;
+        end
         else
+        begin
           Add(tkIdentifier, TokText);
+        end;
       end
       else
+      begin
         Add(tkNumber, TokText);
+      end;
       Continue;
     end;
 
@@ -637,11 +652,11 @@ begin
     end;
   end;
 
+  //referenced in Add
   TokLine   := Sc.Line;
   TokCol    := Sc.Col;
   TokOffset := Sc.I - 1; // = Sc.N; one past the last character (0-based)
   Add(tkEOF, '');
 end;
-
 
 end.

@@ -53,23 +53,23 @@ Note: named option values use `--key:value` or `--key=value` syntax (not `--key 
 ```text
 DelphiLexer.TokenDump
 inputFile: test\golden\minimal.pas
-formatVersion: 1.0.0
+formatVersion: 1.1.0
 
     Idx  Kind               L:C      Offset    Len  Text
   -----  -----------------  -------  ------  -----  ------------------------
-      0  tkKeyword              1:1       0      4  unit
+      0  tkStrictKeyword        1:1       0      4  unit
       1  tkWhitespace           1:5       4      1
       2  tkIdentifier           1:6       5      7  Minimal
       3  tkSymbol              1:13      12      1  ;
       4  tkEOL                 1:14      13      2  <CRLF>
       5  tkEOL                  2:1      15      2  <CRLF>
-      6  tkKeyword              3:1      17      9  interface
+      6  tkStrictKeyword        3:1      17      9  interface
       7  tkEOL                 3:10      26      2  <CRLF>
       8  tkEOL                  4:1      28      2  <CRLF>
-      9  tkKeyword              5:1      30     14  implementation
+      9  tkStrictKeyword        5:1      30     14  implementation
      10  tkEOL                 5:15      44      2  <CRLF>
      11  tkEOL                  6:1      46      2  <CRLF>
-     12  tkKeyword              7:1      48      3  end
+     12  tkStrictKeyword        7:1      48      3  end
      13  tkSymbol               7:4      51      1  .
      14  tkEOL                  7:5      52      2  <CRLF>
      15  tkEOF                  8:1      54      0
@@ -94,7 +94,7 @@ Header Lines:
 Token Table Columns:
 
   Idx    -- 0-based token index
-  Kind   -- TTokenKind name (tkKeyword, tkSymbol, ...)
+  Kind   -- TTokenKind name (tkStrictKeyword, tkSymbol, ...)
   L:C    -- 1-based line:column of the token's first character
   Offset -- 0-based character offset into the source string
   Len    -- character count of the token (= System.Length(Token.Text))
@@ -124,7 +124,7 @@ and tooling integrations.
 {
   "toolName": "DelphiLexer.TokenDump",
   "inputFile": "test\\golden\\minimal.pas",
-  "formatVersion": "1.0.0",
+  "formatVersion": "1.1.0",
   "options": {
     "encoding": "65001 (UTF-8)"
   },
@@ -138,7 +138,7 @@ and tooling integrations.
   "tokens": [
     {
       "index": 0,
-      "kind": "tkKeyword",
+      "kind": "tkStrictKeyword",
       "line": 1,
       "col": 1,
       "offset": 0,
@@ -192,7 +192,7 @@ and tooling integrations.
     },
     {
       "index": 6,
-      "kind": "tkKeyword",
+      "kind": "tkStrictKeyword",
       "line": 3,
       "col": 1,
       "offset": 17,
@@ -219,7 +219,7 @@ and tooling integrations.
     },
     {
       "index": 9,
-      "kind": "tkKeyword",
+      "kind": "tkStrictKeyword",
       "line": 5,
       "col": 1,
       "offset": 30,
@@ -246,7 +246,7 @@ and tooling integrations.
     },
     {
       "index": 12,
-      "kind": "tkKeyword",
+      "kind": "tkStrictKeyword",
       "line": 7,
       "col": 1,
       "offset": 48,

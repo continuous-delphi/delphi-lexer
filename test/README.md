@@ -6,7 +6,7 @@ DUnitX test project: `/tests/DelphiLexer.Tests.dproj`
 | Fixture | Coverage |
 |---|---|
 | `Core` | Basic token kinds, round-trip on trivial input |
-| `Keywords` | All 67 reserved words; escaped identifiers; contextual keywords |
+| `Keywords` | All reserved words (strict+directive+visibility); escaped identifiers |
 | `NumericLiterals` | Float, exponent backtracking, octal, hex/binary digit separators, decimal separators |
 | `TokenMetadata` | StartOffset and Length for all token kinds |
 | `TokenPosition` | Line and Col after EOL sequences including bare CR |

@@ -79,7 +79,7 @@ begin
   WriteLn('');
   WriteLn(AppName);
   WriteLn('inputFile: ', Config.FileName);
-  WriteLn('formatVersion: ', '1.0.0'); // Bump if TEXT output structure changes
+  WriteLn('formatVersion: ', '1.1.0'); // Bump if TEXT output structure (or logic) changes
   WriteLn('');
 
   WriteLn(Format('  %5s  %-17s  %-7s  %6s  %5s  %s',
@@ -178,7 +178,7 @@ begin
 
     Root.AddPair('toolName', AppName);
     Root.AddPair('inputFile', Config.FileName);
-    Root.AddPair('formatVersion', '1.0.0');  // Bump if JSON output structure changes
+    Root.AddPair('formatVersion', '1.1.0');  // Bump if JSON output structure (or logic) changes
 
     Options := TJSONObject.Create;
     Options.AddPair('encoding', Config.Encoding.EncodingName);

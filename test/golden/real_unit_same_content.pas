@@ -8,7 +8,7 @@ type
   TIntArray = array of Integer;
 
 function Sum(const Values: TIntArray): Integer;
-function Max(A, B: Integer): Integer;
+function Max(A, B: Integer): Integer; deprecated;
 
 implementation
 

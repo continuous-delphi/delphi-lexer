@@ -117,7 +117,8 @@ source transformations using deterministic token-level output.
 | Kind | Produced for |
 |---|---|
 | `tkIdentifier` | Plain identifier, or `&ident` escaped identifier |
-| `tkKeyword` | Reserved word (case-insensitive match against DELPHI_KEYWORDS) |
+| `tkStrictKeyword` | Globally reserved key word (`begin`, `if`...) |
+| `tkContextKeyword` | Contextually relevant key word (`public`, `deprecated`...) |
 | `tkNumber` | Decimal, hex (`$`), binary (`%`), octal (`&`), float |
 | `tkString` | `'single-quoted'` or `'''triple-quoted multiline'''` |
 | `tkCharLiteral` | `#nn` or `#$hex` character literal |
@@ -163,7 +164,7 @@ callers.
 Round-trip fidelity is preserved in all unterminated cases.
 
 Callers that require valid input can check `Token.Kind = tkInvalid` or count
-invalid tokens with `LexDump`'s `Invalid:` summary field.
+invalid tokens with `TokenDump`'s `Invalid:` summary field.
 
 ---
 
@@ -239,12 +240,12 @@ $FF_FF      1__000___000    3.14___15__    1e1_0    %101_0___0101
 If `e` or `E` appears after a decimal integer but is not followed by digits
 (optionally with a leading `+` or `-` sign), the lexer backtracks past the
 `e`. The digit run up to that point becomes `tkNumber`; the `e` begins the
-next token (typically `tkIdentifier` or `tkKeyword`).
+next token (typically `tkIdentifier` or `tkStrictKeyword/tkContextKeyword`).
 
 ```text
 1e6    ->  tkNumber('1e6')       // exponent digits present
 1e     ->  tkNumber('1') + tkIdentifier('e')   // no digits after e
-1exit  ->  tkNumber('1') + tkKeyword('exit')   // e starts keyword
+1exit  ->  tkNumber('1') + tkIdentifier('exit')   // e starts identifier
 ```
 
 ---
@@ -259,14 +260,11 @@ character after `.` is also `.`, the decimal point is not consumed.
 
 ## Reserved words
 
-- 67 reserved words are classified as `tkKeyword`. All others tokenize as
-`tkIdentifier`. The list is maintained in `DelphiLexer.Keywords.pas` with
-a comment block explaining inclusion and exclusion decisions.
-
-- Contextual keywords (`virtual`, `override`, `cdecl`, `abstract`, `forward`,
-`deprecated`, and ~60 others) are intentionally absent from the list --
-they tokenize as `tkIdentifier` because the Delphi compiler accepts them as
-plain identifiers without `&`-escaping.
+- 123 reserved words are classified as `tkStrictKeyword` or `tkContextKeyword`
+All others tokenize as `tkIdentifier`. The list is maintained in
+`DelphiLexer.Keywords.pas` and has been matched to Embarcadero's official
+documentation: [https://docwiki.embarcadero.com/RADStudio/en/Fundamental_Syntactic_Elements_%28Delphi%29]
+(https://docwiki.embarcadero.com/RADStudio/en/Fundamental_Syntactic_Elements_%28Delphi%29).
 
 ---
 

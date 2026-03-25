@@ -48,7 +48,7 @@ DelphiLexer.TokenStats.exe [file] [options]
 ```text
 DelphiLexer.TokenStats
 inputFile: test\golden\real_unit.pas
-formatVersion: 1.0.0
+formatVersion: 1.1.0
 
 File               : test\golden\real_unit.pas
 Tokens             : 201
@@ -58,7 +58,8 @@ RoundTrip          : PASS
 
 By Kind:
   tkIdentifier     : 39
-  tkKeyword        : 24
+  tkStrictKeyword  : 24
+  tkContextKeyword : 0
   tkNumber         : 1
   tkString         : 0
   tkCharLiteral    : 0
@@ -70,7 +71,7 @@ By Kind:
   tkEOF            : 1
   tkInvalid        : 0
 
-Top Keywords:
+Top Strict Keywords:
   function         : 4
   end              : 3
   begin            : 2
@@ -81,6 +82,9 @@ Top Keywords:
   for              : 1
   if               : 1
   implementation   : 1
+
+Top Contextual Keywords:
+  (none)
 
 Top Symbols:
   ;                : 12
@@ -147,7 +151,7 @@ and tooling integrations.
 {
   "toolName": "DelphiLexer.TokenStats",
   "inputFile": "test\\golden\\real_unit.pas",
-  "formatVersion": "1.0.0",
+  "formatVersion": "1.1.0",
   "options": {
     "encoding": "65001 (UTF-8)"
   },
@@ -163,7 +167,8 @@ and tooling integrations.
   },
   "countsByKind": {
     "tkIdentifier": 39,
-    "tkKeyword": 24,
+    "tkStrictKeyword": 24,
+    "tkContextKeyword": 0,
     "tkNumber": 1,
     "tkString": 0,
     "tkCharLiteral": 0,
@@ -175,7 +180,7 @@ and tooling integrations.
     "tkEOF": 1,
     "tkInvalid": 0
   },
-  "keywordCounts": [
+  "strictKeywordCounts": [
     {
       "keyword": "function",
       "count": 4
@@ -244,6 +249,8 @@ and tooling integrations.
       "keyword": "var",
       "count": 1
     }
+  ],
+  "contextualKeywordCounts": [
   ],
   "symbolCounts": [
     {
