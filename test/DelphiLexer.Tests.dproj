@@ -92,6 +92,7 @@
         <DCCReference Include="..\source\DelphiLexer.Keywords.pas"/>
         <DCCReference Include="..\source\DelphiLexer.Scanner.pas"/>
         <DCCReference Include="..\source\DelphiLexer.Lexer.pas"/>
+        <DCCReference Include="..\source\DelphiLexer.Diff.pas"/>
         <DCCReference Include="Test.DelphiLexer.Core.pas"/>
         <DCCReference Include="Test.DelphiLexer.MultiLineStrings.pas"/>
         <DCCReference Include="Test.DelphiLexer.TokenMetadata.pas"/>
@@ -104,6 +105,7 @@
         <DCCReference Include="Test.DelphiLexer.InvalidTokens.pas"/>
         <DCCReference Include="Test.DelphiLexer.Symbols.pas"/>
         <DCCReference Include="Test.DelphiLexer.Golden.pas"/>
+        <DCCReference Include="Test.TokenCompare.Myers.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

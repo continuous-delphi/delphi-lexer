@@ -1,4 +1,4 @@
-﻿program DelphiLexer.Tests;
+program DelphiLexer.Tests;
 
 {$IFNDEF TESTINSIGHT}
 {$APPTYPE CONSOLE}
@@ -18,6 +18,7 @@ uses
   DelphiLexer.Keywords in '..\source\DelphiLexer.Keywords.pas',
   DelphiLexer.Scanner in '..\source\DelphiLexer.Scanner.pas',
   DelphiLexer.Lexer in '..\source\DelphiLexer.Lexer.pas',
+  DelphiLexer.Diff in '..\source\DelphiLexer.Diff.pas',
   Test.DelphiLexer.Core in 'Test.DelphiLexer.Core.pas',
   Test.DelphiLexer.MultiLineStrings in 'Test.DelphiLexer.MultiLineStrings.pas',
   Test.DelphiLexer.TokenMetadata in 'Test.DelphiLexer.TokenMetadata.pas',
@@ -29,7 +30,8 @@ uses
   Test.DelphiLexer.QualifiedIdentifiers in 'Test.DelphiLexer.QualifiedIdentifiers.pas',
   Test.DelphiLexer.InvalidTokens in 'Test.DelphiLexer.InvalidTokens.pas',
   Test.DelphiLexer.Symbols in 'Test.DelphiLexer.Symbols.pas',
-  Test.DelphiLexer.Golden in 'Test.DelphiLexer.Golden.pas';
+  Test.DelphiLexer.Golden in 'Test.DelphiLexer.Golden.pas',
+  Test.TokenCompare.Myers in 'Test.TokenCompare.Myers.pas';
 
 { keep comment here to protect the following conditional from being removed by the IDE when adding a unit }
 {$IFNDEF TESTINSIGHT}
