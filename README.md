@@ -83,7 +83,7 @@ docs/               Architecture notes
 - Precise source mapping (offset + length)
 - Minimal assumptions about downstream usage
 - Clear handling of malformed input
-- see also: [Dev Note - Design Invariants.md](/docs/Dev%20Note%20-%20Design%20Invariants.md)
+- see also: [Dev Note - Design Invariants.md](/docs/dev-note--design-invariants.md)
 
 ---
 
