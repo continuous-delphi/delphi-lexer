@@ -436,6 +436,8 @@ begin
   if (C1 = '>') and (C2 = '=') then begin Result := '>='; IncI(Sc, 2); Exit; end;
   if (C1 = '<') and (C2 = '>') then begin Result := '<>'; IncI(Sc, 2); Exit; end;
   if (C1 = '.') and (C2 = '.') then begin Result := '..'; IncI(Sc, 2); Exit; end;
+  if (C1 = '<') and (C2 = '<') then begin Result := '<<'; IncI(Sc, 2); Exit; end;
+  if (C1 = '>') and (C2 = '>') then begin Result := '>>'; IncI(Sc, 2); Exit; end;
   // Single-char.
   Result := C1;
   IncI(Sc);

@@ -11,6 +11,7 @@ uses
   TestInsight.DUnitX,
   {$ELSE}
   DUnitX.Loggers.Console,
+  DUnitX.Loggers.XML.NUnit,
   {$ENDIF }
   DUnitX.TestFramework,
   DelphiLexer.Token in '..\source\DelphiLexer.Token.pas',
