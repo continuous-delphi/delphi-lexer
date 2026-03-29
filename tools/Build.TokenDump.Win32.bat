@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 setlocal
 
 call C:\Delphi\RADStudio37\bin\RSVars.bat
