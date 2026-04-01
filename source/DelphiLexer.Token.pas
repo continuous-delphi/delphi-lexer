@@ -69,6 +69,11 @@ const
 
 function TokenKindName(K: TTokenKind): string;
 
+// Returns True if Kind is a trivia token: whitespace, EOL, comment, or directive.
+// These are the token kinds that the grouping pass assigns as leading/trailing
+// trivia on the surrounding semantic tokens.
+function IsTrivia(Kind: TTokenKind): Boolean;
+
 implementation
 
 
@@ -83,6 +88,12 @@ begin
   if IsEmpty then
     Exit(0);
   Result := LastTokenIndex - FirstTokenIndex + 1;
+end;
+
+
+function IsTrivia(Kind: TTokenKind): Boolean;
+begin
+  Result := Kind in [tkWhitespace, tkEOL, tkComment, tkDirective];
 end;
 
 

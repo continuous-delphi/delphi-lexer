@@ -447,6 +447,76 @@ end;
 
 
 // =========================================================================
+// ApplyTriviaSpans
+// =========================================================================
+//
+// Single O(N) pass over the flat token list produced by TokenizeInto.
+// Assigns LeadingTrivia and TrailingTrivia spans to every semantic token
+// (and to the tkEOF sentinel as the anchor for trailing-file trivia).
+// Trivia tokens themselves retain their MakeToken-initialized empty spans.
+//
+// Trailing trivia: same-line tokens immediately after the semantic token,
+//   through and including the first tkEOL encountered (if any).
+// Leading trivia:  everything from the end of the previous token's trailing
+//   span up to (but not including) the current token.
+
+procedure ApplyTriviaSpans(Tokens: TList<TToken>);
+var
+  I, LeadFirst, J: Integer;
+  T: TToken;
+begin
+  LeadFirst := 0;
+
+  for I := 0 to Tokens.Count - 1 do
+  begin
+    if IsTrivia(Tokens[I].Kind) then
+      Continue;
+
+    // Semantic token or tkEOF sentinel at I.
+    T := Tokens[I];
+
+    // Leading trivia: [LeadFirst .. I-1]
+    if I > LeadFirst then
+    begin
+      T.LeadingTrivia.FirstTokenIndex := LeadFirst;
+      T.LeadingTrivia.LastTokenIndex  := I - 1;
+    end
+    else
+    begin
+      T.LeadingTrivia.FirstTokenIndex := -1;
+      T.LeadingTrivia.LastTokenIndex  := -1;
+    end;
+
+    // Trailing trivia: scan forward through same-line trivia, stop after EOL.
+    J := I + 1;
+    while (J < Tokens.Count) and IsTrivia(Tokens[J].Kind) do
+    begin
+      if Tokens[J].Kind = tkEOL then
+      begin
+        Inc(J);  // include the EOL in the trailing span
+        Break;
+      end;
+      Inc(J);
+    end;
+    // Trailing covers [I+1 .. J-1]
+    if J > I + 1 then
+    begin
+      T.TrailingTrivia.FirstTokenIndex := I + 1;
+      T.TrailingTrivia.LastTokenIndex  := J - 1;
+    end
+    else
+    begin
+      T.TrailingTrivia.FirstTokenIndex := -1;
+      T.TrailingTrivia.LastTokenIndex  := -1;
+    end;
+
+    Tokens[I] := T;
+    LeadFirst := J;
+  end;
+end;
+
+
+// =========================================================================
 // TDelphiLexer
 // =========================================================================
 
@@ -661,6 +731,8 @@ begin
   TokCol    := Sc.Col;
   TokOffset := Sc.I - 1; // = Sc.N; one past the last character (0-based)
   Add(tkEOF, '');
+
+  ApplyTriviaSpans(OutTokens);
 end;
 
 end.
