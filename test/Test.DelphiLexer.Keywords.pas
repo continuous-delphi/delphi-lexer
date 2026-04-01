@@ -3,7 +3,7 @@
 // Keyword classification tests.
 //
 // Verifies:
-//   - All 67 reserved words are recognised by IsDelphiKeyword and tokenize
+//   - All reserved words are recognised by IsDelphiKeyword and tokenize
 //     as tkKeyword (case-insensitive).
 //   - Escaped reserved words (&begin, &type) tokenize as tkIdentifier.
 //   - Mixed-case forms (Begin, BEGIN) still tokenize as tkKeyword.
@@ -34,10 +34,10 @@ type
     [TearDown]
     procedure TearDown;
 
-    // All 67 reserved words via IsDelphiKeyword (direct API).
+    // All reserved words via IsDelphiKeyword (direct API).
     [Test] procedure IsDelphiKeyword_AllReservedWords_ReturnTrue;
 
-    // All 67 reserved words via the tokenizer.
+    // All reserved words via the tokenizer.
     [Test] procedure AllReservedWords_Tokenize_As_tkKeyword;
 
     // Escaped reserved words must be tkIdentifier, not tkKeyword.
