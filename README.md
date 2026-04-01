@@ -115,8 +115,8 @@ source transformations using deterministic token-level output.
 | `Col` | `Integer` | 1-based column number of the first character |
 | `StartOffset` | `Integer` | 0-based character index of the first character in the source string |
 | `Length` | `Integer` | Character count of `Text` (equals `System.Length(Text)`) |
-| `LeadingTrivia` | 'Integer` |  Trivia tokens immediately before this token |
-| `TrailingTrivia` | 'Integer` | same-line trivia tokens after this token (incl. EOL) |
+| `LeadingTrivia` | `Integer` |  Trivia tokens immediately before this token |
+| `TrailingTrivia` | `Integer` | same-line trivia tokens after this token (incl. EOL) |
 
 ## TTokenKind values
 
