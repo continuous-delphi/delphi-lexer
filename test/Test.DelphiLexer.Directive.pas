@@ -30,6 +30,7 @@ type
     [Test] procedure ParenStarDirective_EmitsKind_tkDirective;
     [Test] procedure ParenStarComment_EmitsKind_tkComment;
     [Test] procedure SlashSlashComment_EmitsKind_tkComment;
+    [Test] procedure SlashSlash_WithDollarPrefix_IsNeverDirective;
 
     [Test] procedure BraceDirective;
     [Test] procedure ParenStarDirective;
@@ -117,6 +118,21 @@ begin
   T := Tok('// line comment');
   try
     Assert.AreEqual(Ord(tkComment), Ord(T[0].Kind), 'kind');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TDirectiveTests.SlashSlash_WithDollarPrefix_IsNeverDirective;
+var
+  T: TList<TToken>;
+begin
+  // '//' has no directive form: even a dollar-sign prefix must produce tkComment.
+  T := Tok('//$IFDEF DEBUG');
+  try
+    Assert.AreEqual(Ord(tkComment), Ord(T[0].Kind), 'kind');
+    Assert.IsFalse(Ord(T[0].Kind) = Ord(tkDirective), 'must not be tkDirective');
   finally
     T.Free;
   end;
