@@ -37,9 +37,6 @@ type
 
 implementation
 
-uses
-  System.SysUtils;
-
 
 procedure TDirectiveTests.Setup;
 begin

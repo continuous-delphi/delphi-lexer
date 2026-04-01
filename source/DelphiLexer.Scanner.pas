@@ -135,7 +135,6 @@ begin
     begin
       Result := Sc.S[Sc.I];
       IncI(Sc);
-      Exit;
     end;
   end;
 end;

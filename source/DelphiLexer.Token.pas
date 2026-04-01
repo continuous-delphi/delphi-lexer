@@ -26,13 +26,26 @@ type
   );
 
 
+  // Inclusive range [FirstTokenIndex .. LastTokenIndex] into a TList<TToken>.
+  // Identifies a contiguous run of trivia tokens owned by one semantic token.
+  // Empty when FirstTokenIndex = -1 (use IsEmpty / Count helpers).
+  TTriviaSpan = record
+    FirstTokenIndex: Integer;
+    LastTokenIndex:  Integer;
+    function IsEmpty: Boolean;
+    function Count: Integer;
+  end;
+
+
   TToken = record
-    Kind:        TTokenKind;
-    Text:        string;    // Characters of this token, as they appear in the source
-    Line:        Integer;   // 1-based line number of the first character
-    Col:         Integer;   // 1-based column number of the first character
-    StartOffset: Integer;   // 0-based absolute character index into source
-    Length:      Integer;   // character count of Text: equals `System.Length(Text)`
+    Kind:           TTokenKind;
+    Text:           string;    // Characters of this token, as they appear in the source
+    Line:           Integer;   // 1-based line number of the first character
+    Col:            Integer;   // 1-based column number of the first character
+    StartOffset:    Integer;   // 0-based absolute character index into source
+    Length:         Integer;   // character count of Text: equals `System.Length(Text)`
+    LeadingTrivia:  TTriviaSpan;  // trivia tokens immediately before this token
+    TrailingTrivia: TTriviaSpan;  // same-line trivia tokens after this token (incl. EOL)
   end;
 
 
@@ -54,10 +67,24 @@ const
     'tkInvalid'
   );
 
-  function TokenKindName(K: TTokenKind): string;
-
+function TokenKindName(K: TTokenKind): string;
 
 implementation
+
+
+function TTriviaSpan.IsEmpty: Boolean;
+begin
+  Result := FirstTokenIndex = -1;
+end;
+
+
+function TTriviaSpan.Count: Integer;
+begin
+  if IsEmpty then
+    Exit(0);
+  Result := LastTokenIndex - FirstTokenIndex + 1;
+end;
+
 
 function TokenKindName(K: TTokenKind): string;
 begin

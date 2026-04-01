@@ -43,7 +43,6 @@ implementation
 
 uses
   System.SysUtils,
-  System.Character,
   DelphiLexer.Keywords,
   DelphiLexer.Scanner;
 
@@ -64,12 +63,16 @@ end;
 
 function MakeToken(AKind: TTokenKind; const AText: string; ALine, ACol, AStartOffset: Integer): TToken;
 begin
-  Result.Kind        := AKind;
-  Result.Text        := AText;
-  Result.Line        := ALine;
-  Result.Col         := ACol;
-  Result.StartOffset := AStartOffset;
-  Result.Length      := System.Length(AText);
+  Result.Kind                       := AKind;
+  Result.Text                       := AText;
+  Result.Line                       := ALine;
+  Result.Col                        := ACol;
+  Result.StartOffset                := AStartOffset;
+  Result.Length                     := System.Length(AText);
+  Result.LeadingTrivia.FirstTokenIndex  := -1;
+  Result.LeadingTrivia.LastTokenIndex   := -1;
+  Result.TrailingTrivia.FirstTokenIndex := -1;
+  Result.TrailingTrivia.LastTokenIndex  := -1;
 end;
 
 
@@ -97,7 +100,6 @@ begin
       if Peek(Sc, 1) = CHAR_SINGLE_QUOTE then
       begin
         IncI(Sc, 2); // doubled quote inside string
-        Continue;
       end
       else
       begin

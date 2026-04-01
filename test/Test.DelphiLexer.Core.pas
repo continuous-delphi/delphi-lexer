@@ -9,7 +9,6 @@ uses
   DUnitX.TestFramework,
   System.Generics.Collections,
   DelphiLexer.Token,
-  DelphiLexer.Keywords,
   DelphiLexer.Lexer;
 
 type
@@ -62,7 +61,7 @@ type
 implementation
 
 uses
-  System.SysUtils;
+  DelphiLexer.Keywords;
 
 
 procedure TLexerCoreTests.Setup;
@@ -292,7 +291,7 @@ var
 begin
   T := Tok(Src);
   try
-    var Eof := T[T.Count - 1];
+    var Eof := T.Last;
     Assert.AreEqual(Ord(tkEOF), Ord(Eof.Kind), 'kind');
     Assert.AreEqual(System.Length(Src), Eof.StartOffset, 'EOF offset');
   finally

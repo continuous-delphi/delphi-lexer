@@ -3,7 +3,6 @@ unit TokenCompare;
 interface
 
 uses
-  System.SysUtils,
   System.Generics.Collections,
   DelphiLexer.Utils,
   DelphiLexer.Token,
@@ -35,6 +34,7 @@ type
 implementation
 
 uses
+  System.SysUtils,
   System.JSON,
   DelphiLexer.Lexer;
 

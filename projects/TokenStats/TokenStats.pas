@@ -3,7 +3,6 @@ unit TokenStats;
 interface
 
 uses
-  System.SysUtils,
   System.Generics.Collections,
   DelphiLexer.Utils,
   DelphiLexer.Token;
@@ -27,15 +26,16 @@ type
 implementation
 
 uses
+  System.SysUtils,
   System.JSON,
   System.Generics.Defaults,
   DelphiLexer.Lexer;
 
 type
 
-  TTokenKinds = Array[TTokenKind] of Integer;
+  TTokenKinds = array[TTokenKind] of Integer;
 
-  TTokenSummary = Class
+  TTokenSummary = class
   private const
     MAX_INVALID_TOKENS = 10000;  // toconsider: add param for unlimited
   private
@@ -63,7 +63,7 @@ type
     property ContextPairs: TList<TPair<string, Integer>> read FContextPairs;
     property SymbolPairs: TList<TPair<string, Integer>> read FSymbolPairs;
     property CountsByKind:TTokenKinds read FCountsByKind;
-  End;
+  end;
 
 class function TTokenStats.Run: Integer;
 var
@@ -119,9 +119,9 @@ begin
     WriteLn('');
     WriteLn(Format('%-18s : %s', ['File', Config.FileName]));
     WriteLn(Format('%-18s : %d', ['Tokens', Tokens.Count]));
-    WriteLn(Format('%-18s : %d', ['Lines', rep.MaxLine]));
-    WriteLn(Format('%-18s : %d', ['Invalid', rep.InvalidCount]));
-    if rep.RoundTripOK then
+    WriteLn(Format('%-18s : %d', ['Lines', Rep.MaxLine]));
+    WriteLn(Format('%-18s : %d', ['Invalid', Rep.InvalidCount]));
+    if Rep.RoundTripOK then
       WriteLn(Format('%-18s : %s', ['RoundTrip', 'PASS']))
     else
       WriteLn(Format('%-18s : %s', ['RoundTrip', 'FAIL ***']));
@@ -129,48 +129,48 @@ begin
     WriteLn;
     WriteLn('By Kind:');
     for K := Low(TTokenKind) to High(TTokenKind) do
-      WriteLn(Format('  %-16s : %d', [TokenKindName(K), rep.CountsByKind[K]]));
+      WriteLn(Format('  %-16s : %d', [TokenKindName(K), Rep.CountsByKind[K]]));
 
     WriteLn;
     WriteLn('Top Strict Keywords:');
 
-    if rep.StrictPairs.Count = 0 then
+    if Rep.StrictPairs.Count = 0 then
       WriteLn('  (none)')
     else
     begin
-      N := rep.StrictPairs.Count;
+      N := Rep.StrictPairs.Count;
       if N > TOP_N then N := TOP_N;
       for I := 0 to N - 1 do
-        WriteLn(Format('  %-16s : %d', [rep.StrictPairs[I].Key, rep.StrictPairs[I].Value]));
+        WriteLn(Format('  %-16s : %d', [Rep.StrictPairs[I].Key, Rep.StrictPairs[I].Value]));
     end;
 
     WriteLn;
     WriteLn('Top Contextual Keywords:');
-    if rep.ContextPairs.Count = 0 then
+    if Rep.ContextPairs.Count = 0 then
       WriteLn('  (none)')
     else
     begin
-      N := rep.ContextPairs.Count;
+      N := Rep.ContextPairs.Count;
       if N > TOP_N then N := TOP_N;
       for I := 0 to N - 1 do
-        WriteLn(Format('  %-16s : %d', [rep.ContextPairs[I].Key, rep.ContextPairs[I].Value]));
+        WriteLn(Format('  %-16s : %d', [Rep.ContextPairs[I].Key, Rep.ContextPairs[I].Value]));
     end;
 
     WriteLn;
     WriteLn('Top Symbols:');
-    if rep.SymbolPairs.Count = 0 then
+    if Rep.SymbolPairs.Count = 0 then
       WriteLn('  (none)')
     else
     begin
-      N := rep.SymbolPairs.Count;
+      N := Rep.SymbolPairs.Count;
       if N > TOP_N then N := TOP_N;
       for I := 0 to N - 1 do
-        WriteLn(Format('  %-16s : %d', [rep.SymbolPairs[I].Key, rep.SymbolPairs[I].Value]));
+        WriteLn(Format('  %-16s : %d', [Rep.SymbolPairs[I].Key, Rep.SymbolPairs[I].Value]));
     end;
 
-    if not rep.RoundTripOk then
+    if not Rep.RoundTripOk then
       Result := ExitCode_RoundTripFailed
-    else if rep.InvalidCount > 0 then
+    else if Rep.InvalidCount > 0 then
       Result := ExitCode_InvalidTokens
     else
       Result := ExitCode_Success;

@@ -122,7 +122,7 @@ implementation
 uses
   System.Classes,
   System.IOUtils,
-  WinAPI.Windows;
+  Winapi.Windows;
 
 
 class function TWinUtils.GetModuleVersion(const AIncludeBuild:Boolean=False):string;
@@ -131,8 +131,8 @@ const
 var
   VersionInfoBlock: TMemoryStream;
   AppResource: TResourceStream;
-  FixedFileInfo: PVSFIXEDFILEINFO;
-  puLen: UInt;
+  FixedFileInfo: PVSFixedFileInfo;
+  puLen: UINT;
 begin
   Result := '';
 
@@ -296,7 +296,9 @@ begin
     WriteLn('Version: ', TWinUtils.GetModuleVersion);
     WriteLn;
     for Line in Parser.Usage do
+    begin
       WriteLn(Line);
+    end;
     WriteLn;
     if Opts.InputFile = ''  then Result.ExitCode := 1;
     Exit;
@@ -311,7 +313,7 @@ begin
   end;
 
   Result.Encoding := TLexerUtils.ResolveEncoding(Opts.Encoding);
-  if Result.Encoding = nil then
+  if not Assigned(Result.Encoding) then
   begin
     WriteLn('error: unknown encoding: ', Opts.Encoding);
     WriteLn('Supported: utf-8, utf-16, utf-16be, ansi, ascii, default');
@@ -320,9 +322,13 @@ begin
   end;
 
   if SameText(Opts.Format, 'json') then
-    Result.OutputFormat := TOutputFormat.ofJson
+  begin
+    Result.OutputFormat := TOutputFormat.ofJson;
+  end
   else if SameText(Opts.Format, 'text') then
-    Result.OutputFormat := TOutputFormat.ofText
+  begin
+    Result.OutputFormat := TOutputFormat.ofText;
+  end
   else
   begin
     WriteLn('error: unknown format: ', Opts.Format);
@@ -410,7 +416,6 @@ begin
         WriteLn('error: could not read file: ', E.Message);
         Result.BaseOptions.ExitCode := 1;
         Result.BaseOptions.AbortProgram := True;
-        Exit;
       end;
     end;
   finally

@@ -202,13 +202,15 @@ const
     (Name: 'xor';             Kind: kwXor;              Category: kcStrict)
   );
 
-  function FindDelphiKeyword(const S: string; out Info: TKeywordInfo): Boolean;
-  function IsDelphiKeyword(const S: string): Boolean;
+function FindDelphiKeyword(const S: string; out Info: TKeywordInfo): Boolean;
+function IsDelphiKeyword(const S: string): Boolean;
+
 
 implementation
 
 uses
   System.SysUtils;
+
 
 function CompareKeywordText(const S: string; P: PChar): Integer;
 var
@@ -259,7 +261,7 @@ begin
     if Cmp = 0 then
     begin
       Info := DELPHI_KEYWORDS[Mid];
-      Exit(True)
+      Exit(True);
     end
     else if Cmp < 0 then H := Mid - 1
     else L := Mid + 1;

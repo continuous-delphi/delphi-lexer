@@ -3,7 +3,6 @@ unit TokenDump;
 interface
 
 uses
-  System.SysUtils,
   System.Generics.Collections,
   DelphiLexer.Utils,
   DelphiLexer.Token;
@@ -27,6 +26,7 @@ type
 implementation
 
 uses
+  System.SysUtils,
   System.JSON,
   DelphiLexer.Lexer;
 
@@ -73,7 +73,7 @@ var
   LC: string;
 begin
 
-  RoundTripOk := TLexerUtils.RoundTripCheck(Tokens, Config.FileContents);
+  RoundTripOK := TLexerUtils.RoundTripCheck(Tokens, Config.FileContents);
 
   // Header
   WriteLn('');
@@ -113,21 +113,21 @@ begin
   else
     Write(' Invalid: 0;');
 
-  if RoundTripOk then
-    WriteLn(' Round-trip: OK')
+  if RoundTripOK then
+  begin
+    WriteLn(' Round-trip: OK');
+    if InvalidCount > 0 then
+      Result := ExitCode_InvalidTokens
+    else
+      Result := ExitCode_Success;
+  end
   else
+  begin
     WriteLn(' Round-trip: FAIL ***');
-
-
-  if not RoundTripOk then
-    Result := ExitCode_RoundTripFailed
-  else if InvalidCount > 0 then
-    Result := ExitCode_InvalidTokens
-  else
-    Result := ExitCode_Success;
+    Result := ExitCode_RoundTripFailed;
+  end;
 
   WriteLn('Exit Code: ', Result);
-
 end;
 
 

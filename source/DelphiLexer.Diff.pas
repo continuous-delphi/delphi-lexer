@@ -71,10 +71,6 @@ function BuildDiffList(
 
 implementation
 
-uses
-  System.SysUtils,
-  System.Math;
-
 
 // ---------------------------------------------------------------------------
 // Myers forward pass
