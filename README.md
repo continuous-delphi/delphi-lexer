@@ -130,6 +130,7 @@ source transformations using deterministic token-level output.
 | `tkCharLiteral` | `#nn` or `#$hex` character literal |
 | `tkComment` | `{ }`, `(* *)`, or `//` comment |
 | `tkDirective` | `{$ }` or `(*$ *)` compiler directive |
+| `tkAsmBody` | Opaque payload of an `asm ... end` block (see below) |
 | `tkSymbol` | Operator or punctuation (`:=`, `..`, `<=`, `>=`, `<>`, `(`, `)`, etc.) |
 | `tkWhitespace` | Run of spaces and/or tabs |
 | `tkEOL` | Line ending: `#13#10` (CRLF), `#10` (LF), or `#13` (bare CR) |
@@ -137,7 +138,7 @@ source transformations using deterministic token-level output.
 | `tkInvalid` | Character or prefix that does not begin any valid Delphi token |
 
 
-Note: `//` comment tokens do not include the trailing EOL.
+`tkComment` Note: `//` comment tokens do not include the trailing EOL.
 After a line comment, the line ending is a separate `tkEOL` token -- it is
 not part of the `tkComment` text. This is consistent with how EOLs are
 handled everywhere else in the token stream (they are always their own
@@ -145,6 +146,10 @@ tokens), but it differs from some other lexers where the newline is
 considered part of the comment. Callers that need to detect "end of line
 after a comment" should look at the token immediately following the
 `tkComment`.
+
+`tkString` Note: adjacent string segments and # char literals are emitted as separate tokens
+- Example:
+  `'hello'#32'world'` -> tkString + tkCharLiteral + tkString
 
 ---
 
@@ -181,6 +186,77 @@ Round-trip fidelity is preserved in all unterminated cases.
 
 Callers that require valid input can check `Token.Kind = tkInvalid` or count
 invalid tokens with `TokenDump`'s `Invalid:` summary field.
+
+---
+
+## Asm block policy
+
+The contents of a Delphi `asm ... end` block are intentionally opaque. The
+interior is preserved as a single `tkAsmBody` token rather than being
+tokenised as ordinary Delphi keywords, operators, and identifiers.
+
+The three tokens produced for an asm block are:
+
+```pascal
+asm
+  mov eax, ebx
+  and eax, 1
+end
+```
+
+```
+tkStrictKeyword('asm')
+tkAsmBody(#13#10'  mov eax, ebx'#13#10'  and eax, 1'#13#10)
+tkStrictKeyword('end')
+```
+
+The `asm` and `end` keyword tokens behave identically to any other
+`tkStrictKeyword`. The body token carries all source text between them,
+including whitespace, line endings, comments, directives, and string
+literals, exactly as they appear in the source file.
+
+### Why opaque
+
+Assembly mnemonics and operators such as `and`, `or`, `not`, `shl`, `shr`,
+`mod`, and `div` overlap with Delphi keyword and operator tokens. Emitting
+them as ordinary Delphi tokens would be misleading: a formatter applying
+keyword-casing rules, for example, could silently alter assembly source.
+The lexer does not understand assembly syntax; it only needs to find the
+closing `end`.
+
+### Terminator detection
+
+The closing `end` is detected at a real word boundary: it must not be
+preceded or followed by an identifier character, and it must not appear
+inside a comment, directive, or quoted string. The following forms are
+skipped when scanning for the terminator:
+
+- `// ...` line comments
+- `{ ... }` and `{$ ... }` block comments and directives
+- `(* ... *)` and `(*$ ... *)` block comments and directives
+- `'...'` single-quoted string literals
+
+Identifiers that contain `end` as a substring -- such as `endian`, `vendor`,
+or `myendlabel` -- are not treated as terminators.
+
+### Nesting policy
+
+The scanner is shallow: the first valid standalone `end` after `asm`
+terminates the body, regardless of any nested `begin ... end` or
+`if ... begin ... end` structure that may appear inside the assembly text.
+
+### Unterminated asm block
+
+If the source ends before a closing `end` is found, the lexer emits
+`tkStrictKeyword('asm')` followed by a `tkAsmBody` whose text runs to EOF.
+No `end` token is fabricated. Round-trip fidelity is preserved.
+
+### Trivia spans
+
+Whitespace, line endings, comments, and directives between `asm` and `end`
+are part of the `tkAsmBody` text and are not produced as separate trivia
+tokens. As a result, the `asm` keyword carries no trailing trivia, and the
+`end` keyword carries no leading trivia from the block interior.
 
 ---
 

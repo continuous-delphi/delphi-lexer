@@ -437,6 +437,120 @@ end;
 
 
 // =========================================================================
+// ScanAsmBodyUntilTerminatingEnd
+// =========================================================================
+//
+// Scans from the current scanner position to the first standalone 'end' that
+// terminates a Delphi asm...end block, returning all consumed text as the body.
+//
+// The terminating 'end' must satisfy all of the following:
+//   - Case-insensitive match of e/E, n/N, d/D.
+//   - Not preceded by an identifier character (rules out 'vendor', 'lend').
+//   - Not followed by an identifier character (rules out 'endian', 'endless').
+//   - Not inside a //, { }, or (* *) comment or directive, or a quoted string.
+//
+// RC1 nesting policy: shallow -- the first valid standalone 'end' terminates
+// the body regardless of any nested begin/end structure inside the asm text.
+//
+// On return, Sc is positioned at the 'e' of the terminating 'end', or at
+// Sc.N + 1 if the source ends before a terminating 'end' is found.
+
+function ScanAsmBodyUntilTerminatingEnd(var Sc: TScanner): string;
+var
+  Start:            Integer;
+  PrevWasIdentChar: Boolean;
+  C:                Char;
+begin
+  Start := Sc.I;
+  PrevWasIdentChar := False;
+
+  while Sc.I <= Sc.N do
+  begin
+    C := Peek(Sc);
+
+    // Skip // line comment: consume from '//' to end of line, exclusive.
+    // 'end' appearing inside a line comment does not terminate the block.
+    if (C = '/') and (Peek(Sc, 1) = '/') then
+    begin
+      IncI(Sc, 2);
+      while (Sc.I <= Sc.N) and (Peek(Sc) <> #13) and (Peek(Sc) <> #10) do
+        IncI(Sc);
+      PrevWasIdentChar := False;
+      Continue;
+    end;
+
+    // Skip { } block comment or {$ } directive.
+    // 'end' appearing inside does not terminate the block.
+    if C = '{' then
+    begin
+      IncI(Sc); // consume '{'
+      while (Sc.I <= Sc.N) and (Peek(Sc) <> '}') do
+        IncI(Sc);
+      if Peek(Sc) = '}' then
+        IncI(Sc); // consume '}'
+      PrevWasIdentChar := False;
+      Continue;
+    end;
+
+    // Skip (* *) block comment or (*$ *) directive.
+    // 'end' appearing inside does not terminate the block.
+    if (C = '(') and (Peek(Sc, 1) = '*') then
+    begin
+      IncI(Sc, 2); // consume '(*'
+      while Sc.I <= Sc.N do
+      begin
+        if (Peek(Sc) = '*') and (Peek(Sc, 1) = ')') then
+        begin
+          IncI(Sc, 2); // consume '*)'
+          Break;
+        end;
+        IncI(Sc);
+      end;
+      PrevWasIdentChar := False;
+      Continue;
+    end;
+
+    // Skip single-quoted string. Stops at EOL if unterminated on this line,
+    // matching the main lexer's single-line string rule.
+    // 'end' appearing inside a string does not terminate the block.
+    if C = CHAR_SINGLE_QUOTE then
+    begin
+      IncI(Sc); // consume opening quote
+      while Sc.I <= Sc.N do
+      begin
+        if (Peek(Sc) = #13) or (Peek(Sc) = #10) then
+          Break; // unterminated string: stop at EOL
+        if Peek(Sc) = CHAR_SINGLE_QUOTE then
+        begin
+          IncI(Sc); // consume quote
+          if Peek(Sc) <> CHAR_SINGLE_QUOTE then
+            Break;  // closing quote -- done
+          IncI(Sc); // doubled quote inside string -- stay in string
+        end
+        else
+          IncI(Sc);
+      end;
+      PrevWasIdentChar := False;
+      Continue;
+    end;
+
+    // Check for standalone 'end' keyword (case-insensitive, both word boundaries).
+    if (not PrevWasIdentChar) and
+       CharInSet(C, ['e', 'E']) and
+       CharInSet(Peek(Sc, 1), ['n', 'N']) and
+       CharInSet(Peek(Sc, 2), ['d', 'D']) and
+       (not IsIdentChar(Peek(Sc, 3))) then
+      Break; // leave scanner at 'e' of 'end'; caller emits it as tkStrictKeyword
+
+    PrevWasIdentChar := IsIdentChar(C);
+    IncI(Sc);
+  end;
+
+  Result := Copy(Sc.S, Start, Sc.I - Start);
+end;
+
+
+// =========================================================================
 // ApplyTriviaSpans
 // =========================================================================
 //
@@ -521,6 +635,7 @@ procedure TDelphiLexer.TokenizeInto(const Source: string; const OutTokens: TList
 var
   Temp:TList<TToken>;
   StartIndex, I: Integer;
+  Tok:TToken;
 begin
 
   Temp := TList<TToken>.Create;
@@ -531,7 +646,20 @@ begin
     OutTokens.Capacity := StartIndex + Temp.Count;
 
     for I := 0 to Temp.Count - 1 do
-      OutTokens.Add(Temp[I]);
+    begin
+      Tok := Temp[I];
+      if not Tok.LeadingTrivia.IsEmpty then
+      begin
+        Inc(Tok.LeadingTrivia.FirstTokenIndex, StartIndex);
+        Inc(Tok.LeadingTrivia.LastTokenIndex,  StartIndex);
+      end;
+      if not Tok.TrailingTrivia.IsEmpty then
+      begin
+        Inc(Tok.TrailingTrivia.FirstTokenIndex, StartIndex);
+        Inc(Tok.TrailingTrivia.LastTokenIndex,  StartIndex);
+      end;
+      OutTokens.Add(Tok);
+    end;
   finally
     Temp.Free;
   end;
@@ -698,7 +826,20 @@ begin
         begin
           case KeywordInfo.Category of
             kcStrict:
+            begin
               Add(tkStrictKeyword, TokText);  // toconsider: collect KeywordInfo.Kind, KeywordInfo.Category
+              // After emitting the 'asm' keyword, switch to opaque-body capture.
+              // All text up to the terminating standalone 'end' becomes a single
+              // tkAsmBody token. The 'end' is left in the scanner for the next
+              // iteration to emit as tkStrictKeyword in the normal way.
+              if SameText(TokText, 'asm') then
+              begin
+                TokLine   := Sc.Line;
+                TokCol    := Sc.Col;
+                TokOffset := Sc.I - 1;
+                Add(tkAsmBody, ScanAsmBodyUntilTerminatingEnd(Sc));
+              end;
+            end;
             kcDirective,
             kcVisibility:
               Add(tkContextKeyword, TokText); // toconsider: collect KeywordInfo.Kind, KeywordInfo.Category

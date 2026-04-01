@@ -32,7 +32,8 @@ uses
   Test.DelphiLexer.Symbols in 'Test.DelphiLexer.Symbols.pas',
   Test.DelphiLexer.Golden in 'Test.DelphiLexer.Golden.pas',
   Test.TokenCompare.Myers in 'Test.TokenCompare.Myers.pas',
-  Test.DelphiLexer.TriviaSpans in 'Test.DelphiLexer.TriviaSpans.pas';
+  Test.DelphiLexer.TriviaSpans in 'Test.DelphiLexer.TriviaSpans.pas',
+  Test.DelphiLexer.AsmBody in 'Test.DelphiLexer.AsmBody.pas';
 
 { keep comment here to protect the following conditional from being removed by the IDE when adding a unit }
 {$IFNDEF TESTINSIGHT}

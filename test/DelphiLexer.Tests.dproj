@@ -117,6 +117,7 @@
         <DCCReference Include="Test.DelphiLexer.Golden.pas"/>
         <DCCReference Include="Test.TokenCompare.Myers.pas"/>
         <DCCReference Include="Test.DelphiLexer.TriviaSpans.pas"/>
+        <DCCReference Include="Test.DelphiLexer.AsmBody.pas"/>
         <None Include="README.md"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>

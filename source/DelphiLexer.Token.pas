@@ -18,6 +18,7 @@ type
     tkCharLiteral,   // #nn or #$hex
     tkComment,       // { } (* *) //
     tkDirective,     // {$ } (*$ *)
+    tkAsmBody,       // opaque payload of an asm...end block; not tokenised as assembly
     tkSymbol,        // operator or punctuation
     tkWhitespace,    // space/tab/vt/ff run
     tkEOL,           // CR, LF, or CRLF
@@ -60,6 +61,7 @@ const
     'tkCharLiteral',
     'tkComment',
     'tkDirective',
+    'tkAsmBody',
     'tkSymbol',
     'tkWhitespace',
     'tkEOL',
@@ -70,6 +72,7 @@ const
 function TokenKindName(K: TTokenKind): string;
 
 // Returns True if Kind is a trivia token: whitespace, EOL, comment, or directive.
+// tkAsmBody is NOT trivia -- it is a semantic token whose text happens to be opaque.
 // These are the token kinds that the grouping pass assigns as leading/trailing
 // trivia on the surrounding semantic tokens.
 function IsTrivia(Kind: TTokenKind): Boolean;
