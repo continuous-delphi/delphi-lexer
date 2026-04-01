@@ -1,4 +1,4 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <Base>True</Base>
         <AppType>Console</AppType>
@@ -116,6 +116,7 @@
         <DCCReference Include="Test.DelphiLexer.Symbols.pas"/>
         <DCCReference Include="Test.DelphiLexer.Golden.pas"/>
         <DCCReference Include="Test.TokenCompare.Myers.pas"/>
+        <DCCReference Include="Test.DelphiLexer.TriviaSpans.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
