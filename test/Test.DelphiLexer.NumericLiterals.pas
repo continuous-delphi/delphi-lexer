@@ -1,7 +1,7 @@
 ﻿unit Test.DelphiLexer.NumericLiterals;
 
 // Tests for numeric literal tokenization:
-//   float (decimal + exponent), octal (&nnn), hex/binary digit separators.
+//   float (decimal + exponent), octal (&nnn), hex/binary/octal digit separators.
 
 interface
 
@@ -41,6 +41,8 @@ type
     [Test] procedure Octal_BasicDigits_IsSingleToken;
     [Test] procedure Octal_SingleDigit_IsSingleToken;
     [Test] procedure Octal_DoesNotConsumeEscapedIdentifier;
+    [Test] procedure Octal_WithDigitSeparator_IsSingleToken;
+    [Test] procedure Octal_MultipleDigitSeparators_IsSingleToken;
 
     // --- Digit separators in hex and binary ---
     [Test] procedure Hex_WithDigitSeparator_IsSingleToken;
@@ -303,6 +305,36 @@ begin
     Assert.AreEqual(NativeInt(2), T.Count, 'count');
     Assert.AreEqual(Ord(tkIdentifier), Ord(T[0].Kind), 'kind');
     Assert.AreEqual('&begin', T[0].Text, 'text');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TNumericLiteralTests.Octal_WithDigitSeparator_IsSingleToken;
+var
+  T: TList<TToken>;
+begin
+  T := Tok('&0_77');
+  try
+    Assert.AreEqual(NativeInt(2), T.Count, 'count');
+    Assert.AreEqual(Ord(tkNumber), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual('&0_77', T[0].Text, 'text');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TNumericLiteralTests.Octal_MultipleDigitSeparators_IsSingleToken;
+var
+  T: TList<TToken>;
+begin
+  T := Tok('&3_7_7');
+  try
+    Assert.AreEqual(NativeInt(2), T.Count, 'count');
+    Assert.AreEqual(Ord(tkNumber), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual('&3_7_7', T[0].Text, 'text');
   finally
     T.Free;
   end;
