@@ -186,12 +186,15 @@ var
   SaveLine:        Integer;
   SaveCol:         Integer;
   SaveAtLineStart: Boolean;
+  DelimStr: string;
 begin
   Start := Sc.I;
 
   // Consume opening delimiter (DelimLen quotes) and the optional EOL.
   IncI(Sc, DelimLen);
   ReadEOLIfPresent(Sc);
+
+  DelimStr := RuntimeQuotes(DelimLen);
 
   // Scan lines until a line that begins with optional whitespace then exactly
   // DelimLen quotes followed by a non-quote character (closing delimiter).
@@ -210,7 +213,7 @@ begin
         IncI(Sc);
 
       // Check for exactly DelimLen quotes followed by a non-quote.
-      if (PeekSeq(Sc, DelimLen) = RuntimeQuotes(DelimLen)) and
+      if (PeekSeq(Sc, DelimLen) = DelimStr) and
          (Peek(Sc, DelimLen) <> CHAR_SINGLE_QUOTE) then
       begin
         IncI(Sc, DelimLen); // consume closing delimiter
