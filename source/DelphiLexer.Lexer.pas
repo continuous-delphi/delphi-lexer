@@ -315,28 +315,14 @@ begin
 end;
 
 
-function ReadWhile(var Sc: TScanner; const Func: TFunc<Char, Boolean>): string;
+function ReadWhitespace(var Sc: TScanner): string;
 var
   Start: Integer;
 begin
   Start := Sc.I;
-  while (Sc.I <= Sc.N) and Func(Peek(Sc)) do
+  while (Sc.I <= Sc.N) and IsWhitespaceChar(Peek(Sc)) do  // spaces and tabs only; EOL handled separately
     IncI(Sc);
   Result := Copy(Sc.S, Start, Sc.I - Start);
-end;
-
-
-function ReadWhitespace(var Sc: TScanner): string;
-begin
-  //todo: rework.  Overly clever, future use didn't materialize
-
-  Result := ReadWhile(
-    Sc,
-    function(C: Char): Boolean
-    begin
-      Result := IsWhitespaceChar(C); // spaces and tabs only; EOL handled separately
-    end
-  );
 end;
 
 
