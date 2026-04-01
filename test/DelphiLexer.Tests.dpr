@@ -33,7 +33,8 @@ uses
   Test.DelphiLexer.Golden in 'Test.DelphiLexer.Golden.pas',
   Test.TokenCompare.Myers in 'Test.TokenCompare.Myers.pas',
   Test.DelphiLexer.TriviaSpans in 'Test.DelphiLexer.TriviaSpans.pas',
-  Test.DelphiLexer.AsmBody in 'Test.DelphiLexer.AsmBody.pas';
+  Test.DelphiLexer.AsmBody in 'Test.DelphiLexer.AsmBody.pas',
+  Test.DelphiLexer.FindTokenAtOffset in 'Test.DelphiLexer.FindTokenAtOffset.pas';
 
 { keep comment here to protect the following conditional from being removed by the IDE when adding a unit }
 {$IFNDEF TESTINSIGHT}

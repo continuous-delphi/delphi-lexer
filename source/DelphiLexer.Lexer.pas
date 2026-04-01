@@ -41,6 +41,22 @@ type
 // build expected values in tests: RuntimeQuotes(3) produces '''.
 function RuntimeQuotes(const Count: Integer): string; inline;
 
+// Returns the index of the token in ATokens whose span contains AOffset
+// (0-based character index into the source string).
+//
+// Binary search on StartOffset; O(log N).
+//
+// Returns -1 for:
+//   - negative AOffset
+//   - AOffset at or beyond the source length (the tkEOF sentinel position and
+//     any value past it) -- callers should not expect a valid index for an
+//     offset equal to Source.Length even though it is not "negative"
+//   - empty ATokens
+//
+// tkEOF is never returned: its Length is 0, so the span check
+// (AOffset < StartOffset + Length) is always false for it by design.
+function FindTokenAtOffset(const ATokens: TList<TToken>; AOffset: Integer): Integer;
+
 implementation
 
 uses
@@ -56,6 +72,35 @@ uses
 function RuntimeQuotes(const Count: Integer): string;
 begin
   Result := StringOfChar(CHAR_SINGLE_QUOTE, Count);
+end;
+
+
+function FindTokenAtOffset(const ATokens: TList<TToken>; AOffset: Integer): Integer;
+var
+  Lo, Hi, Mid: Integer;
+begin
+  if (ATokens.Count = 0) or (AOffset < 0) then
+    Exit(-1);
+
+  Lo := 0;
+  Hi := ATokens.Count - 1;
+  while Lo < Hi do
+  begin
+    Mid := (Lo + Hi + 1) div 2;
+    if ATokens[Mid].StartOffset <= AOffset then
+      Lo := Mid
+    else
+      Hi := Mid - 1;
+  end;
+  // Lo is the largest index with StartOffset <= AOffset.
+  // Verify AOffset falls within the token's span [StartOffset .. StartOffset+Length-1].
+  // Deliberately handles tkEOF: its Length is 0, so StartOffset + 0 = StartOffset,
+  // and AOffset < StartOffset is false when AOffset = StartOffset -- returning -1
+  // as required rather than the EOF sentinel index.
+  if AOffset < ATokens[Lo].StartOffset + ATokens[Lo].Length then
+    Result := Lo
+  else
+    Result := -1;
 end;
 
 
