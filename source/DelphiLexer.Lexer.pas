@@ -567,7 +567,7 @@ begin
     end;
 
     // --- Whitespace (space/tab) ---
-    if (C = CHAR_SPACE) or (C = CHAR_TAB) then
+    if IsWhitespaceChar(C) then
     begin
       TokText := ReadWhitespace(Sc);
       if TokText <> '' then
