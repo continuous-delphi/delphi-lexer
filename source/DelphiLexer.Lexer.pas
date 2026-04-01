@@ -185,7 +185,6 @@ var
   SaveI:           Integer;
   SaveLine:        Integer;
   SaveCol:         Integer;
-  SaveAtLineStart: Boolean;
   DelimStr: string;
 begin
   Start := Sc.I;
@@ -202,11 +201,10 @@ begin
   begin
     if Sc.AtLineStart then
     begin
-      // Save full scanner state before probing for the closing delimiter.
+      // (I-8) Save full scanner state before probing for the closing delimiter.
       SaveI           := Sc.I;
       SaveLine        := Sc.Line;
       SaveCol         := Sc.Col;
-      SaveAtLineStart := Sc.AtLineStart;
 
       // Skip any leading spaces/tabs on this line.
       while (Sc.I <= Sc.N) and IsWhitespaceChar(Peek(Sc)) do
@@ -220,11 +218,12 @@ begin
         Exit(Copy(Sc.S, Start, Sc.I - Start));
       end;
 
-      // Not a terminator -- restore full state and continue.
+      // (I-8) Not a terminator -- restore full state and continue.
+      // (Separate var for Sc.AtLineStart is redundant, known true)
       Sc.I           := SaveI;
       Sc.Line        := SaveLine;
       Sc.Col         := SaveCol;
-      Sc.AtLineStart := SaveAtLineStart;
+      Sc.AtLineStart := True;
     end;
 
     IncI(Sc);
