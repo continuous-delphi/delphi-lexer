@@ -58,7 +58,7 @@ type
   TFileComparerCLOptions = class(TFileTokenizerCLOptions)
   private
     FSecondFile: string;
-    FIgnoreTrivia: Boolean;
+    FIgnoreWhitespaceEOL: Boolean;
     FIgnoreWhitespace: Boolean;
     FIgnoreEOL: Boolean;
     FIgnoreComments: Boolean;
@@ -69,8 +69,8 @@ type
     property SecondFile: string read FSecondFile write FSecondFile;
 
 
-    [CLPLongNameAttribute('ignore-trivia'), CLPName('t'), CLPDescription('Ignore whitespace and EOL tokens')]
-    property IgnoreTrivia: Boolean read FIgnoreTrivia write FIgnoreTrivia;
+    [CLPLongNameAttribute('ignore-whitespace-eol'), CLPName('t'), CLPDescription('Ignore whitespace and EOL tokens')]
+    property IgnoreWhitespaceEOL: Boolean read FIgnoreWhitespaceEOL write FIgnoreWhitespaceEOL;
 
     [CLPLongNameAttribute('ignore-whitespace'), CLPName('w'), CLPDescription('Ignore Whitespace tokens')]
     property IgnoreWhitespace: Boolean read FIgnoreWhitespace write FIgnoreWhitespace;
@@ -366,7 +366,7 @@ begin
 
     //TokenCompare offers additional options:
 
-    if Opts.IgnoreTrivia then
+    if Opts.IgnoreWhitespaceEOL then
     begin
       Result.IgnoreWhitespace := True;
       Result.IgnoreEOL := True;
