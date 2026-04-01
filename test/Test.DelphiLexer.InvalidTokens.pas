@@ -84,7 +84,7 @@ type
     // --- Unterminated constructs ---
     // These produce the expected token kind (not tkInvalid). The lexer reads
     // to EOF and returns all consumed characters as the token text, preserving
-    // round-trip fidelity.
+    // round-trip fidelity. For directives the kind is tkDirective, not tkComment.
 
     // Unterminated single-quoted string with no EOL: tkString, text = everything from ' to EOF.
     [Test] procedure Unterminated_String_NoEOL_IstkString;
@@ -98,6 +98,14 @@ type
 
     // Unterminated paren-star comment: tkComment, text = everything from (* to EOF.
     [Test] procedure Unterminated_ParenStarComment_IstkComment;
+
+    // Unterminated brace directive: tkDirective (not tkComment, not tkInvalid),
+    // text = everything from {$ to EOF.
+    [Test] procedure Unterminated_BraceDirective_IstkDirective;
+
+    // Unterminated paren-star directive: tkDirective (not tkComment, not tkInvalid),
+    // text = everything from (*$ to EOF.
+    [Test] procedure Unterminated_ParenStarDirective_IstkDirective;
   end;
 
 implementation
@@ -436,6 +444,56 @@ begin
   try
     Assert.AreEqual(NativeInt(2), T.Count, 'count');
     Assert.AreEqual(Ord(tkComment), Ord(T[0].Kind), '[0] kind');
+    Assert.AreEqual(Src, T[0].Text, '[0] text = entire source');
+    RoundTrip := '';
+    for I := 0 to T.Count - 1 do
+      RoundTrip := RoundTrip + T[I].Text;
+    Assert.AreEqual(Src, RoundTrip, 'round-trip');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TInvalidTokenTests.Unterminated_BraceDirective_IstkDirective;
+var
+  Src: string;
+  T:   TList<TToken>;
+  RoundTrip: string;
+  I:   Integer;
+begin
+  // {$ with no closing }: the lexer reads to EOF. The token kind must be
+  // tkDirective (not tkComment and not tkInvalid), matching the terminated form.
+  Src := '{$IFDEF DEBUG';
+  T := Tok(Src);
+  try
+    Assert.AreEqual(NativeInt(2), T.Count, 'count');
+    Assert.AreEqual(Ord(tkDirective), Ord(T[0].Kind), '[0] kind');
+    Assert.AreEqual(Src, T[0].Text, '[0] text = entire source');
+    RoundTrip := '';
+    for I := 0 to T.Count - 1 do
+      RoundTrip := RoundTrip + T[I].Text;
+    Assert.AreEqual(Src, RoundTrip, 'round-trip');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TInvalidTokenTests.Unterminated_ParenStarDirective_IstkDirective;
+var
+  Src: string;
+  T:   TList<TToken>;
+  RoundTrip: string;
+  I:   Integer;
+begin
+  // (*$ with no closing *): the lexer reads to EOF. The token kind must be
+  // tkDirective (not tkComment and not tkInvalid), matching the terminated form.
+  Src := '(*$R+';
+  T := Tok(Src);
+  try
+    Assert.AreEqual(NativeInt(2), T.Count, 'count');
+    Assert.AreEqual(Ord(tkDirective), Ord(T[0].Kind), '[0] kind');
     Assert.AreEqual(Src, T[0].Text, '[0] text = entire source');
     RoundTrip := '';
     for I := 0 to T.Count - 1 do
