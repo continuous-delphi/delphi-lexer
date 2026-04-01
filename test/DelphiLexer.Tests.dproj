@@ -2,7 +2,7 @@
     <PropertyGroup>
         <Base>True</Base>
         <AppType>Console</AppType>
-        <Config Condition="'$(Config)'==''">Release</Config>
+        <Config Condition="'$(Config)'==''">Debug</Config>
         <FrameworkType>None</FrameworkType>
         <MainSource>DelphiLexer.Tests.dpr</MainSource>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
@@ -49,7 +49,6 @@
     <PropertyGroup Condition="'$(Base)'!=''">
         <SanitizedProjectName>DelphiLexer_Tests</SanitizedProjectName>
         <DCC_DcuOutput>.\$(Platform)\$(Config)</DCC_DcuOutput>
-        <DCC_Define>TESTINSIGHT;$(DCC_Define)</DCC_Define>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <DCC_UnitSearchPath>..\source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
@@ -118,6 +117,7 @@
         <DCCReference Include="Test.TokenCompare.Myers.pas"/>
         <DCCReference Include="Test.DelphiLexer.TriviaSpans.pas"/>
         <DCCReference Include="Test.DelphiLexer.AsmBody.pas"/>
+        <DCCReference Include="Test.DelphiLexer.FindTokenAtOffset.pas"/>
         <None Include="README.md"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>

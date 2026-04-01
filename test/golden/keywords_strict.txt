@@ -2,6 +2,7 @@
 array
 as
 asm
+end
 at
 begin
 case
@@ -14,7 +15,6 @@ div
 do
 downto
 else
-end
 except
 exports
 file
