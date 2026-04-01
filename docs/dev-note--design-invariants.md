@@ -237,3 +237,82 @@ information externally (e.g., in an annotation record that wraps `TToken`).
 **What breaks if violated:** Two consumers that each reclassify the same token
 differently produce inconsistent views of the stream. The lexer's guarantee
 that `*Keyword` means "reserved word per the Delphi spec" no longer holds.
+
+---
+
+## I-14: Trivia ownership is complete and non-overlapping
+
+**Rule:** Every trivia token in the flat list (`tkWhitespace`, `tkEOL`,
+`tkComment`, `tkDirective`) appears in exactly one span -- either the
+`LeadingTrivia` or `TrailingTrivia` of exactly one semantic token (or the
+`tkEOF` sentinel). No trivia token is unowned; none appears in two spans.
+
+Formally: if `Owned[I]` counts the number of times index `I` appears in any
+span across the whole list, then `Owned[I] = 1` for every trivia token and
+`Owned[I] = 0` for every non-trivia token.
+
+**Why it exists:** The trivia spans are the authoritative ownership model for
+downstream consumers (formatters, navigators). If a trivia token is unowned,
+a formatter cannot determine which declaration or statement it belongs to. If
+it is owned twice, moving one owner's trivia corrupts the other owner.
+
+**What breaks if violated:** A formatter that moves a declaration and transfers
+its `LeadingTrivia` will silently duplicate or drop comments. An ownership
+uniqueness check (as in `Test.DelphiLexer.TriviaSpans`) will fail.
+
+---
+
+## I-15: Trivia tokens carry no trivia of their own
+
+**Rule:** For every token where `Kind in [tkWhitespace, tkEOL, tkComment,
+tkDirective]`, both `LeadingTrivia.IsEmpty` and `TrailingTrivia.IsEmpty` are
+`True`. Trivia tokens are owned by semantic tokens; they do not themselves own
+other trivia.
+
+**Why it exists:** Trivia of trivia has no meaningful interpretation and would
+make the ownership model recursive. `MakeToken` initialises both span fields to
+`(-1, -1)` and `ApplyTriviaSpans` skips trivia tokens, so the property holds
+by construction without extra logic.
+
+**What breaks if violated:** Consumer code that walks a token's trivia and then
+walks the trivia of that trivia enters an unexpected recursive case. The
+`I14_SumOfSpanCountsEqualsTriviaTokenCount` invariant test will fail because
+trivia-of-trivia counts would inflate `SpanTotal` above `TriviaCount`.
+
+---
+
+## I-16: EOF sentinel owns all trailing-file trivia as leading trivia
+
+**Rule:** Any trivia token that follows the last non-EOF semantic token and
+precedes `tkEOF` is owned as the `LeadingTrivia` of the `tkEOF` sentinel.
+`tkEOF.TrailingTrivia.IsEmpty` is always `True`.
+
+**Why it exists:** I-14 requires every trivia token to have an owner.
+Trailing-file trivia (a comment or blank line after the last statement, with
+no following semantic token) would otherwise be unowned. Assigning it to the
+EOF sentinel gives it a deterministic owner without introducing a special
+"floating trivia" concept.
+
+**What breaks if violated:** Trailing-file comments are dropped or unowned,
+violating I-14. A formatter that processes the whole file and transfers each
+token's trivia will silently lose end-of-file comments.
+
+---
+
+## TToken field summary
+
+`TToken` is defined in `DelphiLexer.Token.pas`. Current fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `Kind` | `TTokenKind` | Token classification; set once at lex time (I-12) |
+| `Text` | `string` | Characters as they appear in source; concatenation is lossless (I-1) |
+| `Line` | `Integer` | 1-based line number of the first character |
+| `Col` | `Integer` | 1-based column number of the first character |
+| `StartOffset` | `Integer` | 0-based absolute character index into source (I-3) |
+| `Length` | `Integer` | Character count; always equals `System.Length(Text)` (I-3) |
+| `LeadingTrivia` | `TTriviaSpan` | Inclusive index range of trivia tokens preceding this token (I-14, I-15) |
+| `TrailingTrivia` | `TTriviaSpan` | Inclusive index range of same-line trivia tokens after this token, through the first EOL (I-14, I-15) |
+
+`TTriviaSpan` is a record with `FirstTokenIndex` and `LastTokenIndex` (both
+`-1` when empty) and helpers `IsEmpty` and `Count`.
