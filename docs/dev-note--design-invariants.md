@@ -244,8 +244,9 @@ that `*Keyword` means "reserved word per the Delphi spec" no longer holds.
 
 **Rule:** Every trivia token in the flat list (`tkWhitespace`, `tkEOL`,
 `tkComment`, `tkDirective`) appears in exactly one span -- either the
-`LeadingTrivia` or `TrailingTrivia` of exactly one semantic token (or the
-`tkEOF` sentinel). No trivia token is unowned; none appears in two spans.
+`LeadingTrivia` or `TrailingTrivia` of exactly one non-trivia token,
+or the `LeadingTrivia` of the `tkEOF` sentinel. No trivia token is
+unowned; none appears in two spans.
 
 Formally: if `Owned[I]` counts the number of times index `I` appears in any
 span across the whole list, then `Owned[I] = 1` for every trivia token and
@@ -266,7 +267,7 @@ uniqueness check (as in `Test.DelphiLexer.TriviaSpans`) will fail.
 
 **Rule:** For every token where `Kind in [tkWhitespace, tkEOL, tkComment,
 tkDirective]`, both `LeadingTrivia.IsEmpty` and `TrailingTrivia.IsEmpty` are
-`True`. Trivia tokens are owned by semantic tokens; they do not themselves own
+`True`. Trivia tokens are owned by non-trivia tokens; they do not themselves own
 other trivia.
 
 **Why it exists:** Trivia of trivia has no meaningful interpretation and would
@@ -298,6 +299,27 @@ violating I-14. A formatter that processes the whole file and transfers each
 token's trivia will silently lose end-of-file comments.
 
 ---
+
+## I-17: Trivia spans are contiguous and ordered
+
+**Rule:** Any non-empty trivia span refers to a contiguous range of trivia
+tokens in the flat token list, and every token in that range is a trivia
+token. Tokens within a span appear in the same order as in the flat list.
+
+A span [`FirstTokenIndex, LastTokenIndex`] is empty if and only if
+`FirstTokenIndex = -1 and LastTokenIndex = -1`. Otherwise it satisfies
+`FirstTokenIndex <= LastTokenIndex`, and for all `I` in
+[`FirstTokenIndex..LastTokenIndex`], `Tokens[I]` is trivia. Every index in this
+range belongs to the span.
+
+**Why it exists:** Downstream consumers need trivia to preserve exact
+source order. A span that skips indices or includes non-trivia would break
+reconstruction and invalidate ownership reasoning.
+
+**What breaks if violated:** A formatter transferring a span may reorder
+comments or whitespace, or accidentally absorb a semantic token into trivia.
+Ownership totals might still appear valid while source fidelity is corrupted.
+
 
 ## TToken field summary
 

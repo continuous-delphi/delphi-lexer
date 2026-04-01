@@ -161,6 +161,8 @@ begin
       TokenObj.AddPair('col',    TJSONNumber.Create(Tok.Col));
       TokenObj.AddPair('offset', TJSONNumber.Create(Tok.StartOffset));
       TokenObj.AddPair('length', TJSONNumber.Create(Tok.Length));
+      TokenObj.AddPair('leadingTrivia', TJSONNumber.Create(Tok.LeadingTrivia.Count));
+      TokenObj.AddPair('trailingTrivia', TJSONNumber.Create(Tok.TrailingTrivia.Count));
       TokenObj.AddPair('text',   Tok.Text);
       TokensArr.Add(TokenObj);
 
@@ -178,7 +180,7 @@ begin
 
     Root.AddPair('toolName', AppName);
     Root.AddPair('inputFile', Config.FileName);
-    Root.AddPair('formatVersion', '1.1.0');  // Bump if JSON output structure (or logic) changes
+    Root.AddPair('formatVersion', '1.2.0');  // Bump if JSON output structure (or logic) changes
 
     Options := TJSONObject.Create;
     Options.AddPair('encoding', Config.Encoding.EncodingName);
