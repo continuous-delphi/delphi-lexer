@@ -203,6 +203,24 @@ misclassified.
 
 ---
 
+## I-12: Token kind is assigned at lex time; callers do not reclassify
+
+**Rule:** `Token.Kind` is set once, during tokenization, and is not modified
+afterward. No downstream consumer (formatter rule, structural pass, etc.) may
+change a token's kind.
+
+**Why it exists:** Token kind is the contract between the lexer and its
+callers. Allowing reclassification downstream creates hidden coupling between
+components and makes the token stream's meaning context-dependent. If a
+higher-level analysis needs a finer classification, it should store that
+information externally (e.g., in an annotation record that wraps `TToken`).
+
+**What breaks if violated:** Two consumers that each reclassify the same token
+differently produce inconsistent views of the stream. The lexer's guarantee
+that `*Keyword` means "reserved word per the Delphi spec" no longer holds.
+
+---
+
 ## I-13: Operators are matched longest-first
 
 **Rule:** In `ReadSymbol`, multi-character operators (`:=`, `<>`, `<=`, `>=`,
@@ -219,24 +237,6 @@ and range (`..`) operators are each split into two separate tokens. The
 round-trip guarantee (I-1) is still satisfied -- no characters are lost -- but
 the token structure is wrong. Any consumer that matches on `Token.Text = ':='`
 or `Token.Kind = tkSymbol` with a two-char text will never find the operator.
-
----
-
-## I-12: Token kind is assigned at lex time; callers do not reclassify
-
-**Rule:** `Token.Kind` is set once, during tokenization, and is not modified
-afterward. No downstream consumer (formatter rule, structural pass, etc.) may
-change a token's kind.
-
-**Why it exists:** Token kind is the contract between the lexer and its
-callers. Allowing reclassification downstream creates hidden coupling between
-components and makes the token stream's meaning context-dependent. If a
-higher-level analysis needs a finer classification, it should store that
-information externally (e.g., in an annotation record that wraps `TToken`).
-
-**What breaks if violated:** Two consumers that each reclassify the same token
-differently produce inconsistent views of the stream. The lexer's guarantee
-that `*Keyword` means "reserved word per the Delphi spec" no longer holds.
 
 ---
 
