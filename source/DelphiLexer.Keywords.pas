@@ -212,38 +212,6 @@ uses
   System.SysUtils;
 
 
-function CompareKeywordText(const S: string; P: PChar): Integer;
-var
-  I: Integer;
-  C1, C2: Char;
-begin
-  I := 1;
-  while True do
-  begin
-    if I <= Length(S) then
-      C1 := S[I]
-    else
-      C1 := #0;
-
-    C2 := P^;
-
-    if (C1 = #0) and (C2 = #0) then
-      Exit(0);
-
-    C1 := UpCase(C1);
-    C2 := UpCase(C2);
-
-    if C1 < C2 then
-      Exit(-1);
-    if C1 > C2 then
-      Exit(1);
-
-    if C2 <> #0 then
-      Inc(P);
-    Inc(I);
-  end;
-end;
-
 function FindDelphiKeyword(const S: string; out Info: TKeywordInfo): Boolean;
 var
   L, H, Mid, Cmp: Integer;
