@@ -19,7 +19,7 @@ type
     tkComment,       // { } (* *) //
     tkDirective,     // {$ } (*$ *)
     tkSymbol,        // operator or punctuation
-    tkWhitespace,    // space/tab run
+    tkWhitespace,    // space/tab/vt/ff run
     tkEOL,           // CR, LF, or CRLF
     tkEOF,           // end sentinel
     tkInvalid        // unrecognised character (e.g. stray NUL or illegal byte)

@@ -28,6 +28,8 @@ uses
 type
   // Stateless lexer: create, call Tokenize (or TokenizeInto), free.
   TDelphiLexer = class
+  protected
+    procedure TokenizeIntoEmptyList(const Source: string; const OutTokens: TList<TToken>);
   public
     function Tokenize(const Source: string): TList<TToken>;
     procedure TokenizeInto(const Source: string; const OutTokens: TList<TToken>);
@@ -320,7 +322,7 @@ var
   Start: Integer;
 begin
   Start := Sc.I;
-  while (Sc.I <= Sc.N) and IsWhitespaceChar(Peek(Sc)) do  // spaces and tabs only; EOL handled separately
+  while (Sc.I <= Sc.N) and IsWhitespaceChar(Peek(Sc)) do  // spaces and tabs (+VT/FF); EOL handled separately
     IncI(Sc);
   Result := Copy(Sc.S, Start, Sc.I - Start);
 end;
@@ -511,10 +513,32 @@ end;
 function TDelphiLexer.Tokenize(const Source: string): TList<TToken>;
 begin
   Result := TList<TToken>.Create;
-  TokenizeInto(Source, Result);
+  TokenizeIntoEmptyList(Source, Result);
 end;
 
+
 procedure TDelphiLexer.TokenizeInto(const Source: string; const OutTokens: TList<TToken>);
+var
+  Temp:TList<TToken>;
+  StartIndex, I: Integer;
+begin
+
+  Temp := TList<TToken>.Create;
+  try
+    TokenizeIntoEmptyList(Source, Temp);
+
+    StartIndex := OutTokens.Count;
+    OutTokens.Capacity := StartIndex + Temp.Count;
+
+    for I := 0 to Temp.Count - 1 do
+      OutTokens.Add(Temp[I]);
+  finally
+    Temp.Free;
+  end;
+end;
+
+
+procedure TDelphiLexer.TokenizeIntoEmptyList(const Source: string; const OutTokens: TList<TToken>);
 var
   Sc:        TScanner;
   C:         Char;
@@ -535,6 +559,8 @@ var
   end;
   
 begin
+  Assert(OutTokens.Count = 0, 'TokenizeIntoEmptyList assumes list is empty'); //ApplyTriviaSpans walks entire list
+
   Sc.S           := Source;
   Sc.I           := 1;
   Sc.N           := Length(Source);
@@ -566,7 +592,7 @@ begin
       Continue;
     end;
 
-    // --- Whitespace (space/tab) ---
+    // --- Whitespace (space/tab/vt/ff) ---
     if IsWhitespaceChar(C) then
     begin
       TokText := ReadWhitespace(Sc);

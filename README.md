@@ -1,4 +1,4 @@
-# delphi-lexer
+﻿# delphi-lexer
 
 ![delphi-lexer logo](https://continuous-delphi.github.io/assets/logos/delphi-lexer-480x270.png)
 
@@ -14,7 +14,7 @@ A standalone, reusable lexer for Delphi (Object Pascal) source code.
 Produces a flat `TList<TToken>` from source text with full round-trip
 fidelity and precise source mapping.
 
-Lexer only (no parser, no AST, no formatter, and no configuration dependencies.)
+Lexer only (no parser, no AST, no formatter, or configuration dependencies).
 
 ---
 
@@ -61,6 +61,8 @@ source/             Core library units
   DelphiLexer.Keywords.pas    DELPHI_KEYWORDS list, IsDelphiKeyword
   DelphiLexer.Scanner.pas     TScanner + helpers (internal; not public API)
   DelphiLexer.Lexer.pas       TDelphiLexer (public entry point)
+  DelphiLexer.Utils.pas       Shared command line options/utilities
+  DelphiLexer.Diff.pas        Myers diff algorithm over tokens
 
 test/               DUnitX test project
   golden/           Representative .pas files for round-trip tests
@@ -70,8 +72,9 @@ projects
   TokenStats/       Analyze token metrics within a file
   TokenCompare/     Verify tokens between two files
 
-tools/              build & run tools
+tools/              developer tools
 docs/               Architecture notes
+shared/             Third-party code
 ```
 
 ---
@@ -83,11 +86,12 @@ docs/               Architecture notes
 - Precise source mapping (offset + length)
 - Minimal assumptions about downstream usage
 - Clear handling of malformed input
-- see also: [Dev Note - Design Invariants.md](/docs/dev-note--design-invariants.md)
+
+See also: [Dev Note - Design Invariants.md](/docs/dev-note--design-invariants.md)
 
 ---
 
-## Token Utilities
+## Token utilities
 
 In addition to the core lexer, this repository provides three command-line tools
 for working with token streams:
@@ -111,14 +115,16 @@ source transformations using deterministic token-level output.
 | `Col` | `Integer` | 1-based column number of the first character |
 | `StartOffset` | `Integer` | 0-based character index of the first character in the source string |
 | `Length` | `Integer` | Character count of `Text` (equals `System.Length(Text)`) |
+| `LeadingTrivia` | 'Integer` |  Trivia tokens immediately before this token |
+| `TrailingTrivia` | 'Integer` | same-line trivia tokens after this token (incl. EOL) |
 
 ## TTokenKind values
 
 | Kind | Produced for |
 |---|---|
 | `tkIdentifier` | Plain identifier, or `&ident` escaped identifier |
-| `tkStrictKeyword` | Globally reserved key word (`begin`, `if`...) |
-| `tkContextKeyword` | Contextually relevant key word (`public`, `deprecated`...) |
+| `tkStrictKeyword` | Globally reserved keyword (`begin`, `if`...) |
+| `tkContextKeyword` | Contextually relevant keyword (`public`, `deprecated`...) |
 | `tkNumber` | Decimal, hex (`$`), binary (`%`), octal (`&`), float |
 | `tkString` | `'single-quoted'` or `'''triple-quoted multiline'''` |
 | `tkCharLiteral` | `#nn` or `#$hex` character literal |
@@ -130,9 +136,19 @@ source transformations using deterministic token-level output.
 | `tkEOF` | End-of-source sentinel; always the last token, `Text = ''` |
 | `tkInvalid` | Character or prefix that does not begin any valid Delphi token |
 
+
+Note: `//` comment tokens do not include the trailing EOL.
+After a line comment, the line ending is a separate `tkEOL` token -- it is
+not part of the `tkComment` text. This is consistent with how EOLs are
+handled everywhere else in the token stream (they are always their own
+tokens), but it differs from some other lexers where the newline is
+considered part of the comment. Callers that need to detect "end of line
+after a comment" should look at the token immediately following the
+`tkComment`.
+
 ---
 
-### Invalid token policy
+## Invalid token policy
 
 A character or prefix that cannot begin any valid Delphi token produces a
 `tkInvalid` token containing **exactly that character**. The lexer never
@@ -168,15 +184,13 @@ invalid tokens with `TokenDump`'s `Invalid:` summary field.
 
 ---
 
-### Multiline string policy
+## Multiline string policy
 
 A multiline string is delimited by an odd number of single quotes N >= 3
 (the *delimiter width*), optionally followed by trailing whitespace, and then
 a line ending. The closing delimiter is exactly N quotes at the start of a
 line (after optional leading whitespace) where the character immediately
 after the N quotes is not another quote.
-
----
 
 ### Delimiter widths
 
@@ -207,11 +221,9 @@ preserving all whitespace.
 
 ---
 
-### Numeric literal policy
+## Numeric literal policy
 
----
-
-#### Bases supported
+### Bases supported
 
 | Form | Example | Notes |
 |---|---|---|
@@ -221,9 +233,7 @@ preserving all whitespace.
 | Binary | `%10110011` | Leading `%`, digits `0` and `1` |
 | Octal | `&0377` | Leading `&`, digits `0-7` |
 
----
-
-#### Digit separators
+### Digit separators
 
 Underscore (`_`) is allowed as a digit separator in all bases and in all
 parts of a decimal literal (integer part, fractional part, exponent part).
@@ -233,9 +243,7 @@ One or more consecutive underscores are accepted.
 $FF_FF      1__000___000    3.14___15__    1e1_0    %101_0___0101
 ```
 
----
-
-#### Float exponent backtracking
+### Float exponent backtracking
 
 If `e` or `E` appears after a decimal integer but is not followed by digits
 (optionally with a leading `+` or `-` sign), the lexer backtracks past the
@@ -248,9 +256,7 @@ next token (typically `tkIdentifier` or `tkStrictKeyword/tkContextKeyword`).
 1exit  ->  tkNumber('1') + tkIdentifier('exit')   // e starts identifier
 ```
 
----
-
-#### Range operator guard
+### Range operator guard
 
 `1..9` is tokenized as `tkNumber('1')` + `tkSymbol('..')` + `tkNumber('9')`.
 The lexer looks ahead before consuming the `.` fractional part: if the
@@ -260,12 +266,11 @@ character after `.` is also `.`, the decimal point is not consumed.
 
 ## Reserved words
 
-- 123 reserved words are classified as `tkStrictKeyword` or `tkContextKeyword`
+- 123 keywords are classified as `tkStrictKeyword` or `tkContextKeyword`.
 All others tokenize as `tkIdentifier`. The list is maintained in
 `DelphiLexer.Keywords.pas` and has been matched to Embarcadero's official
-documentation: [https://docwiki.embarcadero.com/RADStudio/en/Fundamental_Syntactic_Elements_%28Delphi%29](https://docwiki.embarcadero.com/RADStudio/en/Fundamental_Syntactic_Elements_%28Delphi%29).
+documentation: [Embarcadero: Fundamental Syntactic Elements](https://docwiki.embarcadero.com/RADStudio/en/Fundamental_Syntactic_Elements_%28Delphi%29)
 
----
 
 ### Known simplifications
 
@@ -284,17 +289,6 @@ will not correspond to the visible display column for tokens that follow
 such content. `StartOffset` and `Length` are also in code units, consistent
 with Delphi string indexing.
 
-- `//` comment tokens do not include the trailing EOL.
-After a line comment, the line ending is a separate `tkEOL` token -- it is
-not part of the `tkComment` text. This is consistent with how EOLs are
-handled everywhere else in the token stream (they are always their own
-tokens), but it differs from some other lexers where the newline is
-considered part of the comment. Callers that need to detect "end of line
-after a comment" should look at the token immediately following the
-`tkComment`.
-
----
-
 ### Current non-goals
 
 - No semantic annotations on TToken.
@@ -304,7 +298,7 @@ wrap `TToken` in their own record (e.g., `TAnnotatedToken`).
 
 - No language-version configuration.
 There is currently no switch to target Delphi 7, XE2, or any earlier version. The
-keyword list and literal syntax target the latest release
+keyword list and literal syntax target the latest release.
 
 - No encoding detection.
 The source string is a Delphi `string` (UTF-16). Reading files and detecting
@@ -323,7 +317,7 @@ This repository is currently `incubator` and is under active development.
 It will graduate to `stable` once:
 
 - At least one downstream consumer exists.
-- No breaking API changes expected.
+- No breaking API changes are anticipated.
 
 Until graduation, breaking changes may occur.
 
@@ -334,4 +328,4 @@ Until graduation, breaking changes may occur.
 ## Part of Continuous Delphi
 
 This tool is part of the [Continuous-Delphi](https://github.com/continuous-delphi)
-ecosystem, focused on improving engineering discipline for long-lived Delphi systems.
+ecosystem, dedicated to the long-term success of Delphi applications.
