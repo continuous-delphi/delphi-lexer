@@ -51,6 +51,17 @@ end;
 `Tokenize` allocates and returns a `TList<TToken>`; the caller owns it.
 `TokenizeInto` appends tokens to a caller-supplied list (avoids the allocation).
 
+To look up the token that covers a given source position, use `FindTokenAtOffset`:
+
+```pascal
+// Returns the index of the token whose span contains AOffset (0-based).
+// Binary search, O(log N). Returns -1 if no token covers the offset
+// (negative offset, offset at/beyond EOF, or empty list).
+Idx := FindTokenAtOffset(Tokens, CursorOffset);
+if Idx >= 0 then
+  Tok := Tokens[Idx];
+```
+
 ---
 
 ## Repository layout
@@ -69,7 +80,7 @@ test/               DUnitX test project
 
 projects
   TokenDump/        Inspect tokens within a file
-  TokenStats/       Analyze token metrics within a file
+  TokenStats/       Analyze token metrics for a file, wildcard, or directory tree
   TokenCompare/     Verify tokens between two files
 
 tools/              developer tools
@@ -96,9 +107,9 @@ See also: [Dev Note - Design Invariants.md](/docs/dev-note--design-invariants.md
 In addition to the core lexer, this repository provides three command-line tools
 for working with token streams:
 
-- **DelphiLexer.TokenDump** – inspect tokens
-- **DelphiLexer.TokenStats** – analyze token metrics
-- **DelphiLexer.TokenCompare** – compare token streams
+- **DelphiLexer.TokenDump** - inspect tokens
+- **DelphiLexer.TokenStats** - analyze token metrics
+- **DelphiLexer.TokenCompare** - compare token streams
 
 These utilities are intended for debugging, regression testing, and validating
 source transformations using deterministic token-level output.
@@ -132,7 +143,7 @@ source transformations using deterministic token-level output.
 | `tkDirective` | `{$ }` or `(*$ *)` compiler directive |
 | `tkAsmBody` | Opaque payload of an `asm ... end` block (see below) |
 | `tkSymbol` | Operator or punctuation (`:=`, `..`, `<=`, `>=`, `<>`, `(`, `)`, etc.) |
-| `tkWhitespace` | Run of spaces and/or tabs |
+| `tkWhitespace` | Run of spaces, tabs, vertical tab, form feed, or `^Z` (Ctrl+Z, DOS EOF marker) |
 | `tkEOL` | Line ending: `#13#10` (CRLF), `#10` (LF), or `#13` (bare CR) |
 | `tkEOF` | End-of-source sentinel; always the last token, `Text = ''` |
 | `tkInvalid` | Character or prefix that does not begin any valid Delphi token |

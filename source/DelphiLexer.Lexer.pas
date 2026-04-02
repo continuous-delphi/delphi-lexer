@@ -367,7 +367,7 @@ var
   Start: Integer;
 begin
   Start := Sc.I;
-  while (Sc.I <= Sc.N) and IsWhitespaceChar(Peek(Sc)) do  // spaces and tabs (+VT/FF); EOL handled separately
+  while (Sc.I <= Sc.N) and IsWhitespaceChar(Peek(Sc)) do  // spaces and tabs (+VT/FF/^Z); EOL handled separately
     IncI(Sc);
   Result := Copy(Sc.S, Start, Sc.I - Start);
 end;

@@ -30,8 +30,9 @@ uses
 const
   CHAR_TAB          = #9;
   CHAR_SPACE        = #32;
-  CHAR_VERT_TAB = #11;  //historical whitespace
-  CHAR_FORMFEED = #12;  //historical whitespace
+  CHAR_VERT_TAB = #11;   //historical whitespace
+  CHAR_FORMFEED = #12;   //historical whitespace
+  CHAR_CTRL_Z   = #$1A;  //DOS EOF marker; treated as whitespace in legacy files
   CHAR_SINGLE_QUOTE = #39;
 
 type
@@ -144,7 +145,7 @@ end;
 
 function IsWhitespaceChar(const C: Char): Boolean;
 begin
-  Result := CharInSet(C, [CHAR_SPACE, CHAR_TAB, CHAR_VERT_TAB, CHAR_FORMFEED]);
+  Result := CharInSet(C, [CHAR_SPACE, CHAR_TAB, CHAR_VERT_TAB, CHAR_FORMFEED, CHAR_CTRL_Z]);
 end;
 
 

@@ -88,6 +88,14 @@ type
     property MaxDiffs: Integer read FMaxDiffs write FMaxDiffs;
   end;
 
+  TTokenStatsCLOptions = class(TFileTokenizerCLOptions)
+  private
+    FRecursive: Boolean;
+  public
+    [CLPLongName('recursive'), CLPName('r'), CLPDescription('Search subdirectories recursively')]
+    property Recursive: Boolean read FRecursive write FRecursive;
+  end;
+
 
   TConfigOptions = record
     AbortProgram: Boolean;
@@ -109,12 +117,18 @@ type
     StopAfterFirstDiff: Boolean;
   end;
 
+  TStatsConfig = record
+    Common: TConfigOptions;
+    Recursive: Boolean;
+  end;
+
   TCommandLineParser = class
   protected
     class function ParseSharedOptions(const Opts:TFileTokenizerCLOptions; const Line1, Line2:string):TConfigOptions;
   public
     class function ParseSingleFile(const Line1, Line2:string):TConfigOptions;
     class function ParseFileCompare(const Line1, Line2:string):TFileCompareConfigOptions;
+    class function ParseStats(const Line1, Line2: string): TStatsConfig;
   end;
 
 
@@ -257,6 +271,24 @@ begin
   Opts := TFileTokenizerCLOptions.Create;
   try
     Result := ParseSharedOptions(Opts, Line1, Line2);
+    if Result.AbortProgram then Exit;
+    if not TFile.Exists(Result.FileName) then
+    begin
+      WriteLn('error: file not found: ', Result.FileName);
+      Result.ExitCode := 1;
+      Result.AbortProgram := True;
+      Exit;
+    end;
+    try
+      Result.FileContents := TFile.ReadAllText(Result.FileName, Result.Encoding);
+    except
+      on E: Exception do
+      begin
+        WriteLn('error: could not read file: ', E.Message);
+        Result.ExitCode := 1;
+        Result.AbortProgram := True;
+      end;
+    end;
   finally
     Opts.Free;
   end;
@@ -305,12 +337,6 @@ begin
   end;
 
   Result.FileName := Opts.InputFile;
-  if not TFile.Exists(Result.FileName) then
-  begin
-    WriteLn('error: file not found: ', Result.FileName);
-    Result.ExitCode := 1;
-    Exit;
-  end;
 
   Result.Encoding := TLexerUtils.ResolveEncoding(Opts.Encoding);
   if not Assigned(Result.Encoding) then
@@ -338,17 +364,6 @@ begin
   end;
 
 
-  try
-    Result.FileContents := TFile.ReadAllText(Result.FileName, Result.Encoding);
-  except
-    on E: Exception do
-    begin
-      WriteLn('error: could not read file: ', E.Message);
-      Result.ExitCode := 1;
-      Exit;
-    end;
-  end;
-
   Result.AbortProgram := False;
 end;
 
@@ -363,6 +378,25 @@ begin
     //TokenDump+TokenStats+TokenCompare share a handful of options
     Result.BaseOptions := ParseSharedOptions(Opts, Line1, Line2);
     if Result.BaseOptions.AbortProgram then Exit(Result);
+
+    if not TFile.Exists(Result.BaseOptions.FileName) then
+    begin
+      WriteLn('error: file not found: ', Result.BaseOptions.FileName);
+      Result.BaseOptions.ExitCode := 1;
+      Result.BaseOptions.AbortProgram := True;
+      Exit(Result);
+    end;
+    try
+      Result.BaseOptions.FileContents := TFile.ReadAllText(Result.BaseOptions.FileName, Result.BaseOptions.Encoding);
+    except
+      on E: Exception do
+      begin
+        WriteLn('error: could not read file: ', E.Message);
+        Result.BaseOptions.ExitCode := 1;
+        Result.BaseOptions.AbortProgram := True;
+        Exit(Result);
+      end;
+    end;
 
     //TokenCompare offers additional options:
 
@@ -418,6 +452,22 @@ begin
         Result.BaseOptions.AbortProgram := True;
       end;
     end;
+  finally
+    Opts.Free;
+  end;
+end;
+
+
+class function TCommandLineParser.ParseStats(const Line1, Line2: string): TStatsConfig;
+var
+  Opts: TTokenStatsCLOptions;
+begin
+  Result := Default(TStatsConfig);
+  Opts := TTokenStatsCLOptions.Create;
+  try
+    Result.Common := ParseSharedOptions(Opts, Line1, Line2);
+    if Result.Common.AbortProgram then Exit;
+    Result.Recursive := Opts.Recursive;
   finally
     Opts.Free;
   end;
