@@ -111,27 +111,12 @@ begin
     for FileName in Files do
     begin
       try
-        Contents := TFile.ReadAllText(FileName, Config.Common.Encoding);
+        Contents := TCommandLineParser.ReadAllText(FileName, Config.Common.Encoding, Config.Common.SkipAnsiFallback);
       except
         on E: Exception do
         begin
-          if Config.Common.Encoding <> TEncoding.ANSI then
-          begin
-            try
-              Contents := TFile.ReadAllText(FileName, TEncoding.ANSI);
-            except
-              on E2: Exception do
-              begin
-                WriteLn('warning: could not read: ', FileName, ': ', E.Message);
-                Continue;
-              end;
-            end;
-          end
-          else
-          begin
-            WriteLn('warning: could not read: ', FileName, ': ', E.Message);
-            Continue;
-          end;
+          WriteLn('error: could not read: ', FileName, ': ', E.Message);
+          Exit(1)
         end;
       end;
       Tokens := Lexer.Tokenize(Contents);

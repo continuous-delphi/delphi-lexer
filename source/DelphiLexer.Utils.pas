@@ -37,12 +37,16 @@ type
     FFormat: string;
     FHelp: Boolean;
     FVersion: Boolean;
+    FSkipAnsiFallback: Boolean;
   public
     [CLPPosition(1), CLPLongName('file'), CLPDescription('Delphi source file to tokenize')]
     property InputFile: string read FInputFile write FInputFile;
 
     [CLPLongNameAttribute('encoding'), CLPDescription('Source file encoding (utf-8, utf-16, utf-16be, ansi, ascii, default)', 'name'), CLPDefault('utf-8')]
     property Encoding: string read FEncoding write FEncoding;
+
+    [CLPLongNameAttribute('no-ansi-fallback'), CLPName('a'), CLPDescription('Skip automatic ANSI fallback for encoding errors on file reads')]
+    property SkipAnsiFallback: Boolean read FSkipAnsiFallback write FSkipAnsiFallback;
 
     [CLPLongNameAttribute('format'), CLPDescription('Output format: text or json', 'name'), CLPDefault('text')]
     property Format: string read FFormat write FFormat;
@@ -104,6 +108,7 @@ type
     FileContents: string;
     Encoding: TEncoding;
     OutputFormat: TOutputFormat;
+    SkipAnsiFallback: Boolean;
   end;
 
   TFileCompareConfigOptions = record
@@ -124,11 +129,13 @@ type
 
   TCommandLineParser = class
   protected
-    class function ParseSharedOptions(const Opts:TFileTokenizerCLOptions; const Line1, Line2:string):TConfigOptions;
+    class function ParseSharedOptions(const Opts:TFileTokenizerCLOptions; const HelpLine1, HelpLine2:string):TConfigOptions;
   public
-    class function ParseSingleFile(const Line1, Line2:string):TConfigOptions;
-    class function ParseFileCompare(const Line1, Line2:string):TFileCompareConfigOptions;
-    class function ParseStats(const Line1, Line2: string): TStatsConfig;
+    class function ParseSingleFile(const HelpLine1, HelpLine2:string):TConfigOptions;
+    class function ParseFileCompare(const HelpLine1, HelpLine2:string):TFileCompareConfigOptions;
+    class function ParseStats(const HelpLine1, HelpLine2: string): TStatsConfig;
+
+    class function ReadAllText(const FileName: string; const Encoding:TEncoding; const SkipAnsiFallback:Boolean): string;
   end;
 
 
@@ -264,14 +271,15 @@ begin
 end;
 
 
-class function TCommandLineParser.ParseSingleFile(const Line1, Line2:string):TConfigOptions;
+class function TCommandLineParser.ParseSingleFile(const HelpLine1, HelpLine2:string):TConfigOptions;
 var
   Opts: TFileTokenizerCLOptions;
 begin
   Opts := TFileTokenizerCLOptions.Create;
   try
-    Result := ParseSharedOptions(Opts, Line1, Line2);
+    Result := ParseSharedOptions(Opts, HelpLine1, HelpLine2);
     if Result.AbortProgram then Exit;
+
     if not TFile.Exists(Result.FileName) then
     begin
       WriteLn('error: file not found: ', Result.FileName);
@@ -280,7 +288,7 @@ begin
       Exit;
     end;
     try
-      Result.FileContents := TFile.ReadAllText(Result.FileName, Result.Encoding);
+      Result.FileContents := ReadAllText(Result.FileName, Result.Encoding, Opts.SkipAnsiFallback);
     except
       on E: Exception do
       begin
@@ -294,7 +302,7 @@ begin
   end;
 end;
 
-class function TCommandLineParser.ParseSharedOptions(const Opts:TFileTokenizerCLOptions; const Line1, Line2:string):TConfigOptions;
+class function TCommandLineParser.ParseSharedOptions(const Opts:TFileTokenizerCLOptions; const HelpLine1, HelpLine2:string):TConfigOptions;
 var
   Parser: IGpCommandLineParser;
   Line: string;
@@ -320,8 +328,8 @@ begin
 
   if Opts.Help or (Opts.InputFile = '') then  // inputfile is the one required parameter
   begin
-    WriteLn(Line1);
-    WriteLn(Line2);
+    WriteLn(HelpLine1);
+    WriteLn(HelpLine2);
     WriteLn('A command-line utility for delphi-lexer from Continuous-Delphi');
     WriteLn('https://github.com/continuous-delphi/delphi-lexer');
     WriteLn('MIT Licensed.  Copyright (C) 2026, Darian Miller');
@@ -337,6 +345,7 @@ begin
   end;
 
   Result.FileName := Opts.InputFile;
+  Result.SkipAnsiFallback := Opts.SkipAnsiFallback;
 
   Result.Encoding := TLexerUtils.ResolveEncoding(Opts.Encoding);
   if not Assigned(Result.Encoding) then
@@ -367,7 +376,7 @@ begin
   Result.AbortProgram := False;
 end;
 
-class function TCommandLineParser.ParseFileCompare(const Line1, Line2:string):TFileCompareConfigOptions;
+class function TCommandLineParser.ParseFileCompare(const HelpLine1, HelpLine2:string):TFileCompareConfigOptions;
 var
   Opts: TFileComparerCLOptions;
 begin
@@ -376,7 +385,7 @@ begin
   Opts := TFileComparerCLOptions.Create;
   try
     //TokenDump+TokenStats+TokenCompare share a handful of options
-    Result.BaseOptions := ParseSharedOptions(Opts, Line1, Line2);
+    Result.BaseOptions := ParseSharedOptions(Opts, HelpLine1, HelpLine2);
     if Result.BaseOptions.AbortProgram then Exit(Result);
 
     if not TFile.Exists(Result.BaseOptions.FileName) then
@@ -387,7 +396,7 @@ begin
       Exit(Result);
     end;
     try
-      Result.BaseOptions.FileContents := TFile.ReadAllText(Result.BaseOptions.FileName, Result.BaseOptions.Encoding);
+      Result.BaseOptions.FileContents := ReadAllText(Result.BaseOptions.FileName, Result.BaseOptions.Encoding, Result.BaseOptions.SkipAnsiFallback);
     except
       on E: Exception do
       begin
@@ -443,7 +452,7 @@ begin
 
     try
       // toconsider: offer 2nd file encoding?  (They would be automatically be 'different' if so)
-      Result.SecondContents := TFile.ReadAllText(Result.SecondFile, Result.BaseOptions.Encoding);
+      Result.SecondContents := ReadAllText(Result.SecondFile, Result.BaseOptions.Encoding, Result.BaseOptions.SkipAnsiFallback);
     except
       on E: Exception do
       begin
@@ -458,14 +467,14 @@ begin
 end;
 
 
-class function TCommandLineParser.ParseStats(const Line1, Line2: string): TStatsConfig;
+class function TCommandLineParser.ParseStats(const HelpLine1, HelpLine2: string): TStatsConfig;
 var
   Opts: TTokenStatsCLOptions;
 begin
   Result := Default(TStatsConfig);
   Opts := TTokenStatsCLOptions.Create;
   try
-    Result.Common := ParseSharedOptions(Opts, Line1, Line2);
+    Result.Common := ParseSharedOptions(Opts, HelpLine1, HelpLine2);
     if Result.Common.AbortProgram then Exit;
     Result.Recursive := Opts.Recursive;
   finally
@@ -473,5 +482,39 @@ begin
   end;
 end;
 
+
+class function TCommandLineParser.ReadAllText(const FileName: string; const Encoding:TEncoding; const SkipAnsiFallback:Boolean): string;
+var
+  Win1252:TEncoding;
+begin
+  try
+    Result := TFile.ReadAllText(FileName, Encoding);
+  except
+    on E:EEncodingError do
+      begin
+        // Original assumption is that most code files are UTF-8 today, but that can lead to trouble
+        // Prime example is the RTL file in Delphi 13: source\data\cloud\Data.Cloud.AzureAPI.pas
+        // This has a special right quote character saved as ANSI (Win1252 codepage)
+        // Byte 0x92 (Decimal 146) is invalid with UTF-8
+        if SkipAnsiFallback then
+        begin
+          raise;
+        end
+        else //automatically try again with 1252
+        begin
+          Win1252 :=  TMBCSEncoding.Create(1252, {UseBOM=}False);
+          try
+            Result := TFile.ReadAllText(FileName, Win1252);
+          finally
+            Win1252.Free;
+          end;
+        end;
+      end;
+    else
+    begin
+      raise;
+    end;
+  end;
+end;
 
 end.
