@@ -23,7 +23,8 @@ type
     tkWhitespace,    // space/tab/vt/ff run
     tkEOL,           // CR, LF, or CRLF
     tkEOF,           // end sentinel
-    tkInvalid        // unrecognised character (e.g. stray NUL or illegal byte)
+    tkInvalid,       // unrecognised character (e.g. stray NUL or illegal byte)
+    tkInactiveCode   // collapsed inactive conditional-compilation region (injected by delphi-conditional-processor; never produced by the lexer)
   );
 
 
@@ -66,7 +67,8 @@ const
     'tkWhitespace',
     'tkEOL',
     'tkEOF',
-    'tkInvalid'
+    'tkInvalid',
+    'tkInactiveCode'
   );
 
 function TokenKindName(K: TTokenKind): string;
@@ -96,7 +98,7 @@ end;
 
 function IsTrivia(Kind: TTokenKind): Boolean;
 begin
-  Result := Kind in [tkWhitespace, tkEOL, tkComment, tkDirective];
+  Result := Kind in [tkWhitespace, tkEOL, tkComment, tkDirective, tkInactiveCode];
 end;
 
 
