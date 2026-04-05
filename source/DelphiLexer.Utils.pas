@@ -58,6 +58,14 @@ type
     property Version: Boolean read FVersion write FVersion;
   end;
 
+  TConditionalFileTokenizerCLOptions = class(TFileTokenizerCLOptions)
+  private
+    FJsonContextFile:string;
+  public
+    [CLPPosition(2), CLPLongName('jsonContext', 'json'), CLPDescription('Context defined in json config file')]
+    property JsonContextFile: string read FJsonContextFile write FJsonContextFile;
+  end;
+
 
   TFileComparerCLOptions = class(TFileTokenizerCLOptions)
   private
@@ -122,6 +130,11 @@ type
     StopAfterFirstDiff: Boolean;
   end;
 
+  TConditionalConfig = record
+    Common: TConfigOptions;
+    JSonContextFile: string;
+  end;
+
   TStatsConfig = record
     Common: TConfigOptions;
     Recursive: Boolean;
@@ -134,6 +147,8 @@ type
     class function ParseSingleFile(const HelpLine1, HelpLine2:string):TConfigOptions;
     class function ParseFileCompare(const HelpLine1, HelpLine2:string):TFileCompareConfigOptions;
     class function ParseStats(const HelpLine1, HelpLine2: string): TStatsConfig;
+
+    class function ParseConditionalSingleFile(const HelpLine1, HelpLine2:string):TConditionalConfig;
 
     class function ReadAllText(const FileName: string; const Encoding:TEncoding; const SkipAnsiFallback:Boolean): string;
   end;
@@ -270,6 +285,62 @@ begin
     Result := nil;
 end;
 
+
+class function TCommandLineParser.ParseConditionalSingleFile(const HelpLine1, HelpLine2:string):TConditionalConfig;
+var
+  Opts: TConditionalFileTokenizerCLOptions;
+begin
+  Result := Default(TConditionalConfig);
+
+  Opts := TConditionalFileTokenizerCLOptions.Create;
+  try
+    //TokenDump+TokenStats+TokenCompare share a handful of options
+    Result.Common := ParseSharedOptions(Opts, HelpLine1, HelpLine2);
+    if Result.Common.AbortProgram then Exit(Result);
+
+    if not TFile.Exists(Result.Common.FileName) then
+    begin
+      WriteLn('error: file not found: ', Result.Common.FileName);
+      Result.Common.ExitCode := 1;
+      Result.Common.AbortProgram := True;
+      Exit(Result);
+    end;
+    try
+      Result.Common.FileContents := ReadAllText(Result.Common.FileName, Result.Common.Encoding, Result.Common.SkipAnsiFallback);
+    except
+      on E: Exception do
+      begin
+        WriteLn('error: could not read source file: ', E.Message);
+        Result.Common.ExitCode := 1;
+        Result.Common.AbortProgram := True;
+        Exit(Result);
+      end;
+    end;
+
+
+
+    Result.JSonContextFile := Opts.JsonContextFile;
+
+    if Result.JsonContextFile = '' then
+    begin
+      WriteLn('error: json context config file not specified');
+      Result.Common.ExitCode := 1;
+      Result.Common.AbortProgram := True;
+      Exit(Result);
+    end;
+
+    if not TFile.Exists(Result.JsonContextFile) then
+    begin
+      WriteLn('error: file not found: ', Result.JsonContextFile);
+      Result.Common.ExitCode := 1;
+      Result.Common.AbortProgram := True;
+      Exit(Result);
+    end;
+
+  finally
+    Opts.Free;
+  end;
+end;
 
 class function TCommandLineParser.ParseSingleFile(const HelpLine1, HelpLine2:string):TConfigOptions;
 var

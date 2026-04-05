@@ -1,0 +1,25 @@
+﻿unit directive_usage;
+
+interface
+
+type
+
+  TMytest = class
+  public
+    procedure DoSomething;
+  end;
+
+implementation
+
+{ TMytest }
+
+procedure TMytest.DoSomething;
+begin
+  {$IFDEF DEBUUG}
+  WriteLn('Debug');
+  {$ELSE}
+  WriteLn('Not Debug');
+  {$ENDIF}
+end;
+
+end.

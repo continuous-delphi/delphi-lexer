@@ -9,15 +9,22 @@ uses
 
 type
 
-  TTokenDump = record
+  TTokenDump = class
   private const
-    AppName = 'DelphiLexer.TokenDump';
+    DefaultAppName = 'DelphiLexer.TokenDump';
+    DefaultAppDescription = 'Provides a lossless, position-accurate view of Object Pascal source code';
     ExitCode_Success = 0;
+    ExitCode_Fatal = 1;
     ExitCode_InvalidTokens = 2;
     ExitCode_RoundTripFailed = 3; //tokenization failure
   private
     class function WriteTextOutput(const Config: TConfigOptions; const Tokens: TList<TToken>): Integer; static;
     class function WriteJsonOutput(const Config: TConfigOptions; const Tokens: TList<TToken>): Integer; static;
+  protected
+    class function AppName:String; virtual;
+    class function AppDescription:String; virtual;
+    class function Tokenize(const SourceCode:string):TList<TToken>; virtual;
+    class function WriteOutput(const Config: TConfigOptions; const Tokens: TList<TToken>):Integer;
   public
     class function Run: Integer; static;
   end;
@@ -31,10 +38,41 @@ uses
   DelphiLexer.Lexer;
 
 
+class function TTokenDump.AppDescription: String;
+begin
+  Result := DefaultAppName;
+end;
+
+class function TTokenDump.AppName: String;
+begin
+  Result := DefaultAppDescription;
+end;
+
+class function TTokenDump.Tokenize(const SourceCode:string):TList<TToken>;
+var
+  Lexer: TDelphiLexer;
+begin
+  Lexer  := TDelphiLexer.Create;
+  try
+    Result := Lexer.Tokenize(SourceCode);
+  finally
+    Lexer.Free;
+  end;
+end;
+
+class function TTokenDump.WriteOutput(const Config: TConfigOptions; const Tokens: TList<TToken>):Integer;
+begin
+  case Config.OutputFormat of
+    TOutputFormat.ofText: Result := WriteTextOutput(Config, Tokens);
+    TOutputFormat.ofJson: Result := WriteJsonOutput(Config, Tokens);
+  else
+    Assert(False, 'Invalid output format');
+  end;
+end;
+
 class function TTokenDump.Run: Integer;
 var
-  Options: TConfigOptions;
-  Lexer: TDelphiLexer;
+  Config: TConfigOptions;
   Tokens: TList<TToken>;
 begin
 
@@ -42,24 +80,14 @@ begin
   ReportMemoryLeaksOnShutdown := True;
   {$ENDIF}
 
-  Options := TCommandLineParser.ParseSingleFile(AppName, 'Provides a lossless, position-accurate view of Object Pascal source code');
-  if Options.AbortProgram then Exit(Options.ExitCode);
+  Config := TCommandLineParser.ParseSingleFile(AppName, AppDescription);
+  if Config.AbortProgram then Exit(Config.ExitCode);
 
-  Result := ExitCode_Success;
-
-  Lexer  := TDelphiLexer.Create;
-  Tokens := nil;
+  Tokens := Tokenize(Config.FileContents);
   try
-    Tokens := Lexer.Tokenize(Options.FileContents);
-    case Options.OutputFormat of
-      TOutputFormat.ofText: Result := WriteTextOutput(Options, Tokens);
-      TOutputFormat.ofJson: Result := WriteJsonOutput(Options, Tokens);
-    else
-      Assert(False, 'Invalid output format');
-    end;
+    Result := WriteOutput(Config, Tokens);
   finally
     Tokens.Free;
-    Lexer.Free;
   end;
 end;
 
