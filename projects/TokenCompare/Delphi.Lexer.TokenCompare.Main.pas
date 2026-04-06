@@ -11,7 +11,7 @@ uses
 type
   TTokenCompare = record
   private const
-    AppName = 'DelphiLexer.TokenCompare';
+    AppName = 'Delphi.Lexer.TokenCompare';
     ExitCode_Success = 0;
     ExitCode_OpFailure = 1;
     ExitCode_Difference = 10;

@@ -53,7 +53,7 @@ type
 
   TTokenStats = record
   private const
-    AppName = 'DelphiLexer.TokenStats';
+    AppName = 'Delphi.Lexer.TokenStats';
     ExitCode_Success = 0;
     ExitCode_InvalidTokens = 2;
     ExitCode_RoundTripFailed = 3; //tokenization failure

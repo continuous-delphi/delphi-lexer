@@ -11,7 +11,7 @@ type
 
   TTokenDump = class
   private const
-    DefaultAppName = 'DelphiLexer.TokenDump';
+    DefaultAppName = 'Delphi.Lexer.TokenDump';
     DefaultAppDescription = 'Provides a lossless, position-accurate view of Object Pascal source code';
     ExitCode_Success = 0;
     ExitCode_Fatal = 1;
