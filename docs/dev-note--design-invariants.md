@@ -203,17 +203,19 @@ misclassified.
 
 ---
 
-## I-12: Token kind is assigned at lex time; callers do not reclassify
+## I-12: Token kind is assigned; downstream consumers do not mutate tokens in place
 
-**Rule:** `Token.Kind` is set once, during tokenization, and is not modified
-afterward. No downstream consumer (formatter rule, structural pass, etc.) may
-change a token's kind.
+**Rule:** In the token stream returned directly by `delphi-lexer`, `Token.Kind` is
+set once during tokenization and is not modified afterward. Downstream consumers
+must not mutate token kinds in place.
 
-**Why it exists:** Token kind is the contract between the lexer and its
-callers. Allowing reclassification downstream creates hidden coupling between
-components and makes the token stream's meaning context-dependent. If a
-higher-level analysis needs a finer classification, it should store that
-information externally (e.g., in an annotation record that wraps `TToken`).
+A later pipeline stage _may_ produce a derived token stream from the raw lexer tokens.
+Such a stage may introduce new synthetic token kinds (for example `tkInactiveCode`)
+by replacing a span of source tokens with a new token in the derived stream, but
+it does not alter the original lexer token list in place.
+
+**Why it exists:** This preserves the lexer contract for raw tokens while still allowing
+higher pipeline stages to build context-aware derived views.
 
 **What breaks if violated:** Two consumers that each reclassify the same token
 differently produce inconsistent views of the stream. The lexer's guarantee
