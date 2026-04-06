@@ -11,7 +11,7 @@
 
 
 A standalone, reusable lexer for Delphi (Object Pascal) source code.
-Produces a flat `TList<TToken>` from source text with full round-trip
+Produces a flat `TTokenList` (`TList<TToken>`) from source text with full round-trip
 fidelity and precise source mapping.
 
 Lexer only (no parser, no AST, no formatter, or configuration dependencies).
@@ -23,12 +23,12 @@ Lexer only (no parser, no AST, no formatter, or configuration dependencies).
 ```pascal
 uses
   System.Generics.Collections,
-  DelphiLexer.Token,
-  DelphiLexer.Lexer;
+  Delphi.Lexer.Token,
+  Delphi.Lexer.Lexer;
 
 var
   Lexer:  TDelphiLexer;
-  Tokens: TList<TToken>;
+  Tokens: TTokenList;
   Tok:    TToken;
 begin
   Lexer := nil;
@@ -48,7 +48,7 @@ begin
 end;
 ```
 
-`Tokenize` allocates and returns a `TList<TToken>`; the caller owns it.
+`Tokenize` allocates and returns a `TTokenList`; the caller owns it.
 `TokenizeInto` appends tokens to a caller-supplied list (avoids the allocation).
 
 To look up the token that covers a given source position, use `FindTokenAtOffset`:
@@ -68,12 +68,12 @@ if Idx >= 0 then
 
 ```
 source/             Core library units
-  DelphiLexer.Token.pas       TToken record, TTokenKind enum
-  DelphiLexer.Keywords.pas    DELPHI_KEYWORDS list, IsDelphiKeyword
-  DelphiLexer.Scanner.pas     TScanner + helpers (internal; not public API)
-  DelphiLexer.Lexer.pas       TDelphiLexer (public entry point)
-  DelphiLexer.Utils.pas       Shared command line options/utilities
-  DelphiLexer.Diff.pas        Myers diff algorithm over tokens
+  Delphi.Token.pas             TToken record, TTokenKind enum
+  Delphi.Keywords.pas          DELPHI_KEYWORDS list, IsDelphiKeyword
+  Delphi.Lexer.pas             TDelphiLexer (public entry point)
+  Delphi.Lexer.Scanner.pas     TScanner + helpers (internal; not public API)
+  Delphi.Lexer.Utils.pas       Shared command line options/utilities
+  Delphi.Lexer.MyersDiff.pas   Myers diff algorithm over tokens
 
 test/               DUnitX test project
   golden/           Representative .pas files for round-trip tests
@@ -107,9 +107,9 @@ See also: [Dev Note - Design Invariants.md](/docs/dev-note--design-invariants.md
 In addition to the core lexer, this repository provides three command-line tools
 for working with token streams:
 
-- **DelphiLexer.TokenDump** - inspect tokens
-- **DelphiLexer.TokenStats** - analyze token metrics
-- **DelphiLexer.TokenCompare** - compare token streams
+- **Delphi.Lexer.TokenDump** - inspect tokens
+- **Delphi.Lexer.TokenStats** - analyze token metrics
+- **Delphi.Lexer.TokenCompare** - compare token streams
 
 These utilities are intended for debugging, regression testing, and validating
 source transformations using deterministic token-level output.
@@ -355,7 +355,7 @@ character after `.` is also `.`, the decimal point is not consumed.
 
 - 123 keywords are classified as `tkStrictKeyword` or `tkContextKeyword`.
 All others tokenize as `tkIdentifier`. The list is maintained in
-`DelphiLexer.Keywords.pas` and has been matched to Embarcadero's official
+`Delphi.Lexer.Keywords.pas` and has been matched to Embarcadero's official
 documentation: [Embarcadero: Fundamental Syntactic Elements](https://docwiki.embarcadero.com/RADStudio/en/Fundamental_Syntactic_Elements_%28Delphi%29)
 
 

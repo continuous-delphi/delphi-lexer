@@ -188,7 +188,7 @@ pass malformed files.
 
 ## I-11: DELPHI_KEYWORDS must remain sorted in ascending order
 
-**Rule:** The `DELPHI_KEYWORDS` array in `DelphiLexer.Keywords.pas` must
+**Rule:** The `DELPHI_KEYWORDS` array in `Delphi.Keywords.pas` must
 remain sorted in ascending ASCII/case-folded order at all times. Any addition,
 removal, or rename must preserve the sort.
 

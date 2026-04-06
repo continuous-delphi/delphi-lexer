@@ -67,7 +67,7 @@ Note: named option values use `--key:value` or `--key=value` syntax (not `--key 
 
 ## Example Commands
 
-`delphilexer.tokencompare test\golden\real_unit.pas test\golden\real_unit_plus_CRLF.pas`
+`delphi.lexer.tokencompare test\golden\real_unit.pas test\golden\real_unit_plus_CRLF.pas`
 
 Result (notice Myers diff reduces noise):
 
@@ -111,7 +111,7 @@ Differences:
 Exit Code: 10
 ```
 
-`delphilexer.tokencompare test\golden\real_unit.pas test\golden\real_unit_plus_CRLF.pas -e`
+`delphi.lexer.tokencompare test\golden\real_unit.pas test\golden\real_unit_plus_CRLF.pas -e`
 
 Result
 
@@ -176,7 +176,7 @@ and tooling integrations.
   distance exceeded 30% of the combined token count. When true, `diffCount`
   is `-1` (unknown) and the `diffs` array is empty.
 
-`delphilexer.tokencompare test\golden\real_unit.pas test\golden\real_unit_plus_CRLF.pas --format:json`
+`delphi.lexer.tokencompare test\golden\real_unit.pas test\golden\real_unit_plus_CRLF.pas --format:json`
 
 Result (notice Myers diff reduces noise):
 
