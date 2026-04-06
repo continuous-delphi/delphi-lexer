@@ -147,6 +147,7 @@ source transformations using deterministic token-level output.
 | `tkEOL` | Line ending: `#13#10` (CRLF), `#10` (LF), or `#13` (bare CR) |
 | `tkEOF` | End-of-source sentinel; always the last token, `Text = ''` |
 | `tkInvalid` | Character or prefix that does not begin any valid Delphi token |
+| `tkInactiveCode` | collapsed inactive conditional-compilation region (injected by conditional-processor; never produced by the lexer) |
 
 
 `tkComment` Note: `//` comment tokens do not include the trailing EOL.
