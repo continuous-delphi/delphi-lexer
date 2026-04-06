@@ -15,6 +15,9 @@
         <Projects Include="test\Delphi.Lexer.Tests.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="projects\TokenizeMemo\Delphi.Lexer.TokenizeMemo.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -59,14 +62,23 @@
     <Target Name="Delphi_Lexer_Tests:Make">
         <MSBuild Projects="test\Delphi.Lexer.Tests.dproj" Targets="Make"/>
     </Target>
+    <Target Name="Delphi_Lexer_TokenizeMemo">
+        <MSBuild Projects="projects\TokenizeMemo\Delphi.Lexer.TokenizeMemo.dproj"/>
+    </Target>
+    <Target Name="Delphi_Lexer_TokenizeMemo:Clean">
+        <MSBuild Projects="projects\TokenizeMemo\Delphi.Lexer.TokenizeMemo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Delphi_Lexer_TokenizeMemo:Make">
+        <MSBuild Projects="projects\TokenizeMemo\Delphi.Lexer.TokenizeMemo.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="Delphi_Lexer_TokenDump;Delphi_Lexer_TokenStats;Delphi_Lexer_TokenCompare;Delphi_Lexer_Tests"/>
+        <CallTarget Targets="Delphi_Lexer_TokenDump;Delphi_Lexer_TokenStats;Delphi_Lexer_TokenCompare;Delphi_Lexer_Tests;Delphi_Lexer_TokenizeMemo"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="Delphi_Lexer_TokenDump:Clean;Delphi_Lexer_TokenStats:Clean;Delphi_Lexer_TokenCompare:Clean;Delphi_Lexer_Tests:Clean"/>
+        <CallTarget Targets="Delphi_Lexer_TokenDump:Clean;Delphi_Lexer_TokenStats:Clean;Delphi_Lexer_TokenCompare:Clean;Delphi_Lexer_Tests:Clean;Delphi_Lexer_TokenizeMemo:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="Delphi_Lexer_TokenDump:Make;Delphi_Lexer_TokenStats:Make;Delphi_Lexer_TokenCompare:Make;Delphi_Lexer_Tests:Make"/>
+        <CallTarget Targets="Delphi_Lexer_TokenDump:Make;Delphi_Lexer_TokenStats:Make;Delphi_Lexer_TokenCompare:Make;Delphi_Lexer_Tests:Make;Delphi_Lexer_TokenizeMemo:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

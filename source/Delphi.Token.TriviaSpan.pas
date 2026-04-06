@@ -12,6 +12,7 @@ type
     LastTokenIndex:Integer;
     function IsEmpty:Boolean;
     function Count:Integer;
+    function ToDebugString:string;
   end;
 
 
@@ -37,6 +38,19 @@ begin
   if IsEmpty then
     Exit(0);
   Result := LastTokenIndex - FirstTokenIndex + 1;
+end;
+
+function TTriviaSpan.ToDebugString:string;
+begin
+  if IsEmpty then
+  begin
+    Result := '';
+  end
+  else
+  begin
+    Result := Format('%d:%d', [FirstTokenIndex, LastTokenIndex]);
+  end;
+
 end;
 
 
