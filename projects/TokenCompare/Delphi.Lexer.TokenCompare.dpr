@@ -1,0 +1,25 @@
+program Delphi.Lexer.TokenCompare;
+
+{$APPTYPE CONSOLE}
+
+{$R *.res}
+
+uses
+  Delphi.Lexer.TokenCompare.Main in 'Delphi.Lexer.TokenCompare.Main.pas',
+  Delphi.Lexer.Utils in '..\..\source\Delphi.Lexer.Utils.pas',
+  Delphi.Lexer.Scanner in '..\..\source\Delphi.Lexer.Scanner.pas',
+  Delphi.Lexer in '..\..\source\Delphi.Lexer.pas',
+  Delphi.Keywords in '..\..\source\Delphi.Keywords.pas',
+  GpCommandLineParser in '..\..\shared\GpCommandLineParser.pas',
+  Delphi.Lexer.MyersDiff in '..\..\source\Delphi.Lexer.MyersDiff.pas',
+  Delphi.TokenKind in '..\..\source\Delphi.TokenKind.pas',
+  Delphi.TokenList in '..\..\source\Delphi.TokenList.pas',
+  Delphi.Token in '..\..\source\Delphi.Token.pas',
+  Delphi.Tokenizer in '..\..\source\Delphi.Tokenizer.pas',
+  Delphi.Token.TriviaSpan in '..\..\source\Delphi.Token.TriviaSpan.pas';
+
+begin
+
+  ExitCode := TTokenCompare.Run;
+
+end.

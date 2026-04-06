@@ -1,6 +1,6 @@
 # Tests
 
-DUnitX test project: `/tests/DelphiLexer.Tests.dproj`
+DUnitX test project: `/tests/Delphi.Lexer.Tests.dproj`
 
 
 | Fixture | Coverage |

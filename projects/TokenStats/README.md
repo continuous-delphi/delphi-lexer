@@ -1,4 +1,4 @@
-# DelphiLexer.TokenStats
+# Delphi.Lexer.TokenStats
 
 A command-line utility for analyzing the token stream produced by `delphi-lexer`,
 providing token-level statistics and metrics.
@@ -9,7 +9,7 @@ providing token-level statistics and metrics.
 
 ## When to use this tool
 
-`DelphiLexer.TokenStats` is useful for:
+`Delphi.Lexer.TokenStats` is useful for:
 
 - analyzing token distribution within a source file or across a directory tree
 - detecting unexpected changes in token counts during development
@@ -24,14 +24,14 @@ This utility is part of the `delphi-lexer` repository and is not distributed as 
 ## Usage:
 
 ```text
-DelphiLexer.TokenStats
+Delphi.Lexer.TokenStats
 Provides token-level statistics and metrics of Object Pascal source code
 A command-line utility for delphi-lexer from Continuous-Delphi
 https://github.com/continuous-delphi/delphi-lexer
 MIT Licensed.  Copyright (C) 2026, Darian Miller
 Version: 0.5.0
 
-DelphiLexer.TokenStats.exe [file] [options]
+Delphi.Lexer.TokenStats.exe [file] [options]
 
 [file]              - Delphi source file to tokenize
 [-r], [--recursive] - Search subdirectories recursively
@@ -56,10 +56,10 @@ named `myfile.pas` under the current directory.
 
 ### Single file
 
-`DelphiLexer.TokenStats.exe test\golden\real_unit.pas`
+`Delphi.Lexer.TokenStats.exe test\golden\real_unit.pas`
 
 ```text
-DelphiLexer.TokenStats
+Delphi.Lexer.TokenStats
 inputPath: test\golden\real_unit.pas
 formatVersion: 1.2.0
 
@@ -119,10 +119,10 @@ Exit Code: 0
 
 ### Wildcard (aggregate stats across multiple files)
 
-`DelphiLexer.TokenStats.exe test\golden\*.pas`
+`Delphi.Lexer.TokenStats.exe test\golden\*.pas`
 
 ```text
-DelphiLexer.TokenStats
+Delphi.Lexer.TokenStats
 inputPath: test\golden\*.pas
 formatVersion: 1.2.0
 
@@ -192,7 +192,7 @@ Exit Code: 0
 ```text
 Header Lines:
 
-  AppName       -- DelphiLexer.TokenStats
+  AppName       -- Delphi.Lexer.TokenStats
   inputPath     -- the file path or wildcard specification provided
   formatVersion -- {X.Y.Z}
 
@@ -232,11 +232,11 @@ and tooling integrations.
 - `invalidTokens` includes `file`, `text`, `line`, `col`, `startOffset`,
   and `length` for each `tkInvalid` token.
 
-`DelphiLexer.TokenStats.exe test\golden\real_unit.pas --format:json`
+`Delphi.Lexer.TokenStats.exe test\golden\real_unit.pas --format:json`
 
 ```json
 {
-  "toolName": "DelphiLexer.TokenStats",
+  "toolName": "Delphi.Lexer.TokenStats",
   "inputPath": "test\\golden\\real_unit.pas",
   "recursive": false,
   "fileCount": 1,
@@ -407,9 +407,9 @@ end.
 Part of the [Continuous-Delphi](https://github.com/continuous-delphi) ecosystem including:
 
 - `delphi-lexer` -- core tokenizer
-  - `DelphiLexer.TokenDump` -- token inspection
-  - `DelphiLexer.TokenStats` -- token analysis
-  - `DelphiLexer.TokenCompare` -- token comparison
+  - `Delphi.Lexer.TokenDump` -- token inspection
+  - `Delphi.Lexer.TokenStats` -- token analysis
+  - `Delphi.Lexer.TokenCompare` -- token comparison
 - `delphi-compiler-versions` -- Canonical list of versions with aliases and toolchain metadata
 - `delphi-inspect` -- Delphi toolchain discovery and normalization for assisting with automated builds
 - `delphi-powershell-ci` -- Automate clean, build, test and other steps for reliable pre-commit verification

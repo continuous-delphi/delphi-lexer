@@ -1,4 +1,4 @@
-# DelphiLexer.TokenDump
+# Delphi.Lexer.TokenDump
 
 A command-line utility for inspecting the token stream produced by `delphi-lexer`,
 providing a lossless, position-accurate view of the source.
@@ -9,7 +9,7 @@ providing a lossless, position-accurate view of the source.
 
 ## When to use this tool
 
-`DelphiLexer.TokenDump` is useful for:
+`Delphi.Lexer.TokenDump` is useful for:
 
 - debugging unexpected tokenization behavior
 - validating edge cases (strings, directives, numeric literals)
@@ -24,17 +24,17 @@ This utility is part of the `delphi-lexer` repository and is not distributed as 
 
 View help with `-?` or `--help`
 
-Example:  `DelphiLexer.TokenDump.exe -?`
+Example:  `Delphi.Lexer.TokenDump.exe -?`
 
 ```text
-DelphiLexer.TokenDump
+Delphi.Lexer.TokenDump
 Provides a lossless, position-accurate view of Object Pascal source code
 A command-line utility for delphi-lexer from Continuous-Delphi
 https://github.com/continuous-delphi/delphi-lexer
 MIT Licensed.  Copyright (C) 2026, Darian Miller
 Version: 1.0.0
 
-DelphiLexer.TokenDump.exe [file] [options]
+Delphi.Lexer.TokenDump.exe [file] [options]
 
 [file]            - Delphi source file to tokenize
 [--encoding:name] - Source file encoding (utf-8, utf-16, utf-16be, ansi,
@@ -48,10 +48,10 @@ Note: named option values use `--key:value` or `--key=value` syntax (not `--key 
 
 ## Example Command
 
-`DelphiLexer.TokenDump.exe test\golden\minimal.pas`
+`Delphi.Lexer.TokenDump.exe test\golden\minimal.pas`
 
 ```text
-DelphiLexer.TokenDump
+Delphi.Lexer.TokenDump
 inputFile: test\golden\minimal.pas
 formatVersion: 1.1.0
 
@@ -88,7 +88,7 @@ Exit Code: 0
 ```text
 Header Lines:
 
-  AppName       -- DelphiLexer.TokenDump
+  AppName       -- Delphi.Lexer.TokenDump
   formatVersion -- {X.Y.Z}
 
 Token Table Columns:
@@ -118,11 +118,11 @@ representation of the token stream as produced by `delphi-lexer`.
 - The JSON format is intended for use in automated testing, CI pipelines,
 and tooling integrations.
 
-`DelphiLexer.TokenDump.exe test\golden\minimal.pas --format:json`
+`Delphi.Lexer.TokenDump.exe test\golden\minimal.pas --format:json`
 
 ```json
 {
-  "toolName": "DelphiLexer.TokenDump",
+  "toolName": "Delphi.Lexer.TokenDump",
   "inputFile": "test\\golden\\minimal.pas",
   "formatVersion": "1.1.0",
   "options": {
@@ -352,9 +352,9 @@ end.
 Part of the [Continuous-Delphi](https://github.com/continuous-delphi) ecosystem including:
 
 - `delphi-lexer` -- core tokenizer
-  - `DelphiLexer.TokenDump` -- token inspection
-  - `DelphiLexer.TokenStats` -- token analysis
-  - `DelphiLexer.TokenCompare` -- token comparison
+  - `Delphi.Lexer.TokenDump` -- token inspection
+  - `Delphi.Lexer.TokenStats` -- token analysis
+  - `Delphi.Lexer.TokenCompare` -- token comparison
 - `delphi-compiler-versions` -- Canonical list of versions with aliases and toolchain metadata
 - `delphi-inspect` -- Delphi toolchain discovery and normalization for assisting with automated builds
 - `delphi-powershell-ci` -- Automate clean, build, test and other steps for reliable pre-commit verification

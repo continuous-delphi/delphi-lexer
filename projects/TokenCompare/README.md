@@ -1,4 +1,4 @@
-# DelphiLexer.TokenCompare
+# Delphi.Lexer.TokenCompare
 
 A command-line utility for comparing the token stream produced by `delphi-lexer` for
 two Object Pascal source files.
@@ -19,7 +19,7 @@ the files are almost certainly unrelated.
 
 ## When to use this tool
 
-`DelphiLexer.TokenCompare` is useful for:
+`Delphi.Lexer.TokenCompare` is useful for:
 
 - verifying that two source files produce equivalent token streams
 - validating that formatting changes do not alter semantic tokens
@@ -35,17 +35,17 @@ This utility is part of the `delphi-lexer` repository and is not distributed as 
 
 View help with `-?` or `--help`
 
-Example:  `DelphiLexer.TokenCompare.exe -?`
+Example:  `Delphi.Lexer.TokenCompare.exe -?`
 
 ```text
-DelphiLexer.TokenCompare
+Delphi.Lexer.TokenCompare
 Compares the token streams of two Object Pascal source files
 A command-line utility for delphi-lexer from Continuous-Delphi
 https://github.com/continuous-delphi/delphi-lexer
 MIT Licensed.  Copyright (C) 2026, Darian Miller
 Version: 1.0.1
 
-DelphiLexer.TokenCompare.exe [file] [file2] [options]
+Delphi.Lexer.TokenCompare.exe [file] [file2] [options]
 
 [file]                          - Delphi source file to tokenize
 [file2]                         - Second source file to tokenize
@@ -72,7 +72,7 @@ Note: named option values use `--key:value` or `--key=value` syntax (not `--key 
 Result (notice Myers diff reduces noise):
 
 ```text
-DelphiLexer.TokenCompare
+Delphi.Lexer.TokenCompare
 formatVersion: 2.0.0
 File A             : test\golden\real_unit.pas
 File B             : test\golden\real_unit_plus_CRLF.pas
@@ -116,7 +116,7 @@ Exit Code: 10
 Result
 
 ```text
-DelphiLexer.TokenCompare
+Delphi.Lexer.TokenCompare
 formatVersion: 2.0.0
 File A             : test\golden\real_unit.pas
 File B             : test\golden\real_unit_plus_CRLF.pas
@@ -140,7 +140,7 @@ sets `--max-diffs` to 1)
 ```text
 Header Lines:
 
-  AppName         -- DelphiLexer.TokenCompare
+  AppName         -- Delphi.Lexer.TokenCompare
   formatVersion   -- {X.Y.Z}
   File A          -- First file to compare
   File B          -- Second file to compare
@@ -182,7 +182,7 @@ Result (notice Myers diff reduces noise):
 
 ```json
 {
-  "toolName": "DelphiLexer.TokenCompare",
+  "toolName": "Delphi.Lexer.TokenCompare",
   "formatVersion": "2.0.0",
   "fileA": "test\\golden\\real_unit.pas",
   "fileB": "test\\golden\\real_unit_plus_CRLF.pas",
@@ -391,9 +391,9 @@ end.
 Part of the [Continuous-Delphi](https://github.com/continuous-delphi) ecosystem including:
 
 - `delphi-lexer` -- core tokenizer
-  - `DelphiLexer.TokenDump` -- token inspection
-  - `DelphiLexer.TokenStats` -- token analysis
-  - `DelphiLexer.TokenCompare` -- token comparison
+  - `Delphi.Lexer.TokenDump` -- token inspection
+  - `Delphi.Lexer.TokenStats` -- token analysis
+  - `Delphi.Lexer.TokenCompare` -- token comparison
 - `delphi-compiler-versions` -- Canonical list of versions with aliases and toolchain metadata
 - `delphi-inspect` -- Delphi toolchain discovery and normalization for assisting with automated builds
 - `delphi-powershell-ci` -- Automate clean, build, test and other steps for reliable pre-commit verification
