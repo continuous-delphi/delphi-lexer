@@ -15,7 +15,7 @@ implementation
 
 procedure TMytest.DoSomething;
 begin
-  {$IFDEF DEBUUG}
+  {$IFDEF DEBUG}
   WriteLn('Debug');
   {$ELSE}
   WriteLn('Not Debug');
