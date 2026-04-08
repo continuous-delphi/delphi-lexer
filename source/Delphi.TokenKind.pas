@@ -78,7 +78,7 @@ end;
 
 function IsLexicalTrivia(Kind:TTokenKind):Boolean;
 begin
-  Result := Kind in [tkWhitespace, tkEOL, tkComment, tkDirective, tkInactiveCode];
+  Result := Kind in [tkWhitespace, tkEOL, tkComment, tkDirective];
 end;
 
 
