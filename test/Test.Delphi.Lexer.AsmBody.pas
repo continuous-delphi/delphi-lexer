@@ -2,23 +2,30 @@ unit Test.Delphi.Lexer.AsmBody;
 
 // Tests for tkAsmBody tokenization.
 //
-// An asm...end block is emitted as three tokens:
+// A simple asm...end block (no directives) is emitted as three tokens plus EOF:
 //   tkStrictKeyword('asm')
 //   tkAsmBody(<all source text between asm and end, inclusive of whitespace>)
 //   tkStrictKeyword('end')
+//   tkEOF
 //
-// The interior of the body is opaque: it is not tokenised as individual
-// Delphi or assembly tokens. Comments, directives, and quoted strings inside
-// the body are still recognised structurally so that an 'end' appearing
-// inside them is not mistaken for the block terminator.
+// When the body contains {$...} or (*$...*) compiler directives, each directive
+// is extracted as a separate tkDirective token. The body is split into one
+// tkAsmBody segment before the directive and another after it. Multiple
+// directives produce multiple splits. Non-directive { } comments and (* *)
+// comments are NOT extracted -- they remain part of the enclosing tkAsmBody.
+//
+// 'end' inside any comment, directive, or quoted string is never treated as
+// the block terminator (shallow nesting policy).
 //
 // Sections:
 //   1. Token shape -- kind, count, and body-text fidelity.
-//   2. Opaqueness -- keywords and comments inside body are not separate tokens.
+//   2. Opaqueness -- keywords and non-directive comments inside body are not
+//      separate tokens.
 //   3. Terminator detection -- 'end' is found at the correct boundary.
 //   4. Round-trip and offset invariants.
 //   5. Unterminated asm block.
 //   6. Trivia span behaviour.
+//   7. Directives extracted from asm body.
 
 interface
 
@@ -70,6 +77,14 @@ type
     // --- Trivia span behaviour ---
     [Test] procedure IsNotTrivia;
     [Test] procedure TriviaSpans_NoInternalTriviaTokens;
+
+    // --- Directives extracted from asm body ---
+    [Test] procedure DirectiveInBody_EmittedAsTkDirective;
+    [Test] procedure DirectiveInBody_BodySplitsAroundDirective;
+    [Test] procedure ParenStarDirectiveInBody_EmittedAsTkDirective;
+    [Test] procedure MultipleDirectivesInBody_AllExtracted;
+    [Test] procedure NonDirectiveBraceComment_RemainsInBody;
+    [Test] procedure DirectiveInBody_RoundTrip;
   end;
 
 
@@ -456,6 +471,154 @@ begin
     Assert.IsTrue(T[1].TrailingTrivia.IsEmpty, 'body TrailingTrivia empty');
     // 'end': no leading trivia (body immediately precedes as semantic token)
     Assert.IsTrue(T[2].LeadingTrivia.IsEmpty,  'end LeadingTrivia empty');
+  finally
+    T.Free;
+  end;
+end;
+
+
+// ---------------------------------------------------------------------------
+// Directives extracted from asm body
+// ---------------------------------------------------------------------------
+
+procedure TAsmBodyTests.DirectiveInBody_EmittedAsTkDirective;
+var
+  T: TTokenList;
+begin
+  // A {$directive} inside an asm body must become a separate tkDirective token
+  // so the conditional processor can close the enclosing {$IF} block.
+  // Expected token sequence:
+  //   [0] asm  [1] body-before  [2] {$ENDIF}  [3] body-after  [4] end  [5] EOF
+  T := Tok('asm' + #13#10 +
+           '  nop' + #13#10 +
+           '{$ENDIF}' + #13#10 +
+           'end');
+  try
+    Assert.AreEqual(NativeInt(6), T.Count, 'count');
+    Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), '[0] asm');
+    Assert.AreEqual(Ord(tkAsmBody),       Ord(T[1].Kind), '[1] body before directive');
+    Assert.AreEqual(Ord(tkDirective),     Ord(T[2].Kind), '[2] directive kind');
+    Assert.AreEqual('{$ENDIF}',           T[2].Text,      '[2] directive text');
+    Assert.AreEqual(Ord(tkAsmBody),       Ord(T[3].Kind), '[3] body after directive');
+    Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[4].Kind), '[4] end');
+    Assert.AreEqual(Ord(tkEOF),           Ord(T[5].Kind), '[5] EOF');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TAsmBodyTests.DirectiveInBody_BodySplitsAroundDirective;
+var
+  T: TTokenList;
+begin
+  // The body text before the directive and after the directive must each be
+  // emitted as a separate tkAsmBody token with the correct content.
+  T := Tok('asm' + #13#10 +
+           '  MOV ECX, 1' + #13#10 +
+           '{$ENDIF}' + #13#10 +
+           '  JMP done' + #13#10 +
+           'end');
+  try
+    Assert.AreEqual(NativeInt(6), T.Count, 'count');
+    Assert.AreEqual(#13#10 + '  MOV ECX, 1' + #13#10, T[1].Text, 'body before');
+    Assert.AreEqual('{$ENDIF}',                        T[2].Text, 'directive');
+    Assert.AreEqual(#13#10 + '  JMP done' + #13#10,   T[3].Text, 'body after');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TAsmBodyTests.ParenStarDirectiveInBody_EmittedAsTkDirective;
+var
+  T: TTokenList;
+begin
+  // The (*$...*) directive form inside an asm body must also be extracted
+  // as a separate tkDirective token.
+  T := Tok('asm' + #13#10 +
+           '  nop' + #13#10 +
+           '(*$ENDIF*)' + #13#10 +
+           'end');
+  try
+    Assert.AreEqual(NativeInt(6), T.Count, 'count');
+    Assert.AreEqual(Ord(tkDirective), Ord(T[2].Kind), '[2] directive kind');
+    Assert.AreEqual('(*$ENDIF*)',     T[2].Text,      '[2] directive text');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TAsmBodyTests.MultipleDirectivesInBody_AllExtracted;
+var
+  T: TTokenList;
+begin
+  // Two directives inside an asm body each become a separate tkDirective token.
+  // Expected:
+  //   [0] asm  [1] body  [2] {$IFDEF WIN32}  [3] body  [4] {$ENDIF}  [5] body
+  //   [6] end  [7] EOF  = 8 tokens
+  T := Tok('asm' + #13#10 +
+           '  nop' + #13#10 +
+           '{$IFDEF WIN32}' + #13#10 +
+           '  xor eax, eax' + #13#10 +
+           '{$ENDIF}' + #13#10 +
+           'end');
+  try
+    Assert.AreEqual(NativeInt(8), T.Count, 'count');
+    Assert.AreEqual(Ord(tkDirective), Ord(T[2].Kind), '[2] first directive kind');
+    Assert.AreEqual('{$IFDEF WIN32}', T[2].Text,      '[2] first directive text');
+    Assert.AreEqual(Ord(tkAsmBody),   Ord(T[3].Kind), '[3] body between directives');
+    Assert.AreEqual(Ord(tkDirective), Ord(T[4].Kind), '[4] second directive kind');
+    Assert.AreEqual('{$ENDIF}',       T[4].Text,      '[4] second directive text');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TAsmBodyTests.NonDirectiveBraceComment_RemainsInBody;
+var
+  T: TTokenList;
+  Body: string;
+begin
+  // A plain { } comment (no '$') inside an asm body must NOT be extracted as
+  // a directive -- it remains part of the tkAsmBody text.
+  // Only {$...} directives are extracted; plain comments stay opaque.
+  T := Tok('asm' + #13#10 +
+           '  { plain comment }' + #13#10 +
+           'end');
+  try
+    Assert.AreEqual(NativeInt(4), T.Count, 'count: no extra directive token');
+    Assert.AreEqual(Ord(tkAsmBody), Ord(T[1].Kind), '[1] single body token');
+    Body := T[1].Text;
+    Assert.IsTrue(Pos('{ plain comment }', Body) > 0, 'comment text in body');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TAsmBodyTests.DirectiveInBody_RoundTrip;
+var
+  Src:      string;
+  T:        TTokenList;
+  RoundTrip: string;
+  I:        Integer;
+begin
+  // Concatenating all token texts -- body segments, extracted directive, 'end' --
+  // must reproduce the original source exactly.
+  Src := 'asm' + #13#10 +
+         '  MOV ECX, opDivide' + #13#10 +
+         '  JMP _VarOp' + #13#10 +
+         '{$ENDIF}' + #13#10 +
+         'end';
+  T := Tok(Src);
+  try
+    RoundTrip := '';
+    for I := 0 to T.Count - 1 do
+      RoundTrip := RoundTrip + T[I].Text;
+    Assert.AreEqual(Src, RoundTrip, 'round-trip');
   finally
     T.Free;
   end;

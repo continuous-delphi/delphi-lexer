@@ -483,39 +483,54 @@ end;
 
 
 // =========================================================================
-// ScanAsmBodyUntilTerminatingEnd
+// ScanAsmBodySegment
 // =========================================================================
 //
-// Scans from the current scanner position to the first standalone 'end' that
-// terminates a Delphi asm...end block, returning all consumed text as the body.
+// Scans one segment of an asm body from the current scanner position.
 //
-// The terminating 'end' must satisfy all of the following:
-//   - Case-insensitive match of e/E, n/N, d/D.
-//   - Not preceded by an identifier character (rules out 'vendor', 'lend').
-//   - Not followed by an identifier character (rules out 'endian', 'endless').
-//   - Not inside a //, { }, or (* *) comment or directive, or a quoted string.
+// Stops at the first {$...} or (*$...*) compiler directive, or at the first
+// standalone 'end' that terminates the asm block, whichever comes first.
 //
-// RC1 nesting policy: shallow -- the first valid standalone 'end' terminates
-// the body regardless of any nested begin/end structure inside the asm text.
+// If stopped at a directive:
+//   - Result holds the body text consumed before the directive.
+//   - ADirectiveText holds the full directive text including delimiters.
+//   - ADirLine, ADirCol, ADirOffset are the directive's start position.
+//   - Sc is positioned immediately after the closing delimiter.
 //
-// On return, Sc is positioned at the 'e' of the terminating 'end', or at
-// Sc.N + 1 if the source ends before a terminating 'end' is found.
+// If stopped at 'end' or EOF:
+//   - Result holds all remaining body text up to (not including) 'end'.
+//   - ADirectiveText is ''; ADirLine/Col/Offset are 0.
+//   - Sc is positioned at the 'e' of 'end', or past Sc.N if unterminated.
+//
+// Caller loop: emit tkAsmBody for Result (if non-empty), emit tkDirective for
+// ADirectiveText (if non-empty), repeat until ADirectiveText = ''.
+//
+// Non-directive { } comments, (* *) comments, // line comments, and quoted
+// strings are absorbed into the body text. 'end' inside any of these is not
+// treated as a block terminator (shallow nesting policy).
 
-function ScanAsmBodyUntilTerminatingEnd(var Sc: TScanner): string;
+function ScanAsmBodySegment(var Sc: TScanner;
+  out ADirectiveText: string;
+  out ADirLine, ADirCol, ADirOffset: Integer): string;
 var
   Start:            Integer;
+  DirStart:         Integer;
   PrevWasIdentChar: Boolean;
   C:                Char;
 begin
-  Start := Sc.I;
+  ADirectiveText   := '';
+  ADirLine         := 0;
+  ADirCol          := 0;
+  ADirOffset       := 0;
+  Start            := Sc.I;
   PrevWasIdentChar := False;
 
   while Sc.I <= Sc.N do
   begin
     C := Peek(Sc);
 
-    // Skip // line comment: consume from '//' to end of line, exclusive.
-    // 'end' appearing inside a line comment does not terminate the block.
+    // Skip // line comment: consume from '//' to end of line.
+    // 'end' inside a line comment does not terminate the block.
     if (C = '/') and (Peek(Sc, 1) = '/') then
     begin
       IncI(Sc, 2);
@@ -525,8 +540,25 @@ begin
       Continue;
     end;
 
-    // Skip { } block comment or {$ } directive.
-    // 'end' appearing inside does not terminate the block.
+    // {$...} directive: stop here; return body-so-far and directive as out params.
+    if (C = '{') and (Peek(Sc, 1) = '$') then
+    begin
+      Result         := Copy(Sc.S, Start, Sc.I - Start);
+      ADirLine       := Sc.Line;
+      ADirCol        := Sc.Col;
+      ADirOffset     := Sc.I - 1;
+      DirStart       := Sc.I;
+      IncI(Sc); // consume '{'
+      while (Sc.I <= Sc.N) and (Peek(Sc) <> '}') do
+        IncI(Sc);
+      if Peek(Sc) = '}' then
+        IncI(Sc); // consume '}'
+      ADirectiveText := Copy(Sc.S, DirStart, Sc.I - DirStart);
+      Exit;
+    end;
+
+    // { } block comment (no '$'): absorb into body.
+    // 'end' inside does not terminate the block.
     if C = '{' then
     begin
       IncI(Sc); // consume '{'
@@ -538,8 +570,30 @@ begin
       Continue;
     end;
 
-    // Skip (* *) block comment or (*$ *) directive.
-    // 'end' appearing inside does not terminate the block.
+    // (*$...*) directive: stop here; return body-so-far and directive as out params.
+    if (C = '(') and (Peek(Sc, 1) = '*') and (Peek(Sc, 2) = '$') then
+    begin
+      Result         := Copy(Sc.S, Start, Sc.I - Start);
+      ADirLine       := Sc.Line;
+      ADirCol        := Sc.Col;
+      ADirOffset     := Sc.I - 1;
+      DirStart       := Sc.I;
+      IncI(Sc, 2); // consume '(*'
+      while Sc.I <= Sc.N do
+      begin
+        if (Peek(Sc) = '*') and (Peek(Sc, 1) = ')') then
+        begin
+          IncI(Sc, 2); // consume '*)'
+          Break;
+        end;
+        IncI(Sc);
+      end;
+      ADirectiveText := Copy(Sc.S, DirStart, Sc.I - DirStart);
+      Exit;
+    end;
+
+    // (* *) block comment (no '$'): absorb into body.
+    // 'end' inside does not terminate the block.
     if (C = '(') and (Peek(Sc, 1) = '*') then
     begin
       IncI(Sc, 2); // consume '(*'
@@ -556,9 +610,9 @@ begin
       Continue;
     end;
 
-    // Skip single-quoted string. Stops at EOL if unterminated on this line,
-    // matching the main lexer's single-line string rule.
-    // 'end' appearing inside a string does not terminate the block.
+    // Single-quoted string: absorb into body.
+    // Stops at EOL if unterminated, matching the main lexer's string rule.
+    // 'end' inside does not terminate the block.
     if C = CHAR_SINGLE_QUOTE then
     begin
       IncI(Sc); // consume opening quote
@@ -580,13 +634,14 @@ begin
       Continue;
     end;
 
-    // Check for standalone 'end' keyword (case-insensitive, both word boundaries).
+    // Standalone 'end' keyword (case-insensitive, both word boundaries):
+    // stop segment; leave scanner at 'e' for the caller to emit as tkStrictKeyword.
     if (not PrevWasIdentChar) and
        CharInSet(C, ['e', 'E']) and
        CharInSet(Peek(Sc, 1), ['n', 'N']) and
        CharInSet(Peek(Sc, 2), ['d', 'D']) and
        (not IsIdentChar(Peek(Sc, 3))) then
-      Break; // leave scanner at 'e' of 'end'; caller emits it as tkStrictKeyword
+      Break; // ADirectiveText stays ''
 
     PrevWasIdentChar := IsIdentChar(C);
     IncI(Sc);
@@ -721,8 +776,13 @@ var
   TokCol:    Integer; // start column of current token
   TokOffset: Integer; // 0-based start offset of current token
   TokStartI: Integer; // 1-based start position for Copy() (= TokOffset + 1)
-  DelimLen:  Integer; // multiline string delimiter length (3, 5, 7, ...)
+  DelimLen:   Integer; // multiline string delimiter length (3, 5, 7, ...)
   KeywordInfo: TKeywordInfo;
+  AsmSeg:     string;  // asm body segment text (reused across directive-scan loop)
+  AsmDir:     string;  // directive text extracted from inside an asm body
+  AsmDirLine: Integer; // source position of the extracted asm directive
+  AsmDirCol:  Integer;
+  AsmDirOfs:  Integer;
 
   procedure Add(AKind: TTokenKind; const Text: string);
   var
@@ -880,10 +940,25 @@ begin
               // iteration to emit as tkStrictKeyword in the normal way.
               if SameText(TokText, 'asm') then
               begin
-                TokLine   := Sc.Line;
-                TokCol    := Sc.Col;
-                TokOffset := Sc.I - 1;
-                Add(tkAsmBody, ScanAsmBodyUntilTerminatingEnd(Sc));
+                // Scan the asm body in segments. {$directives} and (*$directives*)
+                // within the body are extracted as separate tkDirective tokens so
+                // the conditional processor can see them. Non-directive comments
+                // and asm code remain inside the tkAsmBody segment(s).
+                repeat
+                  TokLine   := Sc.Line;
+                  TokCol    := Sc.Col;
+                  TokOffset := Sc.I - 1;
+                  AsmSeg := ScanAsmBodySegment(Sc, AsmDir, AsmDirLine, AsmDirCol, AsmDirOfs);
+                  if AsmSeg <> '' then
+                    Add(tkAsmBody, AsmSeg);
+                  if AsmDir <> '' then
+                  begin
+                    TokLine   := AsmDirLine;
+                    TokCol    := AsmDirCol;
+                    TokOffset := AsmDirOfs;
+                    Add(tkDirective, AsmDir);
+                  end;
+                until AsmDir = '';
               end;
             end;
             kcDirective,
