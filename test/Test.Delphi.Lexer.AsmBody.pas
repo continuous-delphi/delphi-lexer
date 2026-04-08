@@ -436,7 +436,7 @@ procedure TAsmBodyTests.IsNotTrivia;
 begin
   // tkAsmBody is a semantic token, not trivia. The trivia pass must not
   // assign it as leading or trailing trivia on any surrounding token.
-  Assert.IsFalse(IsTrivia(tkAsmBody), 'IsTrivia(tkAsmBody)');
+  Assert.IsFalse(IsLexicalTrivia(tkAsmBody), 'IsLexicalTrivia(tkAsmBody)');
 end;
 
 

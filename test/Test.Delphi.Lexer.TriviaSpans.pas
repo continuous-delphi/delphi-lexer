@@ -1,7 +1,7 @@
 unit Test.Delphi.Lexer.TriviaSpans;
 
 // Tests for Phase: Trivia Attachment
-//   Step 2: IsTrivia classification
+//   Step 2: IsLexicalTrivia classification
 //   Step 2: ApplyTriviaSpans grouping rules (leading / trailing ownership)
 //   Step 2: Invariants I-14, I-15, I-16
 
@@ -28,13 +28,13 @@ type
     [Setup]    procedure Setup;
     [TearDown] procedure TearDown;
 
-    // ---- IsTrivia classification ----
-    [Test] procedure IsTrivia_Whitespace_ReturnsTrue;
-    [Test] procedure IsTrivia_EOL_ReturnsTrue;
-    [Test] procedure IsTrivia_Comment_ReturnsTrue;
-    [Test] procedure IsTrivia_Directive_ReturnsTrue;
-    [Test] procedure IsTrivia_Identifier_ReturnsFalse;
-    [Test] procedure IsTrivia_EOF_ReturnsFalse;
+    // ---- IsLexicalTrivia classification ----
+    [Test] procedure IsLexicalTrivia_Whitespace_ReturnsTrue;
+    [Test] procedure IsLexicalTrivia_EOL_ReturnsTrue;
+    [Test] procedure IsLexicalTrivia_Comment_ReturnsTrue;
+    [Test] procedure IsLexicalTrivia_Directive_ReturnsTrue;
+    [Test] procedure IsLexicalTrivia_Identifier_ReturnsFalse;
+    [Test] procedure IsLexicalTrivia_EOF_ReturnsFalse;
 
     // ---- Grouping rules ----
     [Test] procedure NoTrivia_BothSpansEmpty;
@@ -103,7 +103,7 @@ begin
 
   for I := 0 to Tokens.Count - 1 do
   begin
-    if IsTrivia(Tokens[I].Kind) then
+    if IsLexicalTrivia(Tokens[I].Kind) then
       Continue;
     Span := Tokens[I].LeadingTrivia;
     if not Span.IsEmpty then
@@ -117,7 +117,7 @@ begin
 
   for I := 0 to Tokens.Count - 1 do
   begin
-    if IsTrivia(Tokens[I].Kind) then
+    if IsLexicalTrivia(Tokens[I].Kind) then
     begin
       Assert.AreEqual(1, Owned[I],
         Format('Trivia token at index %d owned %d times (expected 1)', [I, Owned[I]]));
@@ -137,34 +137,34 @@ end;
 // IsTrivia classification
 // ---------------------------------------------------------------------------
 
-procedure TTriviaSpanTests.IsTrivia_Whitespace_ReturnsTrue;
+procedure TTriviaSpanTests.IsLexicalTrivia_Whitespace_ReturnsTrue;
 begin
-  Assert.IsTrue(IsTrivia(tkWhitespace));
+  Assert.IsTrue(IsLexicalTrivia(tkWhitespace));
 end;
 
-procedure TTriviaSpanTests.IsTrivia_EOL_ReturnsTrue;
+procedure TTriviaSpanTests.IsLexicalTrivia_EOL_ReturnsTrue;
 begin
-  Assert.IsTrue(IsTrivia(tkEOL));
+  Assert.IsTrue(IsLexicalTrivia(tkEOL));
 end;
 
-procedure TTriviaSpanTests.IsTrivia_Comment_ReturnsTrue;
+procedure TTriviaSpanTests.IsLexicalTrivia_Comment_ReturnsTrue;
 begin
-  Assert.IsTrue(IsTrivia(tkComment));
+  Assert.IsTrue(IsLexicalTrivia(tkComment));
 end;
 
-procedure TTriviaSpanTests.IsTrivia_Directive_ReturnsTrue;
+procedure TTriviaSpanTests.IsLexicalTrivia_Directive_ReturnsTrue;
 begin
-  Assert.IsTrue(IsTrivia(tkDirective));
+  Assert.IsTrue(IsLexicalTrivia(tkDirective));
 end;
 
-procedure TTriviaSpanTests.IsTrivia_Identifier_ReturnsFalse;
+procedure TTriviaSpanTests.IsLexicalTrivia_Identifier_ReturnsFalse;
 begin
-  Assert.IsFalse(IsTrivia(tkIdentifier));
+  Assert.IsFalse(IsLexicalTrivia(tkIdentifier));
 end;
 
-procedure TTriviaSpanTests.IsTrivia_EOF_ReturnsFalse;
+procedure TTriviaSpanTests.IsLexicalTrivia_EOF_ReturnsFalse;
 begin
-  Assert.IsFalse(IsTrivia(tkEOF));
+  Assert.IsFalse(IsLexicalTrivia(tkEOF));
 end;
 
 
@@ -507,7 +507,7 @@ begin
     SpanTotal   := 0;
     for I := 0 to T.Count - 1 do
     begin
-      if IsTrivia(T[I].Kind) then
+      if IsLexicalTrivia(T[I].Kind) then
         Inc(TriviaCount)
       else
       begin
@@ -533,7 +533,7 @@ begin
   T := Lex('// comment'#10'Foo := 1;'#10);
   try
     for I := 0 to T.Count - 1 do
-      if IsTrivia(T[I].Kind) then
+      if IsLexicalTrivia(T[I].Kind) then
       begin
         Assert.IsTrue(T[I].LeadingTrivia.IsEmpty,
           Format('Trivia token at index %d must have empty LeadingTrivia (I-15)', [I]));

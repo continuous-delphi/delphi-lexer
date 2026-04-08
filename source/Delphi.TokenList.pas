@@ -59,6 +59,17 @@ begin
   end;
 end;
 
+(*
+function TTokenList.Clone:TTokenList;
+var
+  I:Integer;
+begin
+  Result := TTokenList.Create;
+  Result.Capacity := Self.Count;
+  for I := 0 to Self.Count - 1 do
+    Result.Add(Self.Tokens[I]);
+end;
+*)
 
 end.
 

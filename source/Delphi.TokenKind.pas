@@ -28,6 +28,17 @@ type
   );
 
 
+(*
+
+tkInactiveCode A region of source that exists but is inactive under current context
+Characteristics:
+  * contains full original source text
+  * not parsed
+  * preserved for round-trip
+  * treated similarly to trivia by parser
+  * produced by conditional processor
+*)
+
 const
 
   TokenKindNames:array[TTokenKind] of string = (
@@ -51,11 +62,10 @@ const
 
 function TokenKindName(K:TTokenKind):string;
 
-// Returns True if Kind is a trivia token: whitespace, EOL, comment, or directive.
-// tkAsmBody is NOT trivia -- it is a semantic token whose text happens to be opaque.
-// These are the token kinds that the grouping pass assigns as leading/trailing
-// trivia on the surrounding semantic tokens.
-function IsTrivia(Kind:TTokenKind):Boolean;
+// Lexical trivia: tokens that do not participate in grammar structure
+// but are preserved for round-trip fidelity (whitespace, comments,
+// directives, inactive code, etc.)
+function IsLexicalTrivia(Kind:TTokenKind):Boolean;
 
 implementation
 
@@ -66,7 +76,7 @@ begin
 end;
 
 
-function IsTrivia(Kind:TTokenKind):Boolean;
+function IsLexicalTrivia(Kind:TTokenKind):Boolean;
 begin
   Result := Kind in [tkWhitespace, tkEOL, tkComment, tkDirective, tkInactiveCode];
 end;

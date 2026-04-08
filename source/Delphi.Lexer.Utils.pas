@@ -321,17 +321,9 @@ begin
 
     Result.JSonContextFile := Opts.JsonContextFile;
 
-    if Result.JsonContextFile = '' then
+    if (not Result.JsonContextFile.IsEmpty) and (not TFile.Exists(Result.JsonContextFile)) then
     begin
-      WriteLn('error: json context config file not specified');
-      Result.Common.ExitCode := 1;
-      Result.Common.AbortProgram := True;
-      Exit(Result);
-    end;
-
-    if not TFile.Exists(Result.JsonContextFile) then
-    begin
-      WriteLn('error: file not found: ', Result.JsonContextFile);
+      WriteLn('error: json config file not found: ', Result.JsonContextFile);
       Result.Common.ExitCode := 1;
       Result.Common.AbortProgram := True;
       Exit(Result);
@@ -522,7 +514,6 @@ begin
     end;
 
     try
-      // toconsider: offer 2nd file encoding?  (They would be automatically be 'different' if so)
       Result.SecondContents := ReadAllText(Result.SecondFile, Result.BaseOptions.Encoding, Result.BaseOptions.SkipAnsiFallback);
     except
       on E: Exception do

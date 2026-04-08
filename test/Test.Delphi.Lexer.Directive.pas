@@ -166,6 +166,7 @@ var
 begin
   T := Tok(Input);
   try
+    Assert.AreEqual(Ord(tkDirective), Ord(T[0].Kind), 'kind');
     Assert.AreEqual(Input, T[0].Text, 'text');
   finally
     T.Free;

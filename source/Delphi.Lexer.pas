@@ -619,7 +619,7 @@ begin
 
   for I := 0 to Tokens.Count - 1 do
   begin
-    if IsTrivia(Tokens[I].Kind) then
+    if IsLexicalTrivia(Tokens[I].Kind) then
       Continue;
 
     // Semantic token or tkEOF sentinel at I.
@@ -639,7 +639,7 @@ begin
 
     // Trailing trivia: scan forward through same-line trivia, stop after EOL.
     J := I + 1;
-    while (J < Tokens.Count) and IsTrivia(Tokens[J].Kind) do
+    while (J < Tokens.Count) and IsLexicalTrivia(Tokens[J].Kind) do
     begin
       if Tokens[J].Kind = tkEOL then
       begin

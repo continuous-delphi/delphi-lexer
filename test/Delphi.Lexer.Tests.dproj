@@ -52,7 +52,6 @@
         <DCC_Define>TESTINSIGHT;$(DCC_Define)</DCC_Define>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
-        <DCC_UnitSearchPath>..\source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <Icns_MainIcns>$(BDS)\bin\delphi_PROJECTICNS.icns</Icns_MainIcns>
         <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
         <UsingDelphiRTL>true</UsingDelphiRTL>
@@ -83,6 +82,7 @@
         <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
         <DCC_DebugDCUs>false</DCC_DebugDCUs>
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
+        <Manifest_File>(None)</Manifest_File>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_DebugInformation>0</DCC_DebugInformation>
@@ -109,7 +109,6 @@
         <DCCReference Include="..\source\Delphi.Token.TriviaSpan.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.AsmBody.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.Core.pas"/>
-        <DCCReference Include="Test.Delphi.Lexer.Directive.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.FindTokenAtOffset.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.Golden.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.InvalidTokens.pas"/>
@@ -123,6 +122,7 @@
         <DCCReference Include="Test.Delphi.Lexer.TokenMetadata.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.TokenPosition.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.TriviaSpans.pas"/>
+        <DCCReference Include="Test.Delphi.Lexer.Directive.pas"/>
         <None Include="README.md"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>

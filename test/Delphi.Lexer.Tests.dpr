@@ -25,7 +25,6 @@ uses
   Delphi.Token.TriviaSpan in '..\source\Delphi.Token.TriviaSpan.pas',
   Test.Delphi.Lexer.AsmBody in 'Test.Delphi.Lexer.AsmBody.pas',
   Test.Delphi.Lexer.Core in 'Test.Delphi.Lexer.Core.pas',
-  Test.Delphi.Lexer.Directive in 'Test.Delphi.Lexer.Directive.pas',
   Test.Delphi.Lexer.FindTokenAtOffset in 'Test.Delphi.Lexer.FindTokenAtOffset.pas',
   Test.Delphi.Lexer.Golden in 'Test.Delphi.Lexer.Golden.pas',
   Test.Delphi.Lexer.InvalidTokens in 'Test.Delphi.Lexer.InvalidTokens.pas',
@@ -38,7 +37,8 @@ uses
   Test.Delphi.Lexer.TokenCompare.Myers in 'Test.Delphi.Lexer.TokenCompare.Myers.pas',
   Test.Delphi.Lexer.TokenMetadata in 'Test.Delphi.Lexer.TokenMetadata.pas',
   Test.Delphi.Lexer.TokenPosition in 'Test.Delphi.Lexer.TokenPosition.pas',
-  Test.Delphi.Lexer.TriviaSpans in 'Test.Delphi.Lexer.TriviaSpans.pas';
+  Test.Delphi.Lexer.TriviaSpans in 'Test.Delphi.Lexer.TriviaSpans.pas',
+  Test.Delphi.Lexer.Directive in 'Test.Delphi.Lexer.Directive.pas';
 
 { keep comment here to protect the following conditional from being removed by the IDE when adding a unit }
 {$IFNDEF TESTINSIGHT}
