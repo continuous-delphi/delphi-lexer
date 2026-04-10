@@ -316,10 +316,8 @@ procedure TTokenMetadataTests.Symbol_Caret_IsSymbol;
 var
   T: TTokenList;
 begin
-  // '^' not followed by a letter (used as pointer-deref operator): tkSymbol.
-  // Note: '^P' is now a hat-notation control char literal (tkCharLiteral).
-  // Use '^' at end-of-input to test the deref symbol case.
-  T := Tok('^');
+  // '^' is always tkSymbol; hat-notation char literals are resolved by the parser.
+  T := Tok('^P');
   try
     Assert.AreEqual(Ord(tkSymbol), Ord(T[0].Kind), 'kind');
     Assert.AreEqual('^', T[0].Text, 'text');
