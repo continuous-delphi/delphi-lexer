@@ -980,6 +980,21 @@ begin
       Continue;
     end;
 
+    // --- Hat-notation control character literal: ^X ---
+    // In Delphi, ^X is a control character literal for any non-whitespace,
+    // non-NUL character X (e.g. ^A = Chr(1), ^V = Chr(22), ^^ = Chr(30),
+    // ^* = Chr(10)).  The caret must be immediately adjacent to X -- no
+    // whitespace is allowed between them.
+    // This must be checked before the generic symbol dispatch so that '^' is
+    // not emitted as tkSymbol when it is the start of a char literal.
+    if (C = '^') and
+       not CharInSet(Peek(Sc, 1), [#0, #9, #10, #13, #32]) then
+    begin
+      IncI(Sc, 2);  // consume '^' and the following character
+      Add(tkCharLiteral, Copy(Sc.S, TokStartI, Sc.I - TokStartI));
+      Continue;
+    end;
+
     // --- Symbols (operators and punctuation) ---
     // Only genuine Delphi operators and punctuation are tkSymbol.
     // Everything else (bare &, #, %, unmatched }, \, ~, !, ?, etc.) is
