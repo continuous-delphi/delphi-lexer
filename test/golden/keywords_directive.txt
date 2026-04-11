@@ -2,6 +2,7 @@ absolute
 abstract
 align
 assembler
+at
 cdecl
 contains
 default
@@ -24,6 +25,7 @@ name
 near
 nodefault
 noreturn
+on
 operator
 out
 overload

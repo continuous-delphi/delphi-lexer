@@ -21,13 +21,12 @@ type
 
     // Strict/HardKeywords : cannot be redefined or used as identifiers
     // Always reserved, global meaning.
-    // Docwiki Note: the words `at` and `on` also have special meanings, and should be treated as reserved words.
-    kwAnd, kwArray, kwAs, kwAsm, kwAt, kwBegin, kwCase, kwClass, kwConst,
+    kwAnd, kwArray, kwAs, kwAsm, kwBegin, kwCase, kwClass, kwConst,
     kwConstructor, kwDestructor, kwDispinterface, kwDiv, kwDo, kwDownto,
     kwElse, kwEnd, kwExcept, kwExports, kwFile, kwFinalization, kwFinally,
     kwFor, kwFunction, kwGoto, kwIf, kwImplementation, kwIn, kwInherited,
     kwInitialization, kwInline, kwInterface, kwIs, kwLabel, kwLibrary,
-    kwMod, kwNil, kwNot, kwObject, kwOf, kwOn, kwOr, kwPacked, kwProcedure,
+    kwMod, kwNil, kwNot, kwObject, kwOf, kwOr, kwPacked, kwProcedure,
     kwProgram, kwProperty, kwRaise, kwRecord, kwRepeat, kwResourcestring,
     kwSet, kwShl, kwShr, kwString, kwThen, kwThreadvar, kwTo, kwTry, kwType,
     kwUnit, kwUntil, kwUses, kwVar, kwWhile, kwWith, kwXor,
@@ -40,14 +39,17 @@ type
        appears only in contexts where user-defined identifiers cannot occur.
        Hence -- although it is inadvisable to do so -- you can define an identifier that looks exactly
        like a directive.
+
+       Docwiki Note: the words `at` and `on` also have special meanings, and should be treated as reserved words.
+       BUT at and on can be used as identifiers without error, so they are contextual instead of strict keywords
     *)
     // Note: `align` currently not on official list, but should be
     //   https://embt.atlassian.net/servicedesk/customer/portal/1/RSS-5167)
     // Note: inline + library are contextual but already flagged as strict above
-    kwAbsolute, kwAbstract, kwAlign, kwAssembler, kwCdecl, kwContains, kwDefault,
+    kwAbsolute, kwAbstract, kwAlign, kwAssembler, kwAt, kwCdecl, kwContains, kwDefault,
     kwDelayed, kwDeprecated, kwDispid, kwDynamic, kwExperimental, kwExport,
     kwExternal, kwFar, kwFinal, kwForward, kwHelper, kwImplements, kwIndex,
-    kwLocal, kwMessage, kwName, kwNear, kwNodefault, kwNoreturn, kwOperator,
+    kwLocal, kwMessage, kwName, kwNear, kwNodefault, kwNoreturn, kwOn,kwOperator,
     kwOut, kwOverload, kwOverride, kwPackage, kwPascal, kwPlatform, kwRead,
     kwReadonly, kwReference, kwRegister, kwReintroduce, kwRequires, kwResident,
     kwSafecall, kwSealed, kwStatic, kwStdcall, kwStored, kwStrict,
@@ -68,8 +70,8 @@ type
 
 const
 
-  DELPHI_STRICT_KEYWORD_COUNT = 66;
-  DELPHI_DIRECTIVE_KEYWORD_COUNT = 52;
+  DELPHI_STRICT_KEYWORD_COUNT = 64;
+  DELPHI_DIRECTIVE_KEYWORD_COUNT = 54;
   DELPHI_VISIBILITY_KEYWORD_COUNT = 5;
   //123 keywords
   DELPHI_TOTAL_KEYWORDS = DELPHI_STRICT_KEYWORD_COUNT + DELPHI_DIRECTIVE_KEYWORD_COUNT + DELPHI_VISIBILITY_KEYWORD_COUNT;
@@ -85,7 +87,7 @@ const
     (Name: 'as';              Kind: kwAs;               Category: kcStrict),
     (Name: 'asm';             Kind: kwAsm;              Category: kcStrict),
     (Name: 'assembler';       Kind: kwAssembler;        Category: kcDirective),
-    (Name: 'at';              Kind: kwAt;               Category: kcStrict),
+    (Name: 'at';              Kind: kwAt;               Category: kcDirective),
     (Name: 'automated';       Kind: kwAutomated;        Category: kcVisibility),
     (Name: 'begin';           Kind: kwBegin;            Category: kcStrict),
     (Name: 'case';            Kind: kwCase;             Category: kcStrict),
@@ -144,7 +146,7 @@ const
     (Name: 'not';             Kind: kwNot;              Category: kcStrict),
     (Name: 'object';          Kind: kwObject;           Category: kcStrict),
     (Name: 'of';              Kind: kwOf;               Category: kcStrict),
-    (Name: 'on';              Kind: kwOn;               Category: kcStrict),
+    (Name: 'on';              Kind: kwOn;               Category: kcDirective),
     (Name: 'operator';        Kind: kwOperator;         Category: kcDirective),
     (Name: 'or';              Kind: kwOr;               Category: kcStrict),
     (Name: 'out';             Kind: kwOut;              Category: kcDirective),

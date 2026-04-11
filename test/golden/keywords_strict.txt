@@ -3,7 +3,6 @@ array
 as
 asm
 end
-at
 begin
 case
 class
@@ -38,7 +37,6 @@ nil
 not
 object
 of
-on
 or
 packed
 procedure

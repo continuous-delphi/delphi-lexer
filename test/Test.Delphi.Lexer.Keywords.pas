@@ -59,10 +59,10 @@ type
     [Test] procedure Contextual_deprecated_IsContextualKeyword;
 
     // Specific decisions: 'at', 'on', 'out', 'inline' are reserved.
-    [Test] procedure Reserved_at_IsStrictKeyword;
+    [Test] procedure Reserved_at_IsContextualKeyword;
     [Test] procedure Reserved_out_IsContextualKeyword;
     [Test] procedure Reserved_inline_IsStrictKeyword;
-    [Test] procedure Reserved_on_IsStrictKeyword;
+    [Test] procedure Reserved_on_IsContextualKeyword;
 
     // Plain identifier is not a keyword.
     [Test] procedure PlainIdentifier_IsNotKeyword;
@@ -302,14 +302,14 @@ end;
 
 // --- Specific reserved-word decisions ---
 
-procedure TKeywordTests.Reserved_at_IsStrictKeyword;
+procedure TKeywordTests.Reserved_at_IsContextualKeyword;
 var
   T: TTokenList;
 begin
   Assert.IsTrue(IsDelphiKeyword('at'), 'IsDelphiKeyword');
   T := Tok('at');
   try
-    Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkContextKeyword), Ord(T[0].Kind), 'kind');
     Assert.AreEqual('at', T[0].Text, 'text');
   finally
     T.Free;
@@ -345,7 +345,7 @@ begin
 end;
 
 
-procedure TKeywordTests.Reserved_on_IsStrictKeyword;
+procedure TKeywordTests.Reserved_on_IsContextualKeyword;
 // 'on' is in DELPHI_KEYWORDS (used in exception handlers: on E: Exception do).
 var
   T: TTokenList;
@@ -353,7 +353,7 @@ begin
   Assert.IsTrue(IsDelphiKeyword('on'), 'IsDelphiKeyword');
   T := Tok('on');
   try
-    Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(tkContextKeyword), Ord(T[0].Kind), 'kind');
   finally
     T.Free;
   end;
