@@ -211,7 +211,7 @@ var
   Src:    string;
   Tokens: TTokenList;
 begin
-  Src := LoadGolden('literals.pas');
+  Src := LoadGolden('literals.txt');
   CheckStandard(Src, 'literals');
 
   Tokens := FLexer.Tokenize(Src);
@@ -230,7 +230,7 @@ var
   Src:    string;
   Tokens: TTokenList;
 begin
-  Src := LoadGolden('comments.pas');
+  Src := LoadGolden('comments.txt');
   CheckStandard(Src, 'comments');
 
   Tokens := FLexer.Tokenize(Src);
@@ -249,7 +249,7 @@ var
   Tokens: TTokenList;
   Idx:    Integer;
 begin
-  Src := LoadGolden('operators.pas');
+  Src := LoadGolden('operators.txt');
   CheckStandard(Src, 'operators');
 
   // Verify that each multi-char operator appears as a single tkSymbol token.
