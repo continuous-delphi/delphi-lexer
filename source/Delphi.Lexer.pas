@@ -636,11 +636,15 @@ begin
 
     // Standalone 'end' keyword (case-insensitive, both word boundaries):
     // stop segment; leave scanner at 'e' for the caller to emit as tkStrictKeyword.
+    // Guard: '@' before 'end' means it is an asm label (@@end:), not a keyword.
+    // PrevWasIdentChar is False for '@' (not an ident char), but the '@' prefix
+    // still makes this a label reference, not a standalone 'end'.
     if (not PrevWasIdentChar) and
        CharInSet(C, ['e', 'E']) and
        CharInSet(Peek(Sc, 1), ['n', 'N']) and
        CharInSet(Peek(Sc, 2), ['d', 'D']) and
-       (not IsIdentChar(Peek(Sc, 3))) then
+       (not IsIdentChar(Peek(Sc, 3))) and
+       ((Sc.I <= 1) or (Sc.S[Sc.I - 1] <> '@')) then
       Break; // ADirectiveText stays ''
 
     PrevWasIdentChar := IsIdentChar(C);
