@@ -911,11 +911,16 @@ begin
       Continue;
     end;
 
-    // --- Escaped identifier: &begin, &unit, etc.
-    //     Produced as tkIdentifier so keyword-casing rules never touch them. ---
-    if (C = '&') and IsIdentStart(Peek(Sc, 1)) then
+    // --- Escaped identifier: &begin, &unit, &&op_Implicit, etc.
+    //     Produced as tkIdentifier so keyword-casing rules never touch them.
+    //     Double-& (&&ident) is also accepted: first & is an escape prefix,
+    //     second & is part of the identifier name. ---
+    if (C = '&') and (IsIdentStart(Peek(Sc, 1)) or
+       ((Peek(Sc, 1) = '&') and IsIdentStart(Peek(Sc, 2)))) then
     begin
-      IncI(Sc); // consume '&'
+      IncI(Sc); // consume first '&'
+      if Peek(Sc) = '&' then
+        IncI(Sc); // consume second '&' (part of the identifier name)
       while IsIdentChar(Peek(Sc)) do
         IncI(Sc);
       Add(tkIdentifier, Copy(Sc.S, TokStartI, Sc.I - TokStartI));
