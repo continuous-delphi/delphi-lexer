@@ -1,0 +1,40 @@
+{
+  "root": "./",
+  "steps": ["Clean", "Build", "Test"],
+  "clean": {
+    "level": "deep",
+    "jobs": [
+      { "name": "Repo clean",
+        "root": "./" }
+    ]
+  },
+  "build": {
+    "engine": "MSBuild",
+    "toolchain": { "version": "Latest" },
+    "platform": "Win64",
+    "configuration": "Release",
+    "verbosity": "minimal",
+    "jobs": [
+      { "name": "TokenCompare",
+        "projectFile": "projects/TokenCompare/Delphi.Lexer.TokenCompare.dproj" },
+      { "name": "TokenDump",
+        "projectFile": "projects/TokenDump/Delphi.Lexer.TokenDump.dproj" },
+      { "name": "TokenStats",
+        "projectFile": "projects/TokenStats/Delphi.Lexer.TokenStats.dproj" },
+      { "name": "TokenizeMemo",
+        "projectFile": "projects/TokenizeMemo/Delphi.Lexer.TokenizeMemo.dproj" },
+      { "name": "Test project",
+        "projectFile": "test/Delphi.Lexer.Tests.dproj",
+        "platform": "Win32",
+        "configuration": "Debug",
+        "defines": ["CI"] }
+    ]
+  },
+  "test": {
+    "timeoutSeconds": 10,
+    "jobs": [
+      { "name": "Lexer Tests",
+        "testExeFile": "test/Win32/Debug/Delphi.Lexer.Tests.exe" }
+    ]
+  }
+}
