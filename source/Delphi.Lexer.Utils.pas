@@ -38,6 +38,7 @@ type
     FHelp: Boolean;
     FVersion: Boolean;
     FSkipAnsiFallback: Boolean;
+    FLexAsm:Boolean;
   public
     [CLPPosition(1), CLPLongName('file'), CLPDescription('Delphi source file to tokenize')]
     property InputFile: string read FInputFile write FInputFile;
@@ -56,6 +57,10 @@ type
 
     [CLPLongNameAttribute('version'), CLPName('v'), CLPDescription('Show tool version and exit')]
     property Version: Boolean read FVersion write FVersion;
+
+    [CLPLongNameAttribute('lexasm'), CLPName('x'), CLPDescription('Flag only used for include files that are included within an asm block')]
+    property LexAsm: Boolean read FLexAsm write FLexAsm;
+
   end;
 
   TConditionalFileTokenizerCLOptions = class(TFileTokenizerCLOptions)
@@ -117,6 +122,7 @@ type
     Encoding: TEncoding;
     OutputFormat: TOutputFormat;
     SkipAnsiFallback: Boolean;
+    LexAsm:Boolean;
   end;
 
   TFileCompareConfigOptions = record
@@ -409,6 +415,7 @@ begin
 
   Result.FileName := Opts.InputFile;
   Result.SkipAnsiFallback := Opts.SkipAnsiFallback;
+  Result.LexAsm := Opts.LexAsm;
 
   Result.Encoding := TLexerUtils.ResolveEncoding(Opts.Encoding);
   if not Assigned(Result.Encoding) then

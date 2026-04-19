@@ -29,10 +29,10 @@ type
   // Stateless lexer: create, call Tokenize (or TokenizeInto), free.
   TDelphiLexer = class
   protected
-    procedure TokenizeIntoEmptyList(const Source: string; const OutTokens: TTokenList);
+    procedure TokenizeIntoEmptyList(const Source: string; const OutTokens: TTokenList; const SkipAsm:Boolean);
   public
-    function Tokenize(const Source: string): TTokenList;
-    procedure TokenizeInto(const Source: string; const OutTokens: TTokenList);
+    function Tokenize(const Source: string; const SkipAsm:Boolean=True): TTokenList;
+    procedure TokenizeInto(const Source: string; const OutTokens: TTokenList; const SkipAsm:Boolean=True);
   end;
 
 // Returns a string of Count single-quote characters.
@@ -729,14 +729,14 @@ end;
 // TDelphiLexer
 // =========================================================================
 
-function TDelphiLexer.Tokenize(const Source: string):TTokenList;
+function TDelphiLexer.Tokenize(const Source: string; const SkipAsm:Boolean=True):TTokenList;
 begin
   Result := TTokenList.Create;
-  TokenizeIntoEmptyList(Source, Result);
+  TokenizeIntoEmptyList(Source, Result, SkipAsm);
 end;
 
 
-procedure TDelphiLexer.TokenizeInto(const Source: string; const OutTokens: TTokenList);
+procedure TDelphiLexer.TokenizeInto(const Source: string; const OutTokens: TTokenList; const SkipAsm:Boolean=True);
 var
   Temp:TTokenList;
   StartIndex, I: Integer;
@@ -745,7 +745,7 @@ begin
 
   Temp := TTokenList.Create;
   try
-    TokenizeIntoEmptyList(Source, Temp);
+    TokenizeIntoEmptyList(Source, Temp, SkipAsm);
 
     StartIndex := OutTokens.Count;
     OutTokens.Capacity := StartIndex + Temp.Count;
@@ -771,7 +771,7 @@ begin
 end;
 
 
-procedure TDelphiLexer.TokenizeIntoEmptyList(const Source: string; const OutTokens: TTokenList);
+procedure TDelphiLexer.TokenizeIntoEmptyList(const Source: string; const OutTokens: TTokenList; const SkipAsm:Boolean);
 var
   Sc:        TScanner;
   C:         Char;
@@ -947,7 +947,12 @@ begin
               // All text up to the terminating standalone 'end' becomes a single
               // tkAsmBody token. The 'end' is left in the scanner for the next
               // iteration to emit as tkStrictKeyword in the normal way.
-              if SameText(TokText, 'asm') then
+
+              // SkipAsm: Turn off for edge case
+              // the token stream for assembly would be "wrong" from an assembly semantics perspective (mnemonics are identifiers,
+              // not instructions), but the parser doesn't interpret them -- it throws them all away inside the nkAsmBlock opaque node.
+              // The only tokens that matter are asm and end, both tkStrictKeyword
+              if SameText(TokText, 'asm') and SkipAsm then
               begin
                 // Scan the asm body in segments. {$directives} and (*$directives*)
                 // within the body are extracted as separate tkDirective tokens so
