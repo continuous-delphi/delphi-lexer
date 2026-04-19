@@ -3,6 +3,7 @@
   "steps": ["Clean", "Build", "Test"],
   "clean": {
     "level": "deep",
+    "outputLevel": "Quiet",
     "jobs": [
       { "name": "Repo clean",
         "root": "./" }
@@ -34,7 +35,8 @@
     "timeoutSeconds": 10,
     "jobs": [
       { "name": "Lexer Tests",
-        "testExeFile": "test/Win32/Debug/Delphi.Lexer.Tests.exe" }
+        "testExeFile": "test/Win32/Debug/Delphi.Lexer.Tests.exe",
+        "arguments": ["-b","-l:Warning","-cm:Quiet"] }
     ]
   }
 }
