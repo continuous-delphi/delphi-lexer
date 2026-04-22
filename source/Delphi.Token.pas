@@ -22,6 +22,12 @@ type
     procedure Reset;
   end;
 
+  //helper used in tree export
+  TTriviaText = record
+    Whitespace:string;
+    InactiveCode:string;
+  end;
+
 
 implementation
 

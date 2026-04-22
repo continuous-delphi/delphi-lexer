@@ -4,7 +4,8 @@ interface
 
 uses
   System.Generics.Collections,
-  Delphi.Token;
+  Delphi.Token,
+  Delphi.Token.TriviaSpan;
 
 type
 
@@ -17,6 +18,7 @@ type
     // canonical empty value (-1, -1).
     // Raises EArgumentException when the pair count is odd. </summary>
     procedure AppendTokenArray(const Pairs:array of const);
+    function TriviaSpanText(const Span:TTriviaSpan):TTriviaText;
   end;
 
 
@@ -24,8 +26,8 @@ type
 implementation
 
 uses
+  System.Math,
   System.SysUtils,
-  Delphi.Token.TriviaSpan,
   Delphi.TokenKind;
 
 
@@ -70,6 +72,30 @@ begin
     Result.Add(Self.Tokens[I]);
 end;
 *)
+
+// Concatenates the text of all tokens within a trivia span.
+// Returns empty string for empty spans.
+function TTokenList.TriviaSpanText(const Span:TTriviaSpan):TTriviaText;
+var
+  I:Integer;
+begin
+  Result := Default(TTriviaText);
+
+  if Span.IsEmpty then Exit;
+
+  for I := Span.FirstTokenIndex to Min(Span.LastTokenIndex, Self.Count - 1) do
+  begin
+    if Self[I].Kind = tkInactiveCode then
+    begin
+      Result.InactiveCode := Result.InactiveCode + Self[I].Text;
+    end
+    else
+    begin
+      Result.Whitespace := Result.Whitespace + Self[I].Text;
+    end;
+  end;
+end;
+
 
 end.
 
