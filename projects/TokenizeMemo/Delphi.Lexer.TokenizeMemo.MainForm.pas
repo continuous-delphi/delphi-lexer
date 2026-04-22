@@ -33,7 +33,7 @@ implementation
 uses
   System.SysUtils,
   Delphi.Token,
-  Delphi.TokenKind,
+  Delphi.Token.Kind,
   Delphi.Lexer,
   Delphi.Lexer.Utils;
 

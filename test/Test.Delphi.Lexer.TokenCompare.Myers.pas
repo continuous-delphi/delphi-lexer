@@ -14,7 +14,7 @@ uses
   System.Generics.Collections,
   Delphi.Token,
   Delphi.Token.List,
-  Delphi.TokenKind,
+  Delphi.Token.Kind,
   Delphi.Lexer.MyersDiff;
 
 type

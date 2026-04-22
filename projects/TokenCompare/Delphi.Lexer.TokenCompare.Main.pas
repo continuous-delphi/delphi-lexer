@@ -37,7 +37,7 @@ uses
   System.SysUtils,
   System.JSON,
   System.Generics.Collections,
-  Delphi.TokenKind,
+  Delphi.Token.Kind,
   Delphi.Lexer;
 
 

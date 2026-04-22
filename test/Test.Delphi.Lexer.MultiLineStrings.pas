@@ -107,7 +107,7 @@ implementation
 
 uses
   System.SysUtils,
-  Delphi.TokenKind,
+  Delphi.Token.Kind,
   Delphi.Lexer.Scanner;
 
 const

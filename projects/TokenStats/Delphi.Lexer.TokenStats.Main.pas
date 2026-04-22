@@ -4,7 +4,7 @@ interface
 
 uses
   System.Generics.Collections,
-  Delphi.TokenKind,
+  Delphi.Token.Kind,
   Delphi.Token,
   Delphi.Token.List,
   Delphi.Lexer.Utils;

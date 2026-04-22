@@ -35,7 +35,7 @@ implementation
 uses
   System.SysUtils,
   System.JSON,
-  Delphi.TokenKind,
+  Delphi.Token.Kind,
   Delphi.Lexer;
 
 

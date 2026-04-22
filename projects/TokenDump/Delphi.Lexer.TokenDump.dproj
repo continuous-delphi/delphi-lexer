@@ -89,8 +89,8 @@
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <DCC_Define>XSINGLE_KEYWORD_LIST;$(DCC_Define)</DCC_Define>
         <Icon_MainIcon>..\..\assets\source-code-browse.ico</Icon_MainIcon>
-        <VerInfo_Build>240</VerInfo_Build>
-        <VerInfo_Keys>CompanyName=Continuous-Delphi;FileDescription=Utility for https://github.com/continuous-delphi/delphi-lexer;FileVersion=1.1.0.240;InternalName=Continuous-Delphi TokenDump utility;LegalCopyright=Copyright (c) 2026, Darian Miller;LegalTrademarks=;OriginalFilename=Delphi.Lexer.TokenDump.exe;ProgramID=com.continous-delphi.$(MSBuildProjectName);ProductName=delphi-lexer by Continuous-Delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Build>241</VerInfo_Build>
+        <VerInfo_Keys>CompanyName=Continuous-Delphi;FileDescription=Utility for https://github.com/continuous-delphi/delphi-lexer;FileVersion=1.1.0.241;InternalName=Continuous-Delphi TokenDump utility;LegalCopyright=Copyright (c) 2026, Darian Miller;LegalTrademarks=;OriginalFilename=Delphi.Lexer.TokenDump.exe;ProgramID=com.continous-delphi.$(MSBuildProjectName);ProductName=delphi-lexer by Continuous-Delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <VerInfo_MajorVer>1</VerInfo_MajorVer>
         <VerInfo_MinorVer>1</VerInfo_MinorVer>
     </PropertyGroup>
@@ -106,7 +106,7 @@
         <DCCReference Include="..\..\source\Delphi.Lexer.Utils.pas"/>
         <DCCReference Include="..\..\source\Delphi.Tokenizer.pas"/>
         <DCCReference Include="..\..\source\Delphi.Token.pas"/>
-        <DCCReference Include="..\..\source\Delphi.TokenKind.pas"/>
+        <DCCReference Include="..\..\source\Delphi.Token.Kind.pas"/>
         <DCCReference Include="..\..\source\Delphi.Token.List.pas"/>
         <DCCReference Include="..\..\source\Delphi.Token.TriviaSpan.pas"/>
         <None Include="README.md"/>
@@ -135,9 +135,16 @@
                 <WelcomePageFolder/>
             </Delphi.Personality>
             <Platforms>
+                <Platform value="Android">False</Platform>
+                <Platform value="Android64">False</Platform>
+                <Platform value="Linux64">False</Platform>
+                <Platform value="OSX64">False</Platform>
+                <Platform value="OSXARM64">False</Platform>
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">False</Platform>
                 <Platform value="WinARM64EC">False</Platform>
+                <Platform value="iOSDevice64">False</Platform>
+                <Platform value="iOSSimARM64">False</Platform>
             </Platforms>
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>

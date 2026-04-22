@@ -37,7 +37,7 @@ implementation
 
 uses
   System.Generics.Collections,
-  Delphi.TokenKind;
+  Delphi.Token.Kind;
 
 
 procedure TMultiSegmentStringTests.Setup;

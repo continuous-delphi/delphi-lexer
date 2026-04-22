@@ -13,7 +13,7 @@ uses
   Delphi.Lexer.Utils in '..\..\source\Delphi.Lexer.Utils.pas',
   Delphi.Tokenizer in '..\..\source\Delphi.Tokenizer.pas',
   Delphi.Token in '..\..\source\Delphi.Token.pas',
-  Delphi.TokenKind in '..\..\source\Delphi.TokenKind.pas',
+  Delphi.Token.Kind in '..\..\source\Delphi.Token.Kind.pas',
   Delphi.Token.List in '..\..\source\Delphi.Token.List.pas',
   Delphi.Token.TriviaSpan in '..\..\source\Delphi.Token.TriviaSpan.pas';
 

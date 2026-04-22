@@ -66,7 +66,7 @@ implementation
 
 uses
   Delphi.Token.TriviaSpan,
-  Delphi.TokenKind;
+  Delphi.Token.Kind;
 
 
 procedure TTriviaSpanTests.Setup;

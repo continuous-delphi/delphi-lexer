@@ -80,7 +80,7 @@ type
 implementation
 
 uses
-  Delphi.TokenKind;
+  Delphi.Token.Kind;
 
 
 procedure TSymbolTests.Setup;

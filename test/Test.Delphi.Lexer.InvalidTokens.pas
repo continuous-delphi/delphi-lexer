@@ -112,7 +112,7 @@ type
 implementation
 
 uses
-  Delphi.TokenKind;
+  Delphi.Token.Kind;
 
 
 procedure TInvalidTokenTests.Setup;

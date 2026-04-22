@@ -11,7 +11,7 @@ uses
   Delphi.Keywords in '..\..\source\Delphi.Keywords.pas',
   Delphi.Lexer.Utils in '..\..\source\Delphi.Lexer.Utils.pas',
   GpCommandLineParser in '..\..\shared\GpCommandLineParser.pas',
-  Delphi.TokenKind in '..\..\source\Delphi.TokenKind.pas',
+  Delphi.Token.Kind in '..\..\source\Delphi.Token.Kind.pas',
   Delphi.Token.List in '..\..\source\Delphi.Token.List.pas',
   Delphi.Token in '..\..\source\Delphi.Token.pas',
   Delphi.Tokenizer in '..\..\source\Delphi.Tokenizer.pas',

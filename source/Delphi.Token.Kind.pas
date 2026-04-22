@@ -1,4 +1,4 @@
-﻿unit Delphi.TokenKind;
+﻿unit Delphi.Token.Kind;
 
 interface
 

@@ -18,7 +18,7 @@ uses
   Delphi.Lexer.Scanner in '..\source\Delphi.Lexer.Scanner.pas',
   Delphi.Lexer in '..\source\Delphi.Lexer.pas',
   Delphi.Lexer.MyersDiff in '..\source\Delphi.Lexer.MyersDiff.pas',
-  Delphi.TokenKind in '..\source\Delphi.TokenKind.pas',
+  Delphi.Token.Kind in '..\source\Delphi.Token.Kind.pas',
   Delphi.Token.List in '..\source\Delphi.Token.List.pas',
   Delphi.Token in '..\source\Delphi.Token.pas',
   Delphi.Tokenizer in '..\source\Delphi.Tokenizer.pas',

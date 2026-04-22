@@ -3,7 +3,7 @@
 interface
 
 uses
-  Delphi.TokenKind,
+  Delphi.Token.Kind,
   Delphi.Token.TriviaSpan;
 
 type

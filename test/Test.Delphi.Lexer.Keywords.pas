@@ -72,7 +72,7 @@ implementation
 
 uses
   System.SysUtils,
-  Delphi.TokenKind;
+  Delphi.Token.Kind;
 
 procedure TKeywordTests.Setup;
 begin

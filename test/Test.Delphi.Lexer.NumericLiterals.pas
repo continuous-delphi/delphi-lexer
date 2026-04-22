@@ -60,7 +60,7 @@ type
 
 implementation
 uses
-  Delphi.TokenKind;
+  Delphi.Token.Kind;
 
 
 procedure TNumericLiteralTests.Setup;

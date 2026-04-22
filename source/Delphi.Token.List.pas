@@ -28,7 +28,7 @@ implementation
 uses
   System.Math,
   System.SysUtils,
-  Delphi.TokenKind;
+  Delphi.Token.Kind;
 
 
 procedure TTokenList.AppendTokenArray(const Pairs:array of const);
