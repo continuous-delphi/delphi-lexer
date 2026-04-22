@@ -11,7 +11,7 @@ interface
 uses
   System.Generics.Collections,
   Delphi.Token,
-  Delphi.TokenList;
+  Delphi.Token.List;
 
 type
   // Myers diff produces only two operations: a token present in A but not B

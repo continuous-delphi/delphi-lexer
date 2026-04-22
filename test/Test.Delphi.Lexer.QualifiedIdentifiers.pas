@@ -32,7 +32,7 @@ implementation
 
 uses
   Delphi.TokenKind,
-  Delphi.TokenList;
+  Delphi.Token.List;
 
 
 // Local helper: assert kind and text of a single token.

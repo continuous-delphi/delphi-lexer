@@ -6,7 +6,7 @@ uses
   System.Generics.Collections,
   Delphi.TokenKind,
   Delphi.Token,
-  Delphi.TokenList,
+  Delphi.Token.List,
   Delphi.Lexer.Utils;
 
 type

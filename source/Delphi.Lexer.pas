@@ -23,7 +23,7 @@ interface
 
 uses
   Delphi.Token,
-  Delphi.TokenList;
+  Delphi.Token.List;
 
 type
   // Stateless lexer: create, call Tokenize (or TokenizeInto), free.
@@ -795,7 +795,7 @@ var
     T := MakeToken(AKind, Text, TokLine, TokCol, TokOffset);
     OutTokens.Add(T);
   end;
-  
+
 begin
   Assert(OutTokens.Count = 0, 'TokenizeIntoEmptyList assumes list is empty'); //ApplyTriviaSpans walks entire list
 

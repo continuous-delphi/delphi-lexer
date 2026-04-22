@@ -107,7 +107,7 @@
         <DCCReference Include="..\..\shared\GpCommandLineParser.pas"/>
         <DCCReference Include="..\..\source\Delphi.Lexer.MyersDiff.pas"/>
         <DCCReference Include="..\..\source\Delphi.TokenKind.pas"/>
-        <DCCReference Include="..\..\source\Delphi.TokenList.pas"/>
+        <DCCReference Include="..\..\source\Delphi.Token.List.pas"/>
         <DCCReference Include="..\..\source\Delphi.Token.pas"/>
         <DCCReference Include="..\..\source\Delphi.Tokenizer.pas"/>
         <DCCReference Include="..\..\source\Delphi.Token.TriviaSpan.pas"/>

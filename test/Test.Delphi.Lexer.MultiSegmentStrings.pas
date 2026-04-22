@@ -10,7 +10,7 @@ uses
   DUnitX.TestFramework,
   System.SysUtils,
   Delphi.Token,
-  Delphi.TokenList,
+  Delphi.Token.List,
   Delphi.Lexer;
 
 type

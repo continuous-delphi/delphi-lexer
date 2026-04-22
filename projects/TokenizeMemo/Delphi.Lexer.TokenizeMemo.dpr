@@ -3,7 +3,7 @@
 uses
   Vcl.Forms,
   Delphi.Lexer.TokenizeMemo.MainForm in 'Delphi.Lexer.TokenizeMemo.MainForm.pas' {frmMain},
-  Delphi.TokenList in '..\..\source\Delphi.TokenList.pas',
+  Delphi.Token.List in '..\..\source\Delphi.Token.List.pas',
   Delphi.TokenKind in '..\..\source\Delphi.TokenKind.pas',
   Delphi.Tokenizer in '..\..\source\Delphi.Tokenizer.pas',
   Delphi.Token.TriviaSpan in '..\..\source\Delphi.Token.TriviaSpan.pas',

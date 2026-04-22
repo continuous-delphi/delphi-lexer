@@ -13,7 +13,7 @@ uses
   GpCommandLineParser in '..\..\shared\GpCommandLineParser.pas',
   Delphi.Lexer.MyersDiff in '..\..\source\Delphi.Lexer.MyersDiff.pas',
   Delphi.TokenKind in '..\..\source\Delphi.TokenKind.pas',
-  Delphi.TokenList in '..\..\source\Delphi.TokenList.pas',
+  Delphi.Token.List in '..\..\source\Delphi.Token.List.pas',
   Delphi.Token in '..\..\source\Delphi.Token.pas',
   Delphi.Tokenizer in '..\..\source\Delphi.Tokenizer.pas',
   Delphi.Token.TriviaSpan in '..\..\source\Delphi.Token.TriviaSpan.pas';

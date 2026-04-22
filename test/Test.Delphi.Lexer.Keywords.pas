@@ -17,7 +17,7 @@ interface
 uses
   DUnitX.TestFramework,
   Delphi.Token,
-  Delphi.TokenList,
+  Delphi.Token.List,
   Delphi.Keywords,
   Delphi.Lexer;
 

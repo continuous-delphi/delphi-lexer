@@ -14,7 +14,7 @@ uses
   Delphi.Tokenizer in '..\..\source\Delphi.Tokenizer.pas',
   Delphi.Token in '..\..\source\Delphi.Token.pas',
   Delphi.TokenKind in '..\..\source\Delphi.TokenKind.pas',
-  Delphi.TokenList in '..\..\source\Delphi.TokenList.pas',
+  Delphi.Token.List in '..\..\source\Delphi.Token.List.pas',
   Delphi.Token.TriviaSpan in '..\..\source\Delphi.Token.TriviaSpan.pas';
 
 begin

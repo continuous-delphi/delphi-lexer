@@ -4,7 +4,7 @@ interface
 
 uses
   Delphi.Token,
-  Delphi.TokenList;
+  Delphi.Token.List;
 
 type
 

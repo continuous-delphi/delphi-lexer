@@ -5,7 +5,7 @@ uses
   System.SysUtils,
   GpCommandLineParser,
   Delphi.Token,
-  Delphi.TokenList;
+  Delphi.Token.List;
 
 type
 

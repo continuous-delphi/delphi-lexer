@@ -23,7 +23,7 @@ uses
   System.SysUtils,
   System.IOUtils,
   Delphi.Token,
-  Delphi.TokenList,
+  Delphi.Token.List,
   Delphi.TokenKind,
   Delphi.Lexer;
 

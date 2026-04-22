@@ -13,7 +13,7 @@ uses
   DUnitX.TestFramework,
   System.Generics.Collections,
   Delphi.Token,
-  Delphi.TokenList,
+  Delphi.Token.List,
   Delphi.TokenKind,
   Delphi.Lexer.MyersDiff;
 

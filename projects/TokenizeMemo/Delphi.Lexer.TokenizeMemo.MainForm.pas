@@ -7,7 +7,7 @@ uses
   Vcl.Controls,
   Vcl.Forms,
   Vcl.StdCtrls,
-  Delphi.TokenList;
+  Delphi.Token.List;
 
 
 type
