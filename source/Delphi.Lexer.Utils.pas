@@ -9,9 +9,15 @@ uses
 
 type
 
+  TAppServices = class
+    class function GetAppVersion:string;
+  end;
+
+  {$IFDEF MSWINDOWS}
   TWinUtils = class
     class function GetModuleVersion(const AIncludeBuild:Boolean=False):string;
   end;
+  {$ENDIF}
 
   TLexerUtils = class
     // Return a printable, single-line representation of S.
@@ -164,9 +170,26 @@ implementation
 uses
   System.Classes,
   System.IOUtils,
-  Winapi.Windows;
+  {$IFDEF MSWINDOWS}
+  Winapi.Windows,
+  {$ENDIF}
+  FMX.Platform;
 
 
+class function TAppServices.GetAppVersion:string;
+var
+  AppService:IFMXApplicationService;
+begin
+  Result := '';
+  if TPlatformServices.Current.SupportsPlatformService(IFMXApplicationService, IInterface(AppService)) then
+    Result := AppService.AppVersion
+  {$IFDEF MSWINDOWS}
+  else
+    Result := TWinUtils.GetModuleVersion;
+  {$ENDIF}
+end;
+
+{$IFDEF MSWINDOWS}
 class function TWinUtils.GetModuleVersion(const AIncludeBuild:Boolean=False):string;
 const
   ROOT_BLOCK = '\';
@@ -210,6 +233,7 @@ begin
   end;
 
 end;
+{$ENDIF}
 
 class function TLexerUtils.RoundTripCheck(const ATokens: TTokenList; const ASource: string): Boolean;
 var
@@ -391,7 +415,7 @@ begin
 
   if Opts.Version then
   begin
-    WriteLn(TWinUtils.GetModuleVersion);
+    WriteLn(TAppServices.GetAppVersion);
     Exit;
   end;
 
@@ -402,7 +426,7 @@ begin
     WriteLn('A command-line utility for delphi-lexer from Continuous-Delphi');
     WriteLn('https://github.com/continuous-delphi/delphi-lexer');
     WriteLn('MIT Licensed.  Copyright (C) 2026, Darian Miller');
-    WriteLn('Version: ', TWinUtils.GetModuleVersion);
+    WriteLn('Version: ', TAppServices.GetAppVersion);
     WriteLn;
     for Line in Parser.Usage do
     begin

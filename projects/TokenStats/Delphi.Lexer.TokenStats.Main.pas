@@ -73,7 +73,9 @@ uses
   System.IOUtils,
   System.JSON,
   System.Generics.Defaults,
-  Winapi.Windows,
+  {$IFDEF MSWINDOWS}
+  Winapi.Windows,  //Squash hint: H2443 [dcc32 Hint] Inline function 'TDirectory.GetCurrentDirectory' has not been expanded because unit 'Winapi.Windows' is not specified in USES list
+  {$ENDIF}
   Delphi.Lexer;
 
 
