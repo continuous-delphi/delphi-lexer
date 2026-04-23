@@ -18,6 +18,7 @@ interface
 uses
   DUnitX.TestFramework,
   Delphi.Token,
+  Delphi.Token.Kind,
   Delphi.Token.List,
   Delphi.Lexer;
 
@@ -53,6 +54,11 @@ type
     [Test] procedure SingleCharSource_OffsetZero_ReturnsIndex0;
     [Test] procedure SingleCharSource_OffsetOne_ReturnsMinusOne;
     [Test] procedure EmptySource_OffsetZero_ReturnsMinusOne;
+    [Test] procedure LargeNegativeOffset_ReturnsMinusOne;
+    [Test] procedure MaxIntOffset_ReturnsMinusOne;
+    [Test] procedure MultiLineSource_OffsetInsideEOL_ReturnsEOLToken;
+    [Test] procedure ManyTokens_LastRealTokenFound;
+    [Test] procedure OnlyWhitespaceSource_OffsetInMiddle;
   end;
 
 implementation
@@ -193,6 +199,64 @@ begin
   Lex('');
   // Empty source: only tkEOF at offset 0 with Length 0 -- no characters at all.
   Assert.AreEqual(-1, FindTokenAtOffset(FTokens, 0), 'empty source: offset 0 -> -1');
+end;
+
+
+procedure TFindTokenAtOffsetTests.LargeNegativeOffset_ReturnsMinusOne;
+begin
+  Lex('abc def');
+  Assert.AreEqual(-1, FindTokenAtOffset(FTokens, -1000000), 'large negative -> -1');
+end;
+
+
+procedure TFindTokenAtOffsetTests.MaxIntOffset_ReturnsMinusOne;
+begin
+  Lex('abc def');
+  Assert.AreEqual(-1, FindTokenAtOffset(FTokens, MaxInt), 'MaxInt -> -1');
+end;
+
+
+procedure TFindTokenAtOffsetTests.MultiLineSource_OffsetInsideEOL_ReturnsEOLToken;
+var
+  EolIdx: Integer;
+begin
+  // 'ab' + CRLF + 'cd' => offsets: ab=0,1  CR=2  LF=3  cd=4,5
+  Lex('ab' + #13#10 + 'cd');
+  // Offset 2 is the CR of the CRLF EOL token.
+  EolIdx := FindTokenAtOffset(FTokens, 2);
+  Assert.IsTrue(EolIdx >= 0, 'should find a token at offset 2');
+  Assert.AreEqual(Ord(tkEOL), Ord(FTokens[EolIdx].Kind), 'offset 2 -> tkEOL');
+  // Offset 3 is the LF of the same CRLF token.
+  Assert.AreEqual(EolIdx, FindTokenAtOffset(FTokens, 3), 'offset 3 -> same EOL token');
+end;
+
+
+procedure TFindTokenAtOffsetTests.ManyTokens_LastRealTokenFound;
+var
+  Idx: Integer;
+begin
+  // 'a b c d e f g h i j' => 19 tokens (10 idents + 9 spaces) + EOF = 20.
+  // Last real token 'j' is at offset 18.
+  Lex('a b c d e f g h i j');
+  Idx := FindTokenAtOffset(FTokens, 18);
+  Assert.IsTrue(Idx >= 0, 'should find token at offset 18');
+  Assert.AreEqual('j', FTokens[Idx].Text, 'last ident found');
+  // One past the last char should be -1 (EOF).
+  Assert.AreEqual(-1, FindTokenAtOffset(FTokens, 19), 'offset 19 -> -1 (EOF)');
+end;
+
+
+procedure TFindTokenAtOffsetTests.OnlyWhitespaceSource_OffsetInMiddle;
+var
+  Idx: Integer;
+begin
+  // '     ' (5 spaces) => [0] tkWhitespace len=5, [1] tkEOF.
+  Lex('     ');
+  Idx := FindTokenAtOffset(FTokens, 2);
+  Assert.AreEqual(0, Idx, 'offset 2 in whitespace -> [0]');
+  Idx := FindTokenAtOffset(FTokens, 4);
+  Assert.AreEqual(0, Idx, 'offset 4 in whitespace -> [0]');
+  Assert.AreEqual(-1, FindTokenAtOffset(FTokens, 5), 'offset 5 -> -1 (EOF)');
 end;
 
 

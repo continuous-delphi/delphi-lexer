@@ -83,6 +83,21 @@ type
     // 7-quote delimiter with embedded ''''' (5-quote run) in the body.
     [Test] procedure SevenQuote_EmbeddedFiveQuote_IsSingleToken;
 
+    // Maximum safe nesting: body line has exactly (DelimLen - 1) quotes at
+    // line start. Must NOT trigger a close because the count is less than
+    // the delimiter length.
+    [Test] procedure FiveQuote_BodyWithFourQuotesAtLineStart_DoesNotClose;
+    [Test] procedure SevenQuote_BodyWithSixQuotesAtLineStart_DoesNotClose;
+
+    // More quotes than the delimiter length at line start: the extra quote
+    // after the delimiter-length run means this is NOT a closing delimiter
+    // (Peek(DelimLen) = quote).
+    [Test] procedure SevenQuote_BodyWithEightQuotesAtLineStart_DoesNotClose;
+
+    // Unterminated extended delimiter reaching EOF.
+    [Test] procedure FiveQuote_UnterminatedAtEOF_IstkString;
+    [Test] procedure SevenQuote_UnterminatedAtEOF_IstkString;
+
     // Even quote count (6) is not a multiline delimiter; ReadStringLiteral
     // handles it as a normal string containing two apostrophes.
     [Test] procedure EvenQuoteCount_IsNotMultilineOpener;
@@ -471,6 +486,111 @@ begin
     Assert.AreEqual(NativeInt(2), T.Count, 'count: string + EOF');
     Assert.AreEqual(Ord(tkString), Ord(T[0].Kind), 'kind');
     Assert.AreEqual(Src, T[0].Text, 'full source in one token');
+    Assert.AreEqual(Src, RoundTrip(T), 'round-trip');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TMultiLineStringTests.FiveQuote_BodyWithFourQuotesAtLineStart_DoesNotClose;
+var
+  Q4, Q5, Src: string;
+  T: TTokenList;
+begin
+  Q4 := RuntimeQuotes(4);
+  Q5 := RuntimeQuotes(5);
+  // Body line is exactly 4 quotes at line start. The delimiter is 5 quotes,
+  // so PeekSeq(5) fails (only 4 available) -- must not close.
+  Src := Q5 + CRLF + Q4 + CRLF + Q5;
+  T := Tok(Src);
+  try
+    Assert.AreEqual(NativeInt(2), T.Count, 'count: string + EOF');
+    Assert.AreEqual(Ord(tkString), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Src, T[0].Text, 'text');
+    Assert.AreEqual(Src, RoundTrip(T), 'round-trip');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TMultiLineStringTests.SevenQuote_BodyWithSixQuotesAtLineStart_DoesNotClose;
+var
+  Q6, Q7, Src: string;
+  T: TTokenList;
+begin
+  Q6 := RuntimeQuotes(6);
+  Q7 := RuntimeQuotes(7);
+  // Body line is exactly 6 quotes at line start. The delimiter is 7 quotes,
+  // so PeekSeq(7) fails -- must not close.
+  Src := Q7 + CRLF + Q6 + CRLF + Q7;
+  T := Tok(Src);
+  try
+    Assert.AreEqual(NativeInt(2), T.Count, 'count: string + EOF');
+    Assert.AreEqual(Ord(tkString), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Src, T[0].Text, 'text');
+    Assert.AreEqual(Src, RoundTrip(T), 'round-trip');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TMultiLineStringTests.SevenQuote_BodyWithEightQuotesAtLineStart_DoesNotClose;
+var
+  Q7, Q8, Src: string;
+  T: TTokenList;
+begin
+  Q7 := RuntimeQuotes(7);
+  Q8 := RuntimeQuotes(8);
+  // Body line has 8 quotes at line start. PeekSeq(7) matches but
+  // Peek(7) is another quote, so the closing check fails -- must not close.
+  Src := Q7 + CRLF + Q8 + CRLF + Q7;
+  T := Tok(Src);
+  try
+    Assert.AreEqual(NativeInt(2), T.Count, 'count: string + EOF');
+    Assert.AreEqual(Ord(tkString), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Src, T[0].Text, 'text');
+    Assert.AreEqual(Src, RoundTrip(T), 'round-trip');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TMultiLineStringTests.FiveQuote_UnterminatedAtEOF_IstkString;
+var
+  Q5, Src: string;
+  T: TTokenList;
+begin
+  Q5  := RuntimeQuotes(5);
+  // Open with 5-quote delimiter but never close -- EOF terminates.
+  Src := Q5 + CRLF + 'content line' + CRLF + 'more content';
+  T := Tok(Src);
+  try
+    Assert.AreEqual(NativeInt(2), T.Count, 'count: unterminated string + EOF');
+    Assert.AreEqual(Ord(tkString), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Src, T[0].Text, 'unterminated: text = entire source');
+    Assert.AreEqual(Src, RoundTrip(T), 'round-trip');
+  finally
+    T.Free;
+  end;
+end;
+
+
+procedure TMultiLineStringTests.SevenQuote_UnterminatedAtEOF_IstkString;
+var
+  Q7, Src: string;
+  T: TTokenList;
+begin
+  Q7  := RuntimeQuotes(7);
+  Src := Q7 + CRLF + 'content line' + CRLF + 'more content';
+  T := Tok(Src);
+  try
+    Assert.AreEqual(NativeInt(2), T.Count, 'count: unterminated string + EOF');
+    Assert.AreEqual(Ord(tkString), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Src, T[0].Text, 'unterminated: text = entire source');
     Assert.AreEqual(Src, RoundTrip(T), 'round-trip');
   finally
     T.Free;
