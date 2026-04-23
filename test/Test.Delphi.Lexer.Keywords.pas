@@ -1,4 +1,4 @@
-﻿unit Test.Delphi.Lexer.Keywords;
+unit Test.Delphi.Lexer.Keywords;
 
 // Keyword classification tests.
 //
@@ -63,6 +63,9 @@ type
     [Test] procedure Reserved_out_IsContextualKeyword;
     [Test] procedure Reserved_inline_IsStrictKeyword;
     [Test] procedure Reserved_on_IsContextualKeyword;
+    {$IFDEF MSWINDOWS}
+    [Test] procedure UpperCaseKeywords_AreStableUnderTurkishThreadLocale;
+    {$ENDIF}
 
     // Plain identifier is not a keyword.
     [Test] procedure PlainIdentifier_IsNotKeyword;
@@ -72,6 +75,9 @@ implementation
 
 uses
   System.SysUtils,
+  {$IFDEF MSWINDOWS}
+  Winapi.Windows,
+  {$ENDIF}
   Delphi.Token.Kind;
 
 procedure TKeywordTests.Setup;
@@ -358,6 +364,38 @@ begin
     T.Free;
   end;
 end;
+
+
+{$IFDEF MSWINDOWS}
+procedure TKeywordTests.UpperCaseKeywords_AreStableUnderTurkishThreadLocale;
+const
+  TurkishLCID = $041F;
+var
+  PrevLCID: LCID;
+  T: TTokenList;
+begin
+  PrevLCID := GetThreadLocale;
+  Assert.IsTrue(SetThreadLocale(TurkishLCID), 'SetThreadLocale(tr-TR)');
+  try
+    Assert.IsTrue(IsDelphiKeyword('INTERFACE'), 'INTERFACE recognized under Turkish locale');
+    Assert.IsTrue(IsDelphiKeyword('INLINE'), 'INLINE recognized under Turkish locale');
+    Assert.IsTrue(IsDelphiKeyword('IF'), 'IF should be recognized');
+
+    T := Tok('INTERFACE INLINE');
+    try
+      Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), 'INTERFACE kind');
+      Assert.AreEqual('INTERFACE', T[0].Text, 'INTERFACE text');
+      Assert.AreEqual(Ord(tkWhitespace), Ord(T[1].Kind), 'separator kind');
+      Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[2].Kind), 'INLINE kind');
+      Assert.AreEqual('INLINE', T[2].Text, 'INLINE text');
+    finally
+      T.Free;
+    end;
+  finally
+    SetThreadLocale(PrevLCID);
+  end;
+end;
+{$ENDIF}
 
 
 procedure TKeywordTests.PlainIdentifier_IsNotKeyword;

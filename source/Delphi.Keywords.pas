@@ -213,6 +213,22 @@ implementation
 uses
   System.SysUtils;
 
+(* todo: speed test
+procedure BuildKeywordDictionary;
+var
+  KI:TKeywordInfo;
+begin
+  KeywordDict := TDictionary<string, TKeywordInfo>.Create;
+  for KI in DELPHI_KEYWORDS do
+    KeywordDict.Add(KI.Name, KI);
+end;
+
+function FindDelphiKeyword(const S: string; out Info: TKeywordInfo): Boolean;
+begin
+  Info := Default(TKeywordInfo);
+  Result := KeywordDict.TryGetValue(S.ToLowerInvariant, Info);
+end;
+*)
 
 function FindDelphiKeyword(const S: string; out Info: TKeywordInfo): Boolean;
 var
@@ -221,7 +237,7 @@ var
 begin
   Info := Default(TKeywordInfo);
 
-  Lower := LowerCase(S);
+  Lower := S.ToLowerInvariant;
   L := Low(DELPHI_KEYWORDS);
   H := High(DELPHI_KEYWORDS);
   while L <= H do
@@ -247,4 +263,7 @@ begin
   Result := FindDelphiKeyword(S, Info);
 end;
 
+
+//initialization
+//BuildKeywordDictionary
 end.
