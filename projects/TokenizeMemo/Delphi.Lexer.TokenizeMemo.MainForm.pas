@@ -72,8 +72,6 @@ begin
 end;
 
 procedure TfrmMain.DumpTokens(const TokenList:TTokenList; const Destination:TStrings);
-const
-  DEAD_CODE_FLAG = '{n/a}';
 var
   I:Integer;
   Token:TToken;
@@ -94,16 +92,8 @@ begin
     begin
       Token := TokenList[i];
 
-      if Token.Kind = tkInactiveCode then //should not happen, moved conditional parsing out of delphi-lexer
-      begin
-        LineVal := DEAD_CODE_FLAG;
-        ColVal := DEAD_CODE_FLAG;
-      end
-      else
-      begin
-        LineVal := Token.Line.ToString;
-        ColVal := Token.Col.ToString;
-      end;
+      LineVal := Token.Line.ToString;
+      ColVal := Token.Col.ToString;
 
       Line := Format('%5d  %-17s  %6s  %6s  %6d  %6d  %11s  %11s  %s',
         [I, TokenKindName(Token.Kind), LineVal, ColVal, Token.StartOffset,
