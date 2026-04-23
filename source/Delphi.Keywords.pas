@@ -211,50 +211,27 @@ function IsDelphiKeyword(const S: string): Boolean;
 implementation
 
 uses
-  System.SysUtils;
+  System.SysUtils,
+  System.Generics.Collections;
 
-(* todo: speed test
+var
+  _KeywordDict:TDictionary<string, TKeywordInfo>;
+
 procedure BuildKeywordDictionary;
 var
   KI:TKeywordInfo;
 begin
-  KeywordDict := TDictionary<string, TKeywordInfo>.Create;
+  _KeywordDict := TDictionary<string, TKeywordInfo>.Create;
   for KI in DELPHI_KEYWORDS do
-    KeywordDict.Add(KI.Name, KI);
+    _KeywordDict.Add(KI.Name, KI);
 end;
 
 function FindDelphiKeyword(const S: string; out Info: TKeywordInfo): Boolean;
 begin
   Info := Default(TKeywordInfo);
-  Result := KeywordDict.TryGetValue(S.ToLowerInvariant, Info);
+  Result := _KeywordDict.TryGetValue(S.ToLowerInvariant, Info);
 end;
-*)
 
-function FindDelphiKeyword(const S: string; out Info: TKeywordInfo): Boolean;
-var
-  L, H, Mid, Cmp: Integer;
-  Lower: string;
-begin
-  Info := Default(TKeywordInfo);
-
-  Lower := S.ToLowerInvariant;
-  L := Low(DELPHI_KEYWORDS);
-  H := High(DELPHI_KEYWORDS);
-  while L <= H do
-  begin
-    Mid := (L + H) div 2;
-    Cmp := CompareStr(Lower, DELPHI_KEYWORDS[Mid].Name);
-    if Cmp = 0 then
-    begin
-      Info := DELPHI_KEYWORDS[Mid];
-      Exit(True);
-    end
-    else if Cmp < 0 then H := Mid - 1
-    else L := Mid + 1;
-  end;
-
-  Result := False;
-end;
 
 function IsDelphiKeyword(const S: string): Boolean;
 var
@@ -264,6 +241,10 @@ begin
 end;
 
 
-//initialization
-//BuildKeywordDictionary
+initialization
+  BuildKeywordDictionary;
+
+finalization
+  _KeywordDict.Free;
+
 end.
