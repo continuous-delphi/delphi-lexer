@@ -109,16 +109,8 @@ end;
 
 
 class function TTokenCompare.TokenLabel(const Tok: TToken): string;
-var
-  S: string;
 begin
-  S := Tok.Text;
-  // Todo: use TLexerUtils.SafeText
-  S := StringReplace(S, #13#10, '<CRLF>', [rfReplaceAll]);
-  S := StringReplace(S, #13,    '<CR>',   [rfReplaceAll]);
-  S := StringReplace(S, #10,    '<LF>',   [rfReplaceAll]);
-  S := StringReplace(S, #9,     '<TAB>',  [rfReplaceAll]);
-  Result := TokenKindName(Tok.Kind) + ' "' + S + '"';
+  Result := Format('%s "%s"', [TokenKindName(Tok.Kind), TLexerUtils.SafeText(Tok.Text)]);
 end;
 
 
