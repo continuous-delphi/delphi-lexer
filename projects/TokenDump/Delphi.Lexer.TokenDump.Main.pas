@@ -41,12 +41,12 @@ uses
 
 class function TTokenDump.AppDescription: String;
 begin
-  Result := DefaultAppName;
+  Result := DefaultAppDescription;
 end;
 
 class function TTokenDump.AppName: String;
 begin
-  Result := DefaultAppDescription;
+  Result := DefaultAppName;
 end;
 
 class function TTokenDump.Tokenize(const SourceCode:string):TTokenList;
