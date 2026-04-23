@@ -111,6 +111,7 @@ begin
   WriteLn('formatVersion: ', '1.1.0'); // Bump if TEXT output structure (or logic) changes
   WriteLn('');
 
+  //toconsider: add KeywordKind enum to output if not kwNone (like kwBegin)
   WriteLn(Format('  %5s  %-17s  %-7s  %6s  %5s  %s',
     ['Idx', 'Kind', 'L:C', 'Offset', 'Len', 'Text']));
   WriteLn('  ', StringOfChar('-', 5), '  ',
@@ -186,6 +187,7 @@ begin
       TokenObj := TJSONObject.Create;
       TokenObj.AddPair('index',  TJSONNumber.Create(I));
       TokenObj.AddPair('kind',   TokenKindName(Tok.Kind));
+      //toconsider: add keywordKind enum to output if not kwNone (like kwBegin)
       TokenObj.AddPair('line',   TJSONNumber.Create(Tok.Line));
       TokenObj.AddPair('col',    TJSONNumber.Create(Tok.Col));
       TokenObj.AddPair('offset', TJSONNumber.Create(Tok.StartOffset));

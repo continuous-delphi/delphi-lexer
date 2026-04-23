@@ -156,6 +156,7 @@ begin
   T := Tok('&type');
   try
     Assert.AreEqual(Ord(tkIdentifier), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(kwNone),       Ord(T[0].KeywordKind), 'keywordKind none');
     Assert.AreEqual('&type', T[0].Text, 'text');
   finally
     T.Free;
@@ -186,6 +187,7 @@ begin
   T := Tok('Begin');
   try
     Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(kwBegin),         Ord(T[0].KeywordKind), 'keywordKind');
     Assert.AreEqual('Begin', T[0].Text, 'text preserved as-is');
   finally
     T.Free;
@@ -214,6 +216,7 @@ begin
   T := Tok('Function');
   try
     Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(kwFunction),      Ord(T[0].KeywordKind), 'keywordKind');
   finally
     T.Free;
   end;
@@ -384,8 +387,10 @@ begin
     T := Tok('INTERFACE INLINE');
     try
       Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), 'INTERFACE kind');
+      Assert.AreEqual(Ord(kwInterface),     Ord(T[0].KeywordKind), 'keywordKind');
       Assert.AreEqual('INTERFACE', T[0].Text, 'INTERFACE text');
       Assert.AreEqual(Ord(tkWhitespace), Ord(T[1].Kind), 'separator kind');
+      Assert.AreEqual(Ord(kwNone),       Ord(T[1].KeywordKind), 'keywordKind none');
       Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[2].Kind), 'INLINE kind');
       Assert.AreEqual('INLINE', T[2].Text, 'INLINE text');
     finally

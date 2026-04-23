@@ -92,6 +92,7 @@ implementation
 
 uses
   System.SysUtils,
+  Delphi.Keywords,
   Delphi.Token.Kind;
 
 procedure TAsmBodyTests.Setup;
@@ -125,9 +126,11 @@ begin
   try
     Assert.AreEqual(NativeInt(4), T.Count, 'count');
     Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), '[0] kind');
+    Assert.AreEqual(Ord(kwAsm),           Ord(T[0].KeywordKind), '[0] keywordKind');
     Assert.AreEqual('asm',                T[0].Text,      '[0] text');
     Assert.AreEqual(Ord(tkAsmBody),       Ord(T[1].Kind), '[1] kind');
     Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[2].Kind), '[2] kind');
+    Assert.AreEqual(Ord(kwEnd),           Ord(T[2].KeywordKind), '[2] keywordKind');
     Assert.AreEqual('end',                T[2].Text,      '[2] text');
     Assert.AreEqual(Ord(tkEOF),           Ord(T[3].Kind), '[3] kind');
   finally
@@ -342,6 +345,7 @@ begin
   try
     Assert.AreEqual(NativeInt(4), T.Count, 'count');
     Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[2].Kind), '[2] kind');
+    Assert.AreEqual(Ord(kwEnd),           Ord(T[2].KeywordKind), '[2] keywordKind');
     Assert.AreEqual('END',                T[2].Text,      '[2] text');
   finally
     T.Free;
@@ -415,6 +419,7 @@ begin
   try
     Assert.AreEqual(NativeInt(3), T.Count, 'count: asm + body + EOF only');
     Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), '[0] kind');
+    Assert.AreEqual(Ord(kwAsm),           Ord(T[0].KeywordKind), '[0] keywordKind');
     Assert.AreEqual(Ord(tkAsmBody),       Ord(T[1].Kind), '[1] kind');
     Assert.AreEqual(Ord(tkEOF),           Ord(T[2].Kind), '[2] kind');
     RoundTrip := '';
@@ -496,11 +501,13 @@ begin
   try
     Assert.AreEqual(NativeInt(6), T.Count, 'count');
     Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), '[0] asm');
+    Assert.AreEqual(Ord(kwAsm),           Ord(T[0].KeywordKind), '[0] keywordKind');
     Assert.AreEqual(Ord(tkAsmBody),       Ord(T[1].Kind), '[1] body before directive');
     Assert.AreEqual(Ord(tkDirective),     Ord(T[2].Kind), '[2] directive kind');
     Assert.AreEqual('{$ENDIF}',           T[2].Text,      '[2] directive text');
     Assert.AreEqual(Ord(tkAsmBody),       Ord(T[3].Kind), '[3] body after directive');
     Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[4].Kind), '[4] end');
+    Assert.AreEqual(Ord(kwEnd),           Ord(T[4].KeywordKind), '[4] keywordKind');
     Assert.AreEqual(Ord(tkEOF),           Ord(T[5].Kind), '[5] EOF');
   finally
     T.Free;

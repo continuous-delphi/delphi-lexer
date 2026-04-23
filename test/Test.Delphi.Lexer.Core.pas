@@ -121,6 +121,7 @@ begin
   try
     Assert.AreEqual(NativeInt(2), T.Count, 'count');
     Assert.AreEqual(Ord(tkStrictKeyword), Ord(T[0].Kind), 'kind');
+    Assert.AreEqual(Ord(kwBegin),         Ord(T[0].KeywordKind), 'keywordKind');
     Assert.AreEqual('begin', T[0].Text, 'text');
     Assert.AreEqual(Ord(tkEOF), Ord(T[1].Kind), 'eof kind');
   finally

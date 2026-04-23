@@ -105,14 +105,11 @@ begin
 end;
 
 
-// =========================================================================
-// MakeToken
-// =========================================================================
-
-function MakeToken(AKind: TTokenKind; const AText: string; ALine, ACol, AStartOffset: Integer): TToken;
+function MakeToken(ATokenKind:TTokenKind; const AText:string; ALine, ACol, AStartOffset:Integer; const AKeywordKind:TKeywordKind):TToken;
 begin
-  Result.Kind                       := AKind;
+  Result.Kind                       := ATokenKind;
   Result.Text                       := AText;
+  Result.KeywordKind                := AKeywordKind;
   Result.Line                       := ALine;
   Result.Col                        := ACol;
   Result.StartOffset                := AStartOffset;
@@ -123,10 +120,6 @@ begin
   Result.TrailingTrivia.LastTokenIndex  := -1;
 end;
 
-
-// =========================================================================
-// Read helpers
-// =========================================================================
 
 function ReadStringLiteral(var Sc: TScanner): string;
 var
@@ -788,11 +781,11 @@ var
   AsmDirCol:  Integer;
   AsmDirOfs:  Integer;
 
-  procedure Add(AKind: TTokenKind; const Text: string);
+  procedure Add(ATokenKind:TTokenKind; const Text:string; const AKeywordKind:TKeywordKind=TKeywordKind.kwNone);
   var
     T: TToken;
   begin
-    T := MakeToken(AKind, Text, TokLine, TokCol, TokOffset);
+    T := MakeToken(ATokenKind, Text, TokLine, TokCol, TokOffset, AKeywordKind);
     OutTokens.Add(T);
   end;
 
@@ -942,7 +935,7 @@ begin
           case KeywordInfo.Category of
             kcStrict:
             begin
-              Add(tkStrictKeyword, TokText);  // toconsider: collect KeywordInfo.Kind, KeywordInfo.Category
+              Add(tkStrictKeyword, TokText, KeywordInfo.Kind);
               // After emitting the 'asm' keyword, switch to opaque-body capture.
               // All text up to the terminating standalone 'end' becomes a single
               // tkAsmBody token. The 'end' is left in the scanner for the next
@@ -977,7 +970,7 @@ begin
             end;
             kcDirective,
             kcVisibility:
-              Add(tkContextKeyword, TokText); // toconsider: collect KeywordInfo.Kind, KeywordInfo.Category
+              Add(tkContextKeyword, TokText, KeywordInfo.Kind);
             else
               Assert(False, 'Unhandled KeywordInfo.Category');
           end;

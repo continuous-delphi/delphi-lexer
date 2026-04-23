@@ -3,6 +3,7 @@
 interface
 
 uses
+  Delphi.Keywords,
   Delphi.Token.Kind,
   Delphi.Token.TriviaSpan;
 
@@ -11,6 +12,7 @@ type
   TToken = record
     Kind:TTokenKind;
     Text:string; // Characters of this token, as they appear in the source
+    KeywordKind:TKeywordKind;  //kwNone for all but 2 TTokenKinds: tkStrictKeyword+tkContextKeyword  (Saves a lot of text comparisons downstream)
     Line:Integer; // 1-based line number of the first character
     Col:Integer; // 1-based column number of the first character
     StartOffset:Integer; // 0-based absolute character index into source
@@ -18,7 +20,7 @@ type
     LeadingTrivia:TTriviaSpan; // trivia tokens immediately before this token
     TrailingTrivia:TTriviaSpan; // same-line trivia tokens after this token (incl. EOL)
 
-    constructor Create(const AKind:TTokenKind; const AText:string; const ALine:Integer = -1; const ACol:Integer = -1; const AStartOffset:Integer = 0; const ALength:Integer = 0);
+    constructor Create(const AKind:TTokenKind; const AText:string; const ALine:Integer = -1; const ACol:Integer = -1; const AStartOffset:Integer = 0; const ALength:Integer = 0; AKeywordKind: TKeywordKind = kwNone);
     procedure Reset;
   end;
 
@@ -31,7 +33,7 @@ type
 
 implementation
 
-constructor TToken.Create(const AKind:TTokenKind; const AText:string; const ALine:Integer = -1; const ACol:Integer = -1; const AStartOffset:Integer = 0; const ALength:Integer = 0);
+constructor TToken.Create(const AKind:TTokenKind; const AText:string; const ALine:Integer = -1; const ACol:Integer = -1; const AStartOffset:Integer = 0; const ALength:Integer = 0; AKeywordKind: TKeywordKind = kwNone);
 begin
   Self.Kind := AKind;
   Self.Text := AText;
@@ -41,6 +43,7 @@ begin
   Self.Length := ALength;
   Self.LeadingTrivia := DEFAULT_TRIVIASPAN;
   Self.TrailingTrivia := DEFAULT_TRIVIASPAN;
+  Self.KeywordKind := AKeywordKind;
 end;
 
 procedure TToken.Reset;
@@ -50,6 +53,7 @@ begin
   Self.Col := -1;
   Self.LeadingTrivia := DEFAULT_TRIVIASPAN;
   Self.TrailingTrivia := DEFAULT_TRIVIASPAN;
+  Self.KeywordKind := kwNone;
 end;
 
 end.
