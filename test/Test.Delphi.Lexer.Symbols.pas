@@ -48,21 +48,15 @@ type
     // '..' must be one tkSymbol, not tkSymbol('.') + tkSymbol('.').
     [Test] procedure DotDot_IsSingleSymbol;
 
-    // '<<' must be one tkSymbol, not tkSymbol('<') + tkSymbol('<').
-    [Test] procedure DoubleLess_IsSingleSymbol;
-
-    // '>>' must be one tkSymbol, not tkSymbol('>') + tkSymbol('>').
-    [Test] procedure DoubleGreater_IsSingleSymbol;
-
     // --- Single-char symbols: unaffected by longest-match ---
 
     // ':' not followed by '=' is a single-char symbol.
     [Test] procedure Colon_Alone_IsSingleChar;
 
-    // '<' not followed by '>', '=', or '<' is a single-char symbol.
+    // '<' not followed by '>' or '=' is a single-char symbol.
     [Test] procedure Less_Alone_IsSingleChar;
 
-    // '>' not followed by '=' or '>' is a single-char symbol.
+    // '>' not followed by '=' is a single-char symbol.
     [Test] procedure Greater_Alone_IsSingleChar;
 
     // '.' not followed by '.' is a single-char symbol.
@@ -181,36 +175,6 @@ begin
 end;
 
 
-procedure TSymbolTests.DoubleLess_IsSingleSymbol;
-var
-  T: TTokenList;
-begin
-  T := Tok('<<');
-  try
-    Assert.AreEqual(NativeInt(2), T.Count, 'count');
-    Assert.AreEqual(Ord(tkSymbol), Ord(T[0].Kind), 'kind');
-    Assert.AreEqual('<<', T[0].Text, 'text');
-  finally
-    T.Free;
-  end;
-end;
-
-
-procedure TSymbolTests.DoubleGreater_IsSingleSymbol;
-var
-  T: TTokenList;
-begin
-  T := Tok('>>');
-  try
-    Assert.AreEqual(NativeInt(2), T.Count, 'count');
-    Assert.AreEqual(Ord(tkSymbol), Ord(T[0].Kind), 'kind');
-    Assert.AreEqual('>>', T[0].Text, 'text');
-  finally
-    T.Free;
-  end;
-end;
-
-
 // ---------------------------------------------------------------------------
 // Single-char symbols (regression: longest-match must not consume too much)
 // ---------------------------------------------------------------------------
@@ -236,7 +200,7 @@ procedure TSymbolTests.Less_Alone_IsSingleChar;
 var
   T: TTokenList;
 begin
-  // '<' followed by something other than '>', '=', or '<': emitted as single char.
+  // '<' followed by something other than '>' or '=': emitted as single char.
   T := Tok('<X');
   try
     Assert.AreEqual(NativeInt(3), T.Count, 'count');

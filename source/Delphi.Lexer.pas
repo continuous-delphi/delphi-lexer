@@ -467,8 +467,11 @@ begin
   if (C1 = '>') and (C2 = '=') then begin Result := '>='; IncI(Sc, 2); Exit; end;
   if (C1 = '<') and (C2 = '>') then begin Result := '<>'; IncI(Sc, 2); Exit; end;
   if (C1 = '.') and (C2 = '.') then begin Result := '..'; IncI(Sc, 2); Exit; end;
-  if (C1 = '<') and (C2 = '<') then begin Result := '<<'; IncI(Sc, 2); Exit; end;
-  if (C1 = '>') and (C2 = '>') then begin Result := '>>'; IncI(Sc, 2); Exit; end;
+
+// treating << and >> as single symbols was an early workaround for handling generics, should no longer be needed
+//  if (C1 = '<') and (C2 = '<') then begin Result := '<<'; IncI(Sc, 2); Exit; end;
+//  if (C1 = '>') and (C2 = '>') then begin Result := '>>'; IncI(Sc, 2); Exit; end;
+
   // Single-char.
   Result := C1;
   IncI(Sc);
