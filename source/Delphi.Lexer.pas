@@ -826,6 +826,17 @@ begin
       Continue;
     end;
 
+    // --- BOM: U+FEFF at start of file only ---
+    if (C = #$FEFF) then
+    begin
+      IncI(Sc);
+      if TokStartI = 1 then
+        Add(tkBOM, #$FEFF)
+      else
+        Add(tkInvalid, #$FEFF);
+      Continue;
+    end;
+
     // --- Whitespace (space/tab/vt/ff) ---
     if IsWhitespaceChar(C) then
     begin

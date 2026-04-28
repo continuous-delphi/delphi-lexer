@@ -22,6 +22,7 @@ type
     tkSymbol, // operator or punctuation
     tkWhitespace, // space/tab/vt/ff run
     tkEOL, // CR, LF, or CRLF
+    tkBOM, // UTF-8 BOM (U+FEFF) at position 0; mid-file BOM is tkInvalid
     tkEOF, // end sentinel
     tkInvalid, // unrecognised character (e.g. stray NUL or illegal byte)
     tkInactiveCode // collapsed inactive conditional-compilation region (injected by delphi-conditional-processor; never produced by the lexer)
@@ -54,6 +55,7 @@ const
     'tkSymbol',
     'tkWhitespace',
     'tkEOL',
+    'tkBOM',
     'tkEOF',
     'tkInvalid',
     'tkInactiveCode'
@@ -78,7 +80,7 @@ end;
 
 function IsLexicalTrivia(Kind:TTokenKind):Boolean;
 begin
-  Result := Kind in [tkWhitespace, tkEOL, tkComment, tkDirective];
+  Result := Kind in [tkWhitespace, tkEOL, tkComment, tkDirective, tkBOM];
 end;
 
 

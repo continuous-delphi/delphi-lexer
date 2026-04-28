@@ -24,6 +24,7 @@ uses
   Delphi.Tokenizer in '..\source\Delphi.Tokenizer.pas',
   Delphi.Token.TriviaSpan in '..\source\Delphi.Token.TriviaSpan.pas',
   Test.Delphi.Lexer.AsmBody in 'Test.Delphi.Lexer.AsmBody.pas',
+  Test.Delphi.Lexer.BOM in 'Test.Delphi.Lexer.BOM.pas',
   Test.Delphi.Lexer.Core in 'Test.Delphi.Lexer.Core.pas',
   Test.Delphi.Lexer.FindTokenAtOffset in 'Test.Delphi.Lexer.FindTokenAtOffset.pas',
   Test.Delphi.Lexer.Golden in 'Test.Delphi.Lexer.Golden.pas',

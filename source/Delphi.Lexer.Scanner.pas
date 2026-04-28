@@ -152,11 +152,13 @@ end;
 function IsIdentStart(C: Char): Boolean;
 begin
   // ASCII range: underscore or letter.
-  // Non-ASCII (>=128): accept any character that is not whitespace or control.
+  // Non-ASCII (>=128): accept any character that is not whitespace or control,
+  // excluding U+FEFF (BOM/ZWNBSP) which is an invisible format character
+  // that must never appear inside identifiers.
   // Delphi's compiler accepts Unicode symbols (e.g. U+2211 summation sign)
   // as identifier characters even though they are not in the Letter category.
   if Ord(C) >= 128 then
-    Result := not C.IsWhiteSpace and not C.IsControl
+    Result := (C <> #$FEFF) and not C.IsWhiteSpace and not C.IsControl
   else
     Result := (C = '_') or C.IsLetter;
 end;
@@ -165,7 +167,7 @@ end;
 function IsIdentChar(C: Char): Boolean;
 begin
   if Ord(C) >= 128 then
-    Result := not C.IsWhiteSpace and not C.IsControl
+    Result := (C <> #$FEFF) and not C.IsWhiteSpace and not C.IsControl
   else
     Result := (C = '_') or C.IsLetterOrDigit;
 end;
