@@ -22,6 +22,7 @@ type
 
     constructor Create(const AKind:TTokenKind; const AText:string; const ALine:Integer = -1; const ACol:Integer = -1; const AStartOffset:Integer = 0; const ALength:Integer = 0; AKeywordKind: TKeywordKind = kwNone);
     procedure Reset;
+    function IsKeyword:Boolean;
   end;
 
   //helper used in tree export
@@ -54,6 +55,11 @@ begin
   Self.LeadingTrivia := DEFAULT_TRIVIASPAN;
   Self.TrailingTrivia := DEFAULT_TRIVIASPAN;
   Self.KeywordKind := kwNone;
+end;
+
+function TToken.IsKeyword:Boolean;
+begin
+  Result := Self.KeywordKind <> TKeywordKind.kwNone;
 end;
 
 end.
