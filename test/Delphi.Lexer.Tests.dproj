@@ -108,6 +108,7 @@
         <DCCReference Include="..\source\Delphi.Tokenizer.pas"/>
         <DCCReference Include="..\source\Delphi.Token.TriviaSpan.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.AsmBody.pas"/>
+        <DCCReference Include="Test.Delphi.Lexer.BOM.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.Core.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.FindTokenAtOffset.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.Golden.pas"/>

@@ -22,6 +22,8 @@ unit Delphi.Lexer;
 interface
 
 uses
+  System.SysUtils,
+  System.Classes,
   Delphi.Token,
   Delphi.Token.List;
 
@@ -29,10 +31,11 @@ type
   // Stateless lexer: create, call Tokenize (or TokenizeInto), free.
   TDelphiLexer = class
   protected
-    procedure TokenizeIntoEmptyList(const Source: string; const OutTokens: TTokenList; const SkipAsm:Boolean);
+    procedure TokenizeIntoEmptyList(Buf: PChar; Len: Integer; const OutTokens: TTokenList; const SkipAsm: Boolean);
   public
-    function Tokenize(const Source: string; const SkipAsm:Boolean=True): TTokenList;
-    procedure TokenizeInto(const Source: string; const OutTokens: TTokenList; const SkipAsm:Boolean=True);
+    function Tokenize(P: PChar; Len: Integer; const SkipAsm: Boolean = True): TTokenList; overload;
+    function Tokenize(const Source: string; const SkipAsm: Boolean = True): TTokenList; overload;
+    procedure TokenizeInto(const Source: string; const OutTokens: TTokenList; const SkipAsm: Boolean = True);
   end;
 
 // Returns a string of Count single-quote characters.
@@ -60,7 +63,6 @@ function FindTokenAtOffset(const ATokens: TTokenList; AOffset: Integer): Integer
 implementation
 
 uses
-  System.SysUtils,
   Delphi.Token.Kind,
   Delphi.Keywords,
   Delphi.Lexer.Scanner;
@@ -151,7 +153,7 @@ begin
     else
       IncI(Sc);
   end;
-  Result := Copy(Sc.S, Start, Sc.I - Start);
+  Result := ScanCopy(Sc, Start, Sc.I - Start);
 end;
 
 
@@ -190,7 +192,7 @@ begin
   PosAfter := Sc.I + Q; // 1-based index of first char after the quote run
   while PosAfter <= Sc.N do
   begin
-    NextChar := Sc.S[PosAfter];
+    NextChar := Sc.P[PosAfter - 1];
     if (NextChar = #13) or (NextChar = #10) then
       Break;                    // EOL found -- valid opener
     if not IsWhitespaceChar(NextChar) then
@@ -256,7 +258,7 @@ begin
          (Peek(Sc, DelimLen) <> CHAR_SINGLE_QUOTE) then
       begin
         IncI(Sc, DelimLen); // consume closing delimiter
-        Exit(Copy(Sc.S, Start, Sc.I - Start));
+        Exit(ScanCopy(Sc, Start, Sc.I - Start));
       end;
 
       // (I-8) Not a terminator -- restore full state and continue.
@@ -271,7 +273,7 @@ begin
   end;
 
   // Unterminated multiline string: return everything up to EOF.
-  Result := Copy(Sc.S, Start, Sc.I - Start);
+  Result := ScanCopy(Sc, Start, Sc.I - Start);
 end;
 
 
@@ -294,7 +296,7 @@ begin
     while CharInSet(Peek(Sc), ['0'..'9']) do
       IncI(Sc);
   end;
-  Result := Copy(Sc.S, Start, Sc.I - Start);
+  Result := ScanCopy(Sc, Start, Sc.I - Start);
 end;
 
 
@@ -308,7 +310,7 @@ begin
   IncI(Sc); // consume '%'
   while CharInSet(Peek(Sc), ['0', '1', '_']) do
     IncI(Sc);
-  Result := Copy(Sc.S, Start, Sc.I - Start);
+  Result := ScanCopy(Sc, Start, Sc.I - Start);
 end;
 
 
@@ -321,7 +323,7 @@ begin
   while (Sc.I <= Sc.N) and (Peek(Sc) <> '}') do
     IncI(Sc);
   if Peek(Sc) = '}' then IncI(Sc); // consume '}'
-  Result := Copy(Sc.S, Start, Sc.I - Start);
+  Result := ScanCopy(Sc, Start, Sc.I - Start);
 end;
 
 
@@ -340,7 +342,7 @@ begin
     end;
     IncI(Sc);
   end;
-  Result := Copy(Sc.S, Start, Sc.I - Start);
+  Result := ScanCopy(Sc, Start, Sc.I - Start);
 end;
 
 
@@ -352,7 +354,7 @@ begin
   IncI(Sc, 2);   // consume '//'
   while (Sc.I <= Sc.N) and (Peek(Sc) <> #13) and (Peek(Sc) <> #10) do
     IncI(Sc);
-  Result := Copy(Sc.S, Start, Sc.I - Start);
+  Result := ScanCopy(Sc, Start, Sc.I - Start);
 end;
 
 
@@ -363,7 +365,7 @@ begin
   Start := Sc.I;
   while (Sc.I <= Sc.N) and IsWhitespaceChar(Peek(Sc)) do  // spaces and tabs (+VT/FF/^Z); EOL handled separately
     IncI(Sc);
-  Result := Copy(Sc.S, Start, Sc.I - Start);
+  Result := ScanCopy(Sc, Start, Sc.I - Start);
 end;
 
 
@@ -383,7 +385,7 @@ begin
     IncI(Sc);
     while IsIdentChar(Peek(Sc)) do
       IncI(Sc);
-    Exit(Copy(Sc.S, Start, Sc.I - Start));
+    Exit(ScanCopy(Sc, Start, Sc.I - Start));
   end;
 
   // Hex literal: $HH...
@@ -392,7 +394,7 @@ begin
     IncI(Sc); // consume '$'
     while CharInSet(Peek(Sc), ['0'..'9', 'A'..'F', 'a'..'f', '_']) do
       IncI(Sc);
-    Exit(Copy(Sc.S, Start, Sc.I - Start));
+    Exit(ScanCopy(Sc, Start, Sc.I - Start));
   end;
 
   // Decimal integer or float (3  42  3.14  1.5e10  2.0e-3  1e6).
@@ -440,7 +442,7 @@ begin
         Sc.AtLineStart := SaveAtLineStart;
       end;
     end;
-    Exit(Copy(Sc.S, Start, Sc.I - Start));
+    Exit(ScanCopy(Sc, Start, Sc.I - Start));
   end;
 
   // Fallback: consume one character.
@@ -449,7 +451,7 @@ begin
   // underscore, or '0'..'9' -- all of which are handled by the branches above.
   // Retained as a defensive safety net in case the dispatch changes.
   IncI(Sc);
-  Result := Copy(Sc.S, Start, 1);
+  Result := ScanCopy(Sc, Start, 1);
 end;
 
 
@@ -539,7 +541,7 @@ begin
     // {$...} directive: stop here; return body-so-far and directive as out params.
     if (C = '{') and (Peek(Sc, 1) = '$') then
     begin
-      Result         := Copy(Sc.S, Start, Sc.I - Start);
+      Result         := ScanCopy(Sc, Start, Sc.I - Start);
       ADirLine       := Sc.Line;
       ADirCol        := Sc.Col;
       ADirOffset     := Sc.I - 1;
@@ -549,7 +551,7 @@ begin
         IncI(Sc);
       if Peek(Sc) = '}' then
         IncI(Sc); // consume '}'
-      ADirectiveText := Copy(Sc.S, DirStart, Sc.I - DirStart);
+      ADirectiveText := ScanCopy(Sc, DirStart, Sc.I - DirStart);
       Exit;
     end;
 
@@ -569,7 +571,7 @@ begin
     // (*$...*) directive: stop here; return body-so-far and directive as out params.
     if (C = '(') and (Peek(Sc, 1) = '*') and (Peek(Sc, 2) = '$') then
     begin
-      Result         := Copy(Sc.S, Start, Sc.I - Start);
+      Result         := ScanCopy(Sc, Start, Sc.I - Start);
       ADirLine       := Sc.Line;
       ADirCol        := Sc.Col;
       ADirOffset     := Sc.I - 1;
@@ -584,7 +586,7 @@ begin
         end;
         IncI(Sc);
       end;
-      ADirectiveText := Copy(Sc.S, DirStart, Sc.I - DirStart);
+      ADirectiveText := ScanCopy(Sc, DirStart, Sc.I - DirStart);
       Exit;
     end;
 
@@ -640,14 +642,14 @@ begin
        CharInSet(Peek(Sc, 1), ['n', 'N']) and
        CharInSet(Peek(Sc, 2), ['d', 'D']) and
        (not IsIdentChar(Peek(Sc, 3))) and
-       ((Sc.I <= 1) or (Sc.S[Sc.I - 1] <> '@')) then
+       ((Sc.I <= 1) or (Sc.P[Sc.I - 2] <> '@')) then
       Break; // ADirectiveText stays ''
 
     PrevWasIdentChar := IsIdentChar(C);
     IncI(Sc);
   end;
 
-  Result := Copy(Sc.S, Start, Sc.I - Start);
+  Result := ScanCopy(Sc, Start, Sc.I - Start);
 end;
 
 
@@ -725,12 +727,17 @@ end;
 // TDelphiLexer
 // =========================================================================
 
-function TDelphiLexer.Tokenize(const Source: string; const SkipAsm:Boolean=True):TTokenList;
+function TDelphiLexer.Tokenize(P: PChar; Len: Integer; const SkipAsm: Boolean = True): TTokenList;
 begin
   Result := TTokenList.Create;
-  TokenizeIntoEmptyList(Source, Result, SkipAsm);
+  TokenizeIntoEmptyList(P, Len, Result, SkipAsm);
 end;
 
+
+function TDelphiLexer.Tokenize(const Source: string; const SkipAsm: Boolean = True): TTokenList;
+begin
+  Result := Tokenize(PChar(Source), Length(Source), SkipAsm);
+end;
 
 procedure TDelphiLexer.TokenizeInto(const Source: string; const OutTokens: TTokenList; const SkipAsm:Boolean=True);
 var
@@ -741,7 +748,7 @@ begin
 
   Temp := TTokenList.Create;
   try
-    TokenizeIntoEmptyList(Source, Temp, SkipAsm);
+    TokenizeIntoEmptyList(PChar(Source), Length(Source), Temp, SkipAsm);
 
     StartIndex := OutTokens.Count;
     OutTokens.Capacity := StartIndex + Temp.Count;
@@ -767,7 +774,7 @@ begin
 end;
 
 
-procedure TDelphiLexer.TokenizeIntoEmptyList(const Source: string; const OutTokens: TTokenList; const SkipAsm:Boolean);
+procedure TDelphiLexer.TokenizeIntoEmptyList(Buf: PChar; Len: Integer; const OutTokens: TTokenList; const SkipAsm: Boolean);
 var
   Sc:        TScanner;
   C:         Char;
@@ -775,7 +782,7 @@ var
   TokLine:   Integer; // start line of current token (captured before Read*)
   TokCol:    Integer; // start column of current token
   TokOffset: Integer; // 0-based start offset of current token
-  TokStartI: Integer; // 1-based start position for Copy() (= TokOffset + 1)
+  TokStartI: Integer; // 1-based start position for ScanCopy() (= TokOffset + 1)
   DelimLen:   Integer; // multiline string delimiter length (3, 5, 7, ...)
   KeywordInfo: TKeywordInfo;
   AsmSeg:     string;  // asm body segment text (reused across directive-scan loop)
@@ -795,9 +802,9 @@ var
 begin
   Assert(OutTokens.Count = 0, 'TokenizeIntoEmptyList assumes list is empty'); //ApplyTriviaSpans walks entire list
 
-  Sc.S           := Source;
+  Sc.P           := Buf;
   Sc.I           := 1;
-  Sc.N           := Length(Source);
+  Sc.N           := Len;
   Sc.Line        := 1;
   Sc.Col         := 1;
   Sc.AtLineStart := True;
@@ -914,7 +921,7 @@ begin
       IncI(Sc); // consume '&'
       while CharInSet(Peek(Sc), ['0'..'7', '_']) do
         IncI(Sc);
-      Add(tkNumber, Copy(Sc.S, TokStartI, Sc.I - TokStartI));
+      Add(tkNumber, ScanCopy(Sc, TokStartI, Sc.I - TokStartI));
       Continue;
     end;
 
@@ -930,7 +937,7 @@ begin
         IncI(Sc); // consume second '&' (part of the identifier name)
       while IsIdentChar(Peek(Sc)) do
         IncI(Sc);
-      Add(tkIdentifier, Copy(Sc.S, TokStartI, Sc.I - TokStartI));
+      Add(tkIdentifier, ScanCopy(Sc, TokStartI, Sc.I - TokStartI));
       Continue;
     end;
 

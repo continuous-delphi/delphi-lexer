@@ -3,6 +3,11 @@ unit Delphi.Lexer.Scanner;
 // Internal scanner record and low-level helpers used by TDelphiLexer.
 // Not part of the public API -- subject to change without notice.
 //
+// The scanner operates on a PChar + length pair. Sc.I is a 1-based
+// logical position (1..N) so that all existing offset arithmetic and
+// the public 0-based StartOffset contract (StartOffset = Sc.I - 1)
+// remain unchanged.
+//
 // AtLineStart design:
 //   TScanner.AtLineStart is maintained by IncI. It is True at position 1
 //   (start of source) and after consuming any EOL character or sequence.
@@ -18,9 +23,6 @@ unit Delphi.Lexer.Scanner;
 //   once for the pair) while also correctly advancing Line for bare CR,
 //   matching the public lexer contract that all three EOL forms produce
 //   tkEOL and move to the next line.
-//
-//   This replaces the original backwards-scanning IsAtLineStart heuristic,
-//   which had a CRLF detection bug and was fragile near the start of source.
 
 interface
 
@@ -37,12 +39,12 @@ const
 
 type
   TScanner = record
-    S:           string;
-    I:           Integer;   // 1-based current position in S
-    N:           Integer;   // Length(S)
-    Line:        Integer;   // 1-based current line number
-    Col:         Integer;   // 1-based current column number
-    AtLineStart: Boolean;   // True at position 1 and after consuming LF
+    P:           PChar;    // pointer to first character of source
+    I:           Integer;  // 1-based current position (1..N)
+    N:           Integer;  // character count (Length)
+    Line:        Integer;  // 1-based current line number
+    Col:         Integer;  // 1-based current column number
+    AtLineStart: Boolean;  // True at position 1 and after consuming LF
   end;
 
 // Advance Sc.I by Count characters, maintaining Line, Col, and AtLineStart.
@@ -58,6 +60,9 @@ function PeekSeq(var Sc: TScanner; const Count: Integer): string;
 // Returns '' if not positioned at an EOL.
 function ReadEOLIfPresent(var Sc: TScanner): string;
 
+// Copy Len characters starting at 1-based position Start from the scanner buffer.
+function ScanCopy(var Sc: TScanner; Start, Len: Integer): string;
+
 function IsWhitespaceChar(const C: Char): Boolean; inline;
 function IsIdentStart(C: Char): Boolean;
 function IsIdentChar(C: Char): Boolean;
@@ -71,20 +76,22 @@ uses
 procedure IncI(var Sc: TScanner; Count: Integer = 1);
 var
   J: Integer;
+  C: Char;
 begin
   for J := 1 to Count do
   begin
     if Sc.I <= Sc.N then
     begin
-      if Sc.S[Sc.I] = #10 then
+      C := Sc.P[Sc.I - 1];
+      if C = #10 then
       begin
         // LF -- line break.
         Inc(Sc.Line);
         Sc.Col := 1;
         Sc.AtLineStart := True;
       end
-      else if (Sc.S[Sc.I] = #13) and
-              not ((Sc.I < Sc.N) and (Sc.S[Sc.I + 1] = #10)) then
+      else if (C = #13) and
+              not ((Sc.I < Sc.N) and (Sc.P[Sc.I] = #10)) then
       begin
         // Bare CR (not part of a CRLF pair) -- line break.
         Inc(Sc.Line);
@@ -105,11 +112,11 @@ end;
 
 function Peek(var Sc: TScanner; Offset: Integer = 0): Char;
 var
-  P: Integer;
+  Pos: Integer;
 begin
-  P := Sc.I + Offset;
-  if (P >= 1) and (P <= Sc.N) then
-    Result := Sc.S[P]
+  Pos := Sc.I + Offset;
+  if (Pos >= 1) and (Pos <= Sc.N) then
+    Result := Sc.P[Pos - 1]
   else
     Result := #0;
 end;
@@ -119,27 +126,36 @@ function PeekSeq(var Sc: TScanner; const Count: Integer): string;
 begin
   if (Sc.I + Count - 1) > Sc.N then
     Exit('');
-  Result := Copy(Sc.S, Sc.I, Count);
+  SetString(Result, Sc.P + Sc.I - 1, Count);
 end;
 
 
 function ReadEOLIfPresent(var Sc: TScanner): string;
+var
+  C: Char;
 begin
   Result := '';
   if Sc.I <= Sc.N then
   begin
-    if (Sc.S[Sc.I] = #13) and (Sc.I + 1 <= Sc.N) and (Sc.S[Sc.I + 1] = #10) then
+    C := Sc.P[Sc.I - 1];
+    if (C = #13) and (Sc.I + 1 <= Sc.N) and (Sc.P[Sc.I] = #10) then
     begin
       Result := #13#10;
       IncI(Sc, 2);
       Exit;
     end;
-    if (Sc.S[Sc.I] = #10) or (Sc.S[Sc.I] = #13) then
+    if (C = #10) or (C = #13) then
     begin
-      Result := Sc.S[Sc.I];
+      Result := C;
       IncI(Sc);
     end;
   end;
+end;
+
+
+function ScanCopy(var Sc: TScanner; Start, Len: Integer): string;
+begin
+  SetString(Result, Sc.P + Start - 1, Len);
 end;
 
 
