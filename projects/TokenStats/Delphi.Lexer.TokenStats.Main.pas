@@ -59,6 +59,8 @@ type
     ExitCode_RoundTripFailed = 3; //tokenization failure
   private
     class function ExpandPathSpec(const PathSpec: string; Recursive: Boolean): TArray<string>; static;
+    class function ParseCommandLine: TStatsConfig; static;
+    class procedure ShowUsage; static;
     class function WriteTextOutput(const Config: TStatsConfig; const Rep: TTokenSummary): Integer; static;
     class function WriteJsonOutput(const Config: TStatsConfig; const Rep: TTokenSummary): Integer; static;
   public
@@ -78,6 +80,103 @@ uses
   {$ENDIF}
   Delphi.Lexer;
 
+class procedure TTokenStats.ShowUsage;
+begin
+  WriteLn(AppName);
+  WriteLn('Provides token-level statistics and metrics of Object Pascal source code');
+  WriteLn('A command-line utility for delphi-lexer from Continuous-Delphi');
+  WriteLn('https://github.com/continuous-delphi/delphi-lexer');
+  WriteLn('MIT Licensed. Copyright (C) 2026, Darian Miller');
+  WriteLn;
+  WriteLn('Usage:');
+  WriteLn('  ', ExtractFileName(ParamStr(0)), ' <path-or-mask> [options]');
+  WriteLn;
+  WriteLn('Options:');
+  WriteLn('  -r, --recursive         Search subdirectories recursively');
+  WriteLn('  --encoding:<name>       Source encoding: utf-8, utf-16, utf-16be, ansi, ascii, default');
+  WriteLn('  --format:<name>         Output format: text or json');
+  WriteLn('  -a, --no-ansi-fallback  Do not retry file reads with ANSI/Windows-1252');
+  WriteLn('  -?, --help              Show this help and exit');
+end;
+
+class function TTokenStats.ParseCommandLine: TStatsConfig;
+var
+  I: Integer;
+  Arg: string;
+  Value: string;
+  EncodingName: string;
+  FormatName: string;
+begin
+  Result := Default(TStatsConfig);
+  Result.Common.AbortProgram := True;
+
+  EncodingName := 'utf-8';
+  FormatName := 'text';
+
+  for I := 1 to ParamCount do
+  begin
+    Arg := ParamStr(I);
+
+    if SameText(Arg, '-?') or SameText(Arg, '--help') then
+    begin
+      ShowUsage;
+      Result.Common.ExitCode := 0;
+      Exit;
+    end
+    else if SameText(Arg, '-r') or SameText(Arg, '--recursive') then
+      Result.Recursive := True
+    else if SameText(Arg, '-a') or SameText(Arg, '--no-ansi-fallback') then
+      Result.Common.SkipAnsiFallback := True
+    else if TLexerUtils.TryReadOptionValue(Arg, '--encoding', Value) then
+      EncodingName := Value
+    else if TLexerUtils.TryReadOptionValue(Arg, '--format', Value) then
+      FormatName := Value
+    else if (Arg <> '') and (Arg[1] = '-') then
+    begin
+      WriteLn('error: unknown option: ', Arg);
+      Result.Common.ExitCode := 1;
+      Exit;
+    end
+    else if Result.Common.FileName = '' then
+      Result.Common.FileName := Arg
+    else
+    begin
+      WriteLn('error: too many path arguments');
+      Result.Common.ExitCode := 1;
+      Exit;
+    end;
+  end;
+
+  if Result.Common.FileName = '' then
+  begin
+    ShowUsage;
+    Result.Common.ExitCode := 1;
+    Exit;
+  end;
+
+  Result.Common.Encoding := TLexerUtils.ResolveEncoding(EncodingName);
+  if not Assigned(Result.Common.Encoding) then
+  begin
+    WriteLn('error: unknown encoding: ', EncodingName);
+    WriteLn('Supported: utf-8, utf-16, utf-16be, ansi, ascii, default');
+    Result.Common.ExitCode := 1;
+    Exit;
+  end;
+
+  if SameText(FormatName, 'json') then
+    Result.Common.OutputFormat := TOutputFormat.ofJson
+  else if SameText(FormatName, 'text') then
+    Result.Common.OutputFormat := TOutputFormat.ofText
+  else
+  begin
+    WriteLn('error: unknown format: ', FormatName);
+    WriteLn('Supported formats: text, json');
+    Result.Common.ExitCode := 1;
+    Exit;
+  end;
+
+  Result.Common.AbortProgram := False;
+end;
 
 class function TTokenStats.Run: Integer;
 var
@@ -95,7 +194,7 @@ begin
   ReportMemoryLeaksOnShutdown := True;
   {$ENDIF}
 
-  Config := TCommandLineParser.ParseStats(AppName, 'Provides token-level statistics and metrics of Object Pascal source code');
+  Config := ParseCommandLine;
   if Config.Common.AbortProgram then Exit(Config.Common.ExitCode);
 
   Files := ExpandPathSpec(Config.Common.FileName, Config.Recursive);
@@ -107,7 +206,6 @@ begin
 
   CollectInvalid := (Config.Common.OutputFormat = TOutputFormat.ofJson);
 
-  Result := ExitCode_Success;
   Summary := TTokenSummary.Create;
   Lexer := TDelphiLexer.Create;
   Tokens := nil;
@@ -115,7 +213,7 @@ begin
     for FileName in Files do
     begin
       try
-        Contents := TCommandLineParser.ReadAllText(FileName, Config.Common.Encoding, Config.Common.SkipAnsiFallback);
+        Contents := TLexerUtils.ReadAllText(FileName, Config.Common.Encoding, Config.Common.SkipAnsiFallback);
       except
         on E: Exception do
         begin
@@ -138,6 +236,7 @@ begin
       TOutputFormat.ofJson: Result := WriteJsonOutput(Config, Summary);
     else
       Assert(False, 'Invalid output format');
+      Result := 1;
     end;
   finally
     Tokens.Free;

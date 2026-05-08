@@ -3,7 +3,9 @@ unit Delphi.Lexer.Utils;
 interface
 uses
   System.SysUtils,
+  {$IFDEF USE_GpCommandLineParser}
   GpCommandLineParser,
+  {$ENDIF}
   Delphi.Token,
   Delphi.Token.List;
 
@@ -27,6 +29,8 @@ type
     // Map a case-insensitive encoding name to a TEncoding singleton.
     // Returns nil if the name is not recognised.
     class function ResolveEncoding(const AName: string): TEncoding;
+    class function TryReadOptionValue(const Arg, Name: string; out Value: string): Boolean;
+    class function ReadAllText(const FileName: string; const Encoding:TEncoding; const SkipAnsiFallback:Boolean): string;
 
     class function RoundTripCheck(const ATokens: TTokenList; const ASource: string):Boolean;
   end;
@@ -35,6 +39,7 @@ type
 
 
 
+  {$IFDEF USE_GpCommandLineParser}
   // For GpCommandLineParser: base set of command-line options for delphi-lexer utilities
   TFileTokenizerCLOptions = class
   private
@@ -118,6 +123,7 @@ type
     [CLPLongName('recursive'), CLPName('r'), CLPDescription('Search subdirectories recursively')]
     property Recursive: Boolean read FRecursive write FRecursive;
   end;
+  {$ENDIF}
 
 
   TConfigOptions = record
@@ -152,6 +158,7 @@ type
     Recursive: Boolean;
   end;
 
+  {$IFDEF USE_GpCommandLineParser}
   TCommandLineParser = class
   protected
     class function ParseSharedOptions(const Opts:TFileTokenizerCLOptions; const HelpLine1, HelpLine2:string):TConfigOptions;
@@ -164,6 +171,7 @@ type
 
     class function ReadAllText(const FileName: string; const Encoding:TEncoding; const SkipAnsiFallback:Boolean): string;
   end;
+  {$ENDIF}
 
 
 implementation
@@ -315,6 +323,58 @@ begin
     Result := nil;
 end;
 
+class function TLexerUtils.TryReadOptionValue(const Arg, Name: string; out Value: string): Boolean;
+var
+  Prefix: string;
+begin
+  Prefix := Name + ':';
+  if SameText(Copy(Arg, 1, Length(Prefix)), Prefix) then
+  begin
+    Value := Copy(Arg, Length(Prefix) + 1, MaxInt);
+    Exit(True);
+  end;
+
+  Prefix := Name + '=';
+  if SameText(Copy(Arg, 1, Length(Prefix)), Prefix) then
+  begin
+    Value := Copy(Arg, Length(Prefix) + 1, MaxInt);
+    Exit(True);
+  end;
+
+  Result := False;
+end;
+
+class function TLexerUtils.ReadAllText(const FileName: string; const Encoding:TEncoding; const SkipAnsiFallback:Boolean): string;
+var
+  Win1252:TEncoding;
+begin
+  try
+    Result := TFile.ReadAllText(FileName, Encoding);
+  except
+    on E:EEncodingError do
+      begin
+        if SkipAnsiFallback then
+        begin
+          raise;
+        end
+        else
+        begin
+          Win1252 :=  TMBCSEncoding.Create(1252, {UseBOM=}False);
+          try
+            Result := TFile.ReadAllText(FileName, Win1252);
+          finally
+            Win1252.Free;
+          end;
+        end;
+      end;
+    else
+    begin
+      raise;
+    end;
+  end;
+end;
+
+{$IFDEF USE_GpCommandLineParser}
 
 class function TCommandLineParser.ParseConditionalSingleFile(const HelpLine1, HelpLine2:string):TConditionalConfig;
 var
@@ -577,37 +637,9 @@ end;
 
 
 class function TCommandLineParser.ReadAllText(const FileName: string; const Encoding:TEncoding; const SkipAnsiFallback:Boolean): string;
-var
-  Win1252:TEncoding;
 begin
-  try
-    Result := TFile.ReadAllText(FileName, Encoding);
-  except
-    on E:EEncodingError do
-      begin
-        // Original assumption is that most code files are UTF-8 today, but that can lead to trouble
-        // Prime example is the RTL file in Delphi 13: source\data\cloud\Data.Cloud.AzureAPI.pas
-        // This has a special right quote character saved as ANSI (Win1252 codepage)
-        // Byte 0x92 (Decimal 146) is invalid with UTF-8
-        if SkipAnsiFallback then
-        begin
-          raise;
-        end
-        else //automatically try again with 1252
-        begin
-          Win1252 :=  TMBCSEncoding.Create(1252, {UseBOM=}False);
-          try
-            Result := TFile.ReadAllText(FileName, Win1252);
-          finally
-            Win1252.Free;
-          end;
-        end;
-      end;
-    else
-    begin
-      raise;
-    end;
-  end;
+  Result := TLexerUtils.ReadAllText(FileName, Encoding, SkipAnsiFallback);
 end;
+{$ENDIF}
 
 end.

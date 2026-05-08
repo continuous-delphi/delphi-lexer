@@ -11,8 +11,7 @@ uses
   Delphi.Lexer.Utils in '..\..\source\Delphi.Lexer.Utils.pas',
   Delphi.Lexer.Scanner in '..\..\source\Delphi.Lexer.Scanner.pas',
   Delphi.Lexer in '..\..\source\Delphi.Lexer.pas',
-  Delphi.Keywords in '..\..\source\Delphi.Keywords.pas',
-  GpCommandLineParser in '..\..\shared\GpCommandLineParser.pas';
+  Delphi.Keywords in '..\..\source\Delphi.Keywords.pas';
 
 {$R *.res}
 

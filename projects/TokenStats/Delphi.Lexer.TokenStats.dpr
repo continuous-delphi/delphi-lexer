@@ -10,7 +10,6 @@ uses
   Delphi.Lexer.Scanner in '..\..\source\Delphi.Lexer.Scanner.pas',
   Delphi.Keywords in '..\..\source\Delphi.Keywords.pas',
   Delphi.Lexer.Utils in '..\..\source\Delphi.Lexer.Utils.pas',
-  GpCommandLineParser in '..\..\shared\GpCommandLineParser.pas',
   Delphi.Token.Kind in '..\..\source\Delphi.Token.Kind.pas',
   Delphi.Token.List in '..\..\source\Delphi.Token.List.pas',
   Delphi.Token in '..\..\source\Delphi.Token.pas',

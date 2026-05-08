@@ -164,7 +164,6 @@
         <DCCReference Include="..\..\source\Delphi.Lexer.Scanner.pas"/>
         <DCCReference Include="..\..\source\Delphi.Lexer.pas"/>
         <DCCReference Include="..\..\source\Delphi.Keywords.pas"/>
-        <DCCReference Include="..\..\shared\GpCommandLineParser.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

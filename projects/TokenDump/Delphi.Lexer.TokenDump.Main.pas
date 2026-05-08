@@ -18,6 +18,8 @@ type
     ExitCode_InvalidTokens = 2;
     ExitCode_RoundTripFailed = 3; //tokenization failure
   private
+    class function ParseCommandLine: TConfigOptions; static;
+    class procedure ShowUsage; static;
     class function WriteTextOutput(const Config: TConfigOptions; const Tokens: TTokenList): Integer; static;
     class function WriteJsonOutput(const Config: TConfigOptions; const Tokens: TTokenList): Integer; static;
   protected
@@ -33,6 +35,7 @@ type
 implementation
 
 uses
+  System.IOUtils,
   System.SysUtils,
   System.JSON,
   Delphi.Token.Kind,
@@ -61,6 +64,119 @@ begin
   end;
 end;
 
+class procedure TTokenDump.ShowUsage;
+begin
+  WriteLn(AppName);
+  WriteLn(AppDescription);
+  WriteLn('A command-line utility for delphi-lexer from Continuous-Delphi');
+  WriteLn('https://github.com/continuous-delphi/delphi-lexer');
+  WriteLn('MIT Licensed. Copyright (C) 2026, Darian Miller');
+  WriteLn;
+  WriteLn('Usage:');
+  WriteLn('  ', ExtractFileName(ParamStr(0)), ' <file> [options]');
+  WriteLn;
+  WriteLn('Options:');
+  WriteLn('  --encoding:<name>       Source encoding: utf-8, utf-16, utf-16be, ansi, ascii, default');
+  WriteLn('  --format:<name>         Output format: text or json');
+  WriteLn('  -a, --no-ansi-fallback  Do not retry file reads with ANSI/Windows-1252');
+  WriteLn('  -?, --help              Show this help and exit');
+end;
+
+class function TTokenDump.ParseCommandLine: TConfigOptions;
+var
+  I: Integer;
+  Arg: string;
+  Value: string;
+  EncodingName: string;
+  FormatName: string;
+begin
+  Result := Default(TConfigOptions);
+  Result.AbortProgram := True;
+
+  EncodingName := 'utf-8';
+  FormatName := 'text';
+
+  for I := 1 to ParamCount do
+  begin
+    Arg := ParamStr(I);
+
+    if SameText(Arg, '-?') or SameText(Arg, '--help') then
+    begin
+      ShowUsage;
+      Result.ExitCode := 0;
+      Exit;
+    end
+    else if SameText(Arg, '-a') or SameText(Arg, '--no-ansi-fallback') then
+      Result.SkipAnsiFallback := True
+    else if TLexerUtils.TryReadOptionValue(Arg, '--encoding', Value) then
+      EncodingName := Value
+    else if TLexerUtils.TryReadOptionValue(Arg, '--format', Value) then
+      FormatName := Value
+    else if (Arg <> '') and (Arg[1] = '-') then
+    begin
+      WriteLn('error: unknown option: ', Arg);
+      Result.ExitCode := ExitCode_Fatal;
+      Exit;
+    end
+    else if Result.FileName = '' then
+      Result.FileName := Arg
+    else
+    begin
+      WriteLn('error: too many input files');
+      Result.ExitCode := ExitCode_Fatal;
+      Exit;
+    end;
+  end;
+
+  if Result.FileName = '' then
+  begin
+    ShowUsage;
+    Result.ExitCode := ExitCode_Fatal;
+    Exit;
+  end;
+
+  Result.Encoding := TLexerUtils.ResolveEncoding(EncodingName);
+  if not Assigned(Result.Encoding) then
+  begin
+    WriteLn('error: unknown encoding: ', EncodingName);
+    WriteLn('Supported: utf-8, utf-16, utf-16be, ansi, ascii, default');
+    Result.ExitCode := ExitCode_Fatal;
+    Exit;
+  end;
+
+  if SameText(FormatName, 'json') then
+    Result.OutputFormat := TOutputFormat.ofJson
+  else if SameText(FormatName, 'text') then
+    Result.OutputFormat := TOutputFormat.ofText
+  else
+  begin
+    WriteLn('error: unknown format: ', FormatName);
+    WriteLn('Supported formats: text, json');
+    Result.ExitCode := ExitCode_Fatal;
+    Exit;
+  end;
+
+  if not TFile.Exists(Result.FileName) then
+  begin
+    WriteLn('error: file not found: ', Result.FileName);
+    Result.ExitCode := ExitCode_Fatal;
+    Exit;
+  end;
+
+  try
+    Result.FileContents := TLexerUtils.ReadAllText(Result.FileName, Result.Encoding, Result.SkipAnsiFallback);
+  except
+    on E: Exception do
+    begin
+      WriteLn('error: could not read file: ', E.Message);
+      Result.ExitCode := ExitCode_Fatal;
+      Exit;
+    end;
+  end;
+
+  Result.AbortProgram := False;
+end;
+
 class function TTokenDump.WriteOutput(const Config: TConfigOptions; const Tokens: TTokenList):Integer;
 begin
   case Config.OutputFormat of
@@ -68,6 +184,7 @@ begin
     TOutputFormat.ofJson: Result := WriteJsonOutput(Config, Tokens);
   else
     Assert(False, 'Invalid output format');
+    Result := ExitCode_Fatal;
   end;
 end;
 
@@ -81,7 +198,7 @@ begin
   ReportMemoryLeaksOnShutdown := True;
   {$ENDIF}
 
-  Config := TCommandLineParser.ParseSingleFile(AppName, AppDescription);
+  Config := ParseCommandLine;
   if Config.AbortProgram then Exit(Config.ExitCode);
 
   Tokens := Tokenize(Config.FileContents);

@@ -17,6 +17,8 @@ type
     ExitCode_Difference = 10;
     ExitCode_TooManyDiffs = 11;  // comparison aborted: edit distance exceeded threshold
   private
+    class function ParseCommandLine: TFileCompareConfigOptions; static;
+    class procedure ShowUsage; static;
     // Derive the comparison mode name from the active ignore flags for display in output.
     class function ComparisonModeName(const Config:TFileCompareConfigOptions): string; static;
     // Return a new list containing only the tokens that survive the active
@@ -34,12 +36,174 @@ type
 implementation
 
 uses
+  System.IOUtils,
   System.SysUtils,
   System.JSON,
   System.Generics.Collections,
   Delphi.Token.Kind,
   Delphi.Lexer;
 
+class procedure TTokenCompare.ShowUsage;
+begin
+  WriteLn(AppName);
+  WriteLn('Compares the token streams of two Object Pascal source files');
+  WriteLn('A command-line utility for delphi-lexer from Continuous-Delphi');
+  WriteLn('https://github.com/continuous-delphi/delphi-lexer');
+  WriteLn('MIT Licensed. Copyright (C) 2026, Darian Miller');
+  WriteLn;
+  WriteLn('Usage:');
+  WriteLn('  ', ExtractFileName(ParamStr(0)), ' <file-a> <file-b> [options]');
+  WriteLn;
+  WriteLn('Options:');
+  WriteLn('  -t, --ignore-trivia        Ignore whitespace and EOL tokens');
+  WriteLn('      --ignore-whitespace-eol  Alias for --ignore-trivia');
+  WriteLn('  -w, --ignore-whitespace    Ignore whitespace tokens');
+  WriteLn('  -e, --ignore-eol           Ignore EOL tokens');
+  WriteLn('  -c, --ignore-comments      Ignore comment tokens');
+  WriteLn('  -x, --stop-after-first-diff  Stop after the first difference');
+  WriteLn('      --max-diffs:<n>        Limit reported differences, 0 means unlimited');
+  WriteLn('  --encoding:<name>          Source encoding: utf-8, utf-16, utf-16be, ansi, ascii, default');
+  WriteLn('  --format:<name>            Output format: text or json');
+  WriteLn('  -a, --no-ansi-fallback     Do not retry file reads with ANSI/Windows-1252');
+  WriteLn('  -?, --help                 Show this help and exit');
+end;
+
+class function TTokenCompare.ParseCommandLine: TFileCompareConfigOptions;
+var
+  I: Integer;
+  Arg: string;
+  Value: string;
+  EncodingName: string;
+  FormatName: string;
+begin
+  Result := Default(TFileCompareConfigOptions);
+  Result.BaseOptions.AbortProgram := True;
+
+  EncodingName := 'utf-8';
+  FormatName := 'text';
+
+  for I := 1 to ParamCount do
+  begin
+    Arg := ParamStr(I);
+
+    if SameText(Arg, '-?') or SameText(Arg, '--help') then
+    begin
+      ShowUsage;
+      Result.BaseOptions.ExitCode := 0;
+      Exit;
+    end
+    else if SameText(Arg, '-a') or SameText(Arg, '--no-ansi-fallback') then
+      Result.BaseOptions.SkipAnsiFallback := True
+    else if SameText(Arg, '-t') or SameText(Arg, '--ignore-trivia') or SameText(Arg, '--ignore-whitespace-eol') then
+    begin
+      Result.IgnoreWhitespace := True;
+      Result.IgnoreEOL := True;
+    end
+    else if SameText(Arg, '-w') or SameText(Arg, '--ignore-whitespace') then
+      Result.IgnoreWhitespace := True
+    else if SameText(Arg, '-e') or SameText(Arg, '--ignore-eol') then
+      Result.IgnoreEOL := True
+    else if SameText(Arg, '-c') or SameText(Arg, '--ignore-comments') then
+      Result.IgnoreComments := True
+    else if SameText(Arg, '-x') or SameText(Arg, '--stop-after-first-diff') then
+      Result.StopAfterFirstDiff := True
+    else if TLexerUtils.TryReadOptionValue(Arg, '--encoding', Value) then
+      EncodingName := Value
+    else if TLexerUtils.TryReadOptionValue(Arg, '--format', Value) then
+      FormatName := Value
+    else if TLexerUtils.TryReadOptionValue(Arg, '--max-diffs', Value) then
+    begin
+      if not TryStrToInt(Value, Result.MaxDiffs) then
+      begin
+        WriteLn('error: invalid integer for --max-diffs: ', Value);
+        Result.BaseOptions.ExitCode := ExitCode_OpFailure;
+        Exit;
+      end;
+    end
+    else if (Arg <> '') and (Arg[1] = '-') then
+    begin
+      WriteLn('error: unknown option: ', Arg);
+      Result.BaseOptions.ExitCode := ExitCode_OpFailure;
+      Exit;
+    end
+    else if Result.BaseOptions.FileName = '' then
+      Result.BaseOptions.FileName := Arg
+    else if Result.SecondFile = '' then
+      Result.SecondFile := Arg
+    else
+    begin
+      WriteLn('error: too many input files');
+      Result.BaseOptions.ExitCode := ExitCode_OpFailure;
+      Exit;
+    end;
+  end;
+
+  if (Result.BaseOptions.FileName = '') or (Result.SecondFile = '') then
+  begin
+    ShowUsage;
+    Result.BaseOptions.ExitCode := ExitCode_OpFailure;
+    Exit;
+  end;
+
+  Result.BaseOptions.Encoding := TLexerUtils.ResolveEncoding(EncodingName);
+  if not Assigned(Result.BaseOptions.Encoding) then
+  begin
+    WriteLn('error: unknown encoding: ', EncodingName);
+    WriteLn('Supported: utf-8, utf-16, utf-16be, ansi, ascii, default');
+    Result.BaseOptions.ExitCode := ExitCode_OpFailure;
+    Exit;
+  end;
+
+  if SameText(FormatName, 'json') then
+    Result.BaseOptions.OutputFormat := TOutputFormat.ofJson
+  else if SameText(FormatName, 'text') then
+    Result.BaseOptions.OutputFormat := TOutputFormat.ofText
+  else
+  begin
+    WriteLn('error: unknown format: ', FormatName);
+    WriteLn('Supported formats: text, json');
+    Result.BaseOptions.ExitCode := ExitCode_OpFailure;
+    Exit;
+  end;
+
+  if not TFile.Exists(Result.BaseOptions.FileName) then
+  begin
+    WriteLn('error: file not found: ', Result.BaseOptions.FileName);
+    Result.BaseOptions.ExitCode := ExitCode_OpFailure;
+    Exit;
+  end;
+  if not TFile.Exists(Result.SecondFile) then
+  begin
+    WriteLn('error: file not found: ', Result.SecondFile);
+    Result.BaseOptions.ExitCode := ExitCode_OpFailure;
+    Exit;
+  end;
+
+  try
+    Result.BaseOptions.FileContents := TLexerUtils.ReadAllText(
+      Result.BaseOptions.FileName,
+      Result.BaseOptions.Encoding,
+      Result.BaseOptions.SkipAnsiFallback);
+    Result.SecondContents := TLexerUtils.ReadAllText(
+      Result.SecondFile,
+      Result.BaseOptions.Encoding,
+      Result.BaseOptions.SkipAnsiFallback);
+  except
+    on E: Exception do
+    begin
+      WriteLn('error: could not read file: ', E.Message);
+      Result.BaseOptions.ExitCode := ExitCode_OpFailure;
+      Exit;
+    end;
+  end;
+
+  if Result.StopAfterFirstDiff then
+    Result.MaxDiffs := 1
+  else if Result.MaxDiffs <= 0 then
+    Result.MaxDiffs := MaxInt;
+
+  Result.BaseOptions.AbortProgram := False;
+end;
 
 class function TTokenCompare.Run: Integer;
 var
@@ -51,10 +215,8 @@ begin
   ReportMemoryLeaksOnShutdown := True;
   {$ENDIF}
 
-  Options := TCommandLineParser.ParseFileCompare(AppName, 'Compares the token streams of two Object Pascal source files');
+  Options := ParseCommandLine;
   if Options.BaseOptions.AbortProgram then Exit(Options.BaseOptions.ExitCode);
-
-  Result := ExitCode_Success;
 
   Lexer   := TDelphiLexer.Create;
   TokensA := nil;
@@ -67,6 +229,7 @@ begin
       TOutputFormat.ofJson: Result := WriteJsonOutput(Options, TokensA, TokensB);
     else
       Assert(False, 'Invalid output format');
+      Result := ExitCode_OpFailure;
     end;
   finally
     TokensB.Free;

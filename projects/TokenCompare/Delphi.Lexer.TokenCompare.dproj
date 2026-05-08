@@ -90,8 +90,8 @@
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <Debugger_RunParams>-v</Debugger_RunParams>
         <Icon_MainIcon>..\..\assets\source-code-ok.ico</Icon_MainIcon>
-        <VerInfo_Build>61</VerInfo_Build>
-        <VerInfo_Keys>CompanyName=Continuous-Delphi;FileDescription=Utility for https://github.com/continuous-delphi/delphi-lexer;FileVersion=1.1.0.61;InternalName=Continous-Delphi TokenCompare Utility;LegalCopyright=Copyright (c) 2026, Darian Miller;LegalTrademarks=;OriginalFilename=Delphi.Lexer.TokenCompare.exe;ProgramID=com.continuous-delphi.$(MSBuildProjectName);ProductName=delphi-lexer by Continuous-Delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Build>63</VerInfo_Build>
+        <VerInfo_Keys>CompanyName=Continuous-Delphi;FileDescription=Utility for https://github.com/continuous-delphi/delphi-lexer;FileVersion=1.1.0.63;InternalName=Continous-Delphi TokenCompare Utility;LegalCopyright=Copyright (c) 2026, Darian Miller;LegalTrademarks=;OriginalFilename=Delphi.Lexer.TokenCompare.exe;ProgramID=com.continuous-delphi.$(MSBuildProjectName);ProductName=delphi-lexer by Continuous-Delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <VerInfo_MajorVer>1</VerInfo_MajorVer>
         <VerInfo_MinorVer>1</VerInfo_MinorVer>
     </PropertyGroup>
@@ -104,7 +104,6 @@
         <DCCReference Include="..\..\source\Delphi.Lexer.Scanner.pas"/>
         <DCCReference Include="..\..\source\Delphi.Lexer.pas"/>
         <DCCReference Include="..\..\source\Delphi.Keywords.pas"/>
-        <DCCReference Include="..\..\shared\GpCommandLineParser.pas"/>
         <DCCReference Include="..\..\source\Delphi.Lexer.MyersDiff.pas"/>
         <DCCReference Include="..\..\source\Delphi.Token.Kind.pas"/>
         <DCCReference Include="..\..\source\Delphi.Token.List.pas"/>
