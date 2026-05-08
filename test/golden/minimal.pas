@@ -1,4 +1,4 @@
-﻿unit Minimal;
+unit Minimal;
 
 interface
 

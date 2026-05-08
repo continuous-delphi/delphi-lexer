@@ -1,4 +1,18 @@
-﻿unit Test.Delphi.Lexer.QualifiedIdentifiers;
+(*
+
+  delphi-lexer
+  https://github.com/continuous-delphi/delphi-lexer
+
+  A lightweight, lossless lexer for Delphi source code.
+  Includes TokenDump, TokenStats, and TokenCompare utilities
+  plus a syntax highlighter for SynEdit.
+
+  License: MIT
+  Copyright (c) 2026 Darian Miller
+
+*)
+
+unit Test.Delphi.Lexer.QualifiedIdentifiers;
 
 // Verifies that qualified names (System.SysUtils.FreeAndNil, Foo.bar.Baz)
 // are tokenized as separate identifier and '.' tokens, not merged.

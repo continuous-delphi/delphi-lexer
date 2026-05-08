@@ -1,4 +1,4 @@
-﻿UNIT NumberUtils;
+UNIT NumberUtils;
 
 INTERFACE
 

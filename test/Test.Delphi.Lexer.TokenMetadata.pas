@@ -1,4 +1,18 @@
-﻿unit Test.Delphi.Lexer.TokenMetadata;
+(*
+
+  delphi-lexer
+  https://github.com/continuous-delphi/delphi-lexer
+
+  A lightweight, lossless lexer for Delphi source code.
+  Includes TokenDump, TokenStats, and TokenCompare utilities
+  plus a syntax highlighter for SynEdit.
+
+  License: MIT
+  Copyright (c) 2026 Darian Miller
+
+*)
+
+unit Test.Delphi.Lexer.TokenMetadata;
 
 // Phase 3.4 -- Verify StartOffset and Length for tokens at various positions.
 //

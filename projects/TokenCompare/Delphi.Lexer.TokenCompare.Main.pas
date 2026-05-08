@@ -1,3 +1,17 @@
+(*
+
+  delphi-lexer
+  https://github.com/continuous-delphi/delphi-lexer
+
+  A lightweight, lossless lexer for Delphi source code.
+  Includes TokenDump, TokenStats, and TokenCompare utilities
+  plus a syntax highlighter for SynEdit.
+
+  License: MIT
+  Copyright (c) 2026 Darian Miller
+
+*)
+
 unit Delphi.Lexer.TokenCompare.Main;
 
 interface
