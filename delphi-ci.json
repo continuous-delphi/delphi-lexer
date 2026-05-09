@@ -1,42 +1,83 @@
 {
   "root": "./",
-  "steps": ["Clean", "Build", "Test"],
+  "steps": [
+    "Clean",
+    "Build",
+    "Test"
+  ],
   "clean": {
     "level": "deep",
     "outputLevel": "Quiet",
     "jobs": [
-      { "name": "Repo clean",
-        "root": "./" }
+      {
+        "name": "Repo clean",
+        "root": "./"
+      }
     ]
   },
   "build": {
     "engine": "MSBuild",
-    "toolchain": { "version": "Latest" },
+    "toolchain": {
+      "version": "Latest"
+    },
     "platform": "Win64",
     "configuration": "Release",
     "verbosity": "minimal",
     "jobs": [
-      { "name": "TokenCompare",
-        "projectFile": "projects/TokenCompare/Delphi.Lexer.TokenCompare.dproj" },
-      { "name": "TokenDump",
-        "projectFile": "projects/TokenDump/Delphi.Lexer.TokenDump.dproj" },
-      { "name": "TokenStats",
-        "projectFile": "projects/TokenStats/Delphi.Lexer.TokenStats.dproj" },
-      { "name": "TokenizeMemo",
-        "projectFile": "projects/TokenizeMemo/Delphi.Lexer.TokenizeMemo.dproj" },
-      { "name": "Test project",
+      {
+        "name": "TokenCompare",
+        "projectFile": "projects/TokenCompare/Delphi.Lexer.TokenCompare.dproj"
+      },
+      {
+        "name": "TokenDump",
+        "projectFile": "projects/TokenDump/Delphi.Lexer.TokenDump.dproj"
+      },
+      {
+        "name": "TokenStats",
+        "projectFile": "projects/TokenStats/Delphi.Lexer.TokenStats.dproj"
+      },
+      {
+        "name": "TokenizeMemo",
+        "projectFile": "projects/TokenizeMemo/Delphi.Lexer.TokenizeMemo.dproj"
+      },
+      {
+        "name": "Win32 Test project",
         "projectFile": "test/Delphi.Lexer.Tests.dproj",
         "platform": "Win32",
-        "configuration": "Debug",
-        "defines": ["CI"] }
+        "defines": [
+          "CI"
+        ]
+      },
+      {
+        "name": "Win64 Test project",
+        "projectFile": "test/Delphi.Lexer.Tests.dproj",
+        "defines": [
+          "CI"
+        ]
+      }
     ]
   },
   "test": {
     "timeoutSeconds": 10,
     "jobs": [
-      { "name": "Lexer Tests",
-        "testExeFile": "test/Win32/Debug/Delphi.Lexer.Tests.exe",
-        "arguments": ["-b","-l:Warning","-cm:Quiet"] }
+      {
+        "name": "Lexer Win32 Tests",
+        "testExeFile": "test/Win32/Release/Delphi.Lexer.Tests.exe",
+        "arguments": [
+          "-b",
+          "-l:Warning",
+          "-cm:Quiet"
+        ]
+      },
+      {
+        "name": "Lexer Win64 Tests",
+        "testExeFile": "test/Win64/Release/Delphi.Lexer.Tests.exe",
+        "arguments": [
+          "-b",
+          "-l:Warning",
+          "-cm:Quiet"
+        ]
+      }
     ]
   }
 }
