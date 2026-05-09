@@ -3,8 +3,6 @@
 ![delphi-lexer logo](https://continuous-delphi.github.io/assets/logos/delphi-lexer-480x270.png)
 
 [![Delphi](https://img.shields.io/badge/delphi-red)](https://www.embarcadero.com/products/delphi)
-[![CI](https://github.com/continuous-delphi/delphi-lexer/actions/workflows/ci.yml/badge.svg)](https://github.com/continuous-delphi/delphi-lexer/actions/workflows/ci.yml)
-[![GitHub Release](https://img.shields.io/github/v/release/continuous-delphi/delphi-lexer?display_name=release)](https://github.com/continuous-delphi/delphi-lexer/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/continuous-delphi/delphi-lexer)
 [![Continuous Delphi](https://img.shields.io/badge/org-continuous--delphi-red)](https://github.com/continuous-delphi)
@@ -396,18 +394,6 @@ or converting encoding is the caller's responsibility.
 The lexer produces `tkInvalid` for unrecognised input but makes no attempt
 to re-synchronize or guess the intended token. Recovery is the caller's
 concern.
-
----
-
-## Maturity
-
-This repository is currently `incubator` and is under active development.
-It will graduate to `stable` once:
-
-- At least one downstream consumer exists.
-- No breaking API changes are anticipated.
-
-Until graduation, breaking changes may occur.
 
 ---
 
