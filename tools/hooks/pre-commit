@@ -1,0 +1,7 @@
+#!/bin/sh
+# Pre-commit hook: runs the Delphi CI pipeline before allowing a commit.
+# One-time git install required (not tracked): `git config core.hooksPath tools/hooks`
+
+echo "Running Delphi CI pipeline..."
+pwsh -NoProfile -Command "Invoke-DelphiCI -ConfigFile delphi-ci.json"
+exit $?
