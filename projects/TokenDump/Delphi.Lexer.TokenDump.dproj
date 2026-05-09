@@ -45,7 +45,6 @@
         <SanitizedProjectName>Delphi_Lexer_TokenDump</SanitizedProjectName>
         <DCC_DcuOutput>.\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>
-        <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Keys>CompanyName=Continuous-Delphi;FileDescription=$(MSBuildProjectName);FileVersion=0.5.0.0;InternalName=TokenDump utility for https://github.com/continuous-delphi/delphi-lexer;LegalCopyright=Copyright (c) 2026, Darian Miller;LegalTrademarks=;OriginalFilename=DelphiLexer.TokenDump.exe;ProgramID=com.continous-delphi.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=https://github.com/continuous-delphi/delphi-lexer</VerInfo_Keys>
         <VerInfo_Locale>1033</VerInfo_Locale>

@@ -82,10 +82,6 @@ uses
   Delphi.Lexer.Scanner;
 
 
-// =========================================================================
-// RuntimeQuotes
-// =========================================================================
-
 function RuntimeQuotes(const Count: Integer): string;
 begin
   Result := StringOfChar(CHAR_SINGLE_QUOTE, Count);
