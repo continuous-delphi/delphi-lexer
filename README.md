@@ -21,8 +21,8 @@ Lexer only (no parser, no AST, no formatter, or configuration dependencies).
 ```pascal
 uses
   System.Generics.Collections,
-  Delphi.Lexer.Token,
-  Delphi.Lexer.Lexer;
+  Delphi.Token,
+  Delphi.Lexer;
 
 var
   Lexer:  TDelphiLexer;
@@ -66,12 +66,16 @@ if Idx >= 0 then
 
 ```
 source/             Core library units
-  Delphi.Token.pas             TToken record, TTokenKind enum
-  Delphi.Keywords.pas          DELPHI_KEYWORDS list, IsDelphiKeyword
   Delphi.Lexer.pas             TDelphiLexer (public entry point)
   Delphi.Lexer.Scanner.pas     TScanner + helpers (internal; not public API)
   Delphi.Lexer.Utils.pas       Shared command line options/utilities
   Delphi.Lexer.MyersDiff.pas   Myers diff algorithm over tokens
+  Delphi.Token.pas             TToken record
+  Delphi.Token.Kind.pas        TTokenKind enum
+  Delphi.Token.List.pas        TTokenList (TList<TToken>)
+  Delphi.Token.TriviaSpan.pas  TTriviaSpan record
+  Delphi.Tokenizer.pas         High-level tokenize helpers
+  Delphi.Keywords.pas          DELPHI_KEYWORDS list, IsDelphiKeyword
 
 test/               DUnitX test project
   golden/           Representative .pas files for round-trip tests

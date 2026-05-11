@@ -261,7 +261,7 @@ it is owned twice, moving one owner's trivia corrupts the other owner.
 
 **What breaks if violated:** A formatter that moves a declaration and transfers
 its `LeadingTrivia` will silently duplicate or drop comments. An ownership
-uniqueness check (as in `Test.DelphiLexer.TriviaSpans`) will fail.
+uniqueness check (as in `Test.Delphi.Lexer.TriviaSpans`) will fail.
 
 ---
 
@@ -325,7 +325,7 @@ Ownership totals might still appear valid while source fidelity is corrupted.
 
 ## TToken field summary
 
-`TToken` is defined in `DelphiLexer.Token.pas`. Current fields:
+`TToken` is defined in `Delphi.Lexer.Token.pas`. Current fields:
 
 | Field | Type | Description |
 |---|---|---|
