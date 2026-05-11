@@ -20,7 +20,6 @@ Lexer only (no parser, no AST, no formatter, or configuration dependencies).
 
 ```pascal
 uses
-  System.Generics.Collections,
   Delphi.Token,
   Delphi.Lexer;
 
@@ -87,7 +86,7 @@ projects
 
 tools/              developer tools
 docs/               Architecture notes
-shared/             Third-party code
+extras/             Custom syntax highlighter for `SynEdit`
 ```
 
 ---
@@ -124,6 +123,7 @@ source transformations using deterministic token-level output.
 |---|---|---|
 | `Kind` | `TTokenKind` | Token classification (see below) |
 | `Text` | `string` | Characters of this token, as they appear in the source |
+| `KeywordKind` | `TKeywordKind` | Is `kwNone` for all but `tkStrictKeyword+tkContextKeyword` |
 | `Line` | `Integer` | 1-based line number of the first character |
 | `Col` | `Integer` | 1-based column number of the first character |
 | `StartOffset` | `Integer` | 0-based character index of the first character in the source string |
@@ -147,6 +147,7 @@ source transformations using deterministic token-level output.
 | `tkSymbol` | Operator or punctuation (`:=`, `..`, `<=`, `>=`, `<>`, `(`, `)`, etc.) |
 | `tkWhitespace` | Run of spaces, tabs, vertical tab, form feed, or `^Z` (Ctrl+Z, DOS EOF marker) |
 | `tkEOL` | Line ending: `#13#10` (CRLF), `#10` (LF), or `#13` (bare CR) |
+| `tkBOM` | BOM if at position 0; mid-file BOM is tkInvalid |
 | `tkEOF` | End-of-source sentinel; always the last token, `Text = ''` |
 | `tkInvalid` | Character or prefix that does not begin any valid Delphi token |
 | `tkInactiveCode` | collapsed inactive conditional-compilation region (injected by conditional-processor; never produced by the lexer) |
