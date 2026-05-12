@@ -1,0 +1,54 @@
+{
+  "root": "./",
+   "defaults": {
+    "coverage": {
+      "engine": "radCodeCoverage",
+      "enginePath": "radCodeCoverage.x64.exe",
+      "formats!": ["md"], 
+      "timeoutSeconds": 60
+    }
+  },
+  "pipeline": [
+    {
+      "action": "clean",
+      "level": "Deep",
+      "outputLevel": "Quiet",
+      "includeFilePattern": ["*.res"],
+      "jobs": [{"name": "Repo clean", "root": "./test" }]
+    },
+    {
+      "action": "build",
+      "engine": "MSBuild",
+      "toolchain": {"version": "Latest"},
+      "platform": "Win64",
+      "verbosity": "minimal",
+      "jobs": [
+        { "name": "Win64 Test project (Debug)",
+          "projectFile": "test/Delphi.Lexer.Tests.dproj",
+          "configuration": "Debug",
+          "defines": ["CI"] },
+      ]
+    },
+    {
+      "action": "run",
+      "timeoutSeconds": 10,
+      "jobs": [
+        { "name": "Lexer Win64 Tests",
+          "execute": "test/Win64/Debug/Delphi.Lexer.Tests.exe",
+          "arguments": ["-b", "-l:Warning", "-cm:Quiet"] }
+      ]
+    },
+    {
+      "action": "Coverage",
+      "jobs": [
+        { "name": "Parser Win64 Coverage",
+          "execute": "test/Win64/Debug/Delphi.Lexer.Tests.exe",
+          "mapFile": "test/Win64/Debug/Delphi.Lexer.Tests.map",
+          "sourceDir": ["/source", "/test"],
+          "outputDir": "assets/coverage",
+          "arguments": ["-b", "-cm:off"],
+          "badge": "assets/coverage/coverage-badge.svg" }
+      ]
+    }
+  ]
+}
