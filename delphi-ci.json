@@ -1,83 +1,68 @@
 {
   "root": "./",
-  "steps": [
-    "Clean",
-    "Build",
-    "Test"
-  ],
-  "clean": {
-    "level": "deep",
-    "outputLevel": "Quiet",
-    "jobs": [
-      {
-        "name": "Repo clean",
-        "root": "./"
-      }
-    ]
-  },
-  "build": {
-    "engine": "MSBuild",
-    "toolchain": {
-      "version": "Latest"
+  "defaults": {
+    "clean": {
+      "level": "deep",
+      "outputLevel": "Quiet"
     },
-    "platform": "Win64",
-    "configuration": "Release",
-    "verbosity": "minimal",
-    "jobs": [
-      {
-        "name": "TokenCompare",
-        "projectFile": "projects/TokenCompare/Delphi.Lexer.TokenCompare.dproj"
-      },
-      {
-        "name": "TokenDump",
-        "projectFile": "projects/TokenDump/Delphi.Lexer.TokenDump.dproj"
-      },
-      {
-        "name": "TokenStats",
-        "projectFile": "projects/TokenStats/Delphi.Lexer.TokenStats.dproj"
-      },
-      {
-        "name": "TokenizeMemo",
-        "projectFile": "projects/TokenizeMemo/Delphi.Lexer.TokenizeMemo.dproj"
-      },
-      {
-        "name": "Win32 Test project",
-        "projectFile": "test/Delphi.Lexer.Tests.dproj",
-        "platform": "Win32",
-        "defines": [
-          "CI"
-        ]
-      },
-      {
-        "name": "Win64 Test project",
-        "projectFile": "test/Delphi.Lexer.Tests.dproj",
-        "defines": [
-          "CI"
-        ]
-      }
-    ]
+    "build": {
+      "engine": "MSBuild",
+      "toolchain": { "version": "Latest" },
+      "platform": "Win64",
+      "configuration": "Release",
+      "verbosity": "minimal"
+    },
+    "run": {
+      "timeoutSeconds": 10
+    },
+    "coverage": {
+      "engine": "radCodeCoverage",
+      "enginePath": "radCodeCoverage.x64.exe",
+      "formats!": ["md"], 
+      "timeoutSeconds": 60
+    }
   },
-  "test": {
-    "timeoutSeconds": 10,
-    "jobs": [
-      {
-        "name": "Lexer Win32 Tests",
-        "testExeFile": "test/Win32/Release/Delphi.Lexer.Tests.exe",
-        "arguments": [
-          "-b",
-          "-l:Warning",
-          "-cm:Quiet"
-        ]
-      },
-      {
-        "name": "Lexer Win64 Tests",
-        "testExeFile": "test/Win64/Release/Delphi.Lexer.Tests.exe",
-        "arguments": [
-          "-b",
-          "-l:Warning",
-          "-cm:Quiet"
-        ]
-      }
-    ]
-  }
+  "pipeline": [
+    {
+      "action": "Clean",
+      "jobs": [
+        { "name": "Repo clean", "root": "./" }
+      ]
+    },
+    {
+      "action": "Build",
+      "jobs": [
+        { "name": "TokenCompare",
+          "projectFile": "projects/TokenCompare/Delphi.Lexer.TokenCompare.dproj" },
+        { "name": "TokenDump",
+          "projectFile": "projects/TokenDump/Delphi.Lexer.TokenDump.dproj" },
+        { "name": "TokenStats",
+          "projectFile": "projects/TokenStats/Delphi.Lexer.TokenStats.dproj" },
+        { "name": "TokenizeMemo",
+          "projectFile": "projects/TokenizeMemo/Delphi.Lexer.TokenizeMemo.dproj" },
+        { "name": "Win32 Test project",
+          "projectFile": "test/Delphi.Lexer.Tests.dproj",
+          "platform": "Win32",
+          "defines": ["CI"] },
+        { "name": "Win64 Test project (Release)",
+          "projectFile": "test/Delphi.Lexer.Tests.dproj",
+          "defines": ["CI"] },
+        { "name": "Win64 Test project (Debug)",
+          "projectFile": "test/Delphi.Lexer.Tests.dproj",
+          "configuration": "Debug",
+          "defines": ["CI"] }
+      ]
+    },
+    {
+      "action": "Run",
+      "jobs": [
+        { "name": "Lexer Win32 Tests",
+          "execute": "test/Win32/Release/Delphi.Lexer.Tests.exe",
+          "arguments": ["-b", "-l:Warning", "-cm:Quiet"] },
+        { "name": "Lexer Win64 Tests",
+          "execute": "test/Win64/Release/Delphi.Lexer.Tests.exe",
+          "arguments": ["-b", "-l:Warning", "-cm:Quiet"] }
+      ]
+    }
+  ]
 }
