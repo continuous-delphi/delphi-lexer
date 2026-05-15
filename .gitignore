@@ -108,3 +108,5 @@ modules/
 TestInsightSettings.ini
 
 /tools/*.ps1
+*.html
+*.xml
