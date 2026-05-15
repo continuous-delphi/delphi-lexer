@@ -34,7 +34,7 @@
 | Delphi.Lexer.pas | Delphi.Lexer.Tests.exe | 93.7% | 26 | 384 | 410 | PASS |
 | Delphi.Token.pas | Delphi.Lexer.Tests.exe | 4.3% | 22 | 1 | 23 | RISK |
 | Delphi.Token.TriviaSpan.pas | Delphi.Lexer.Tests.exe | 64.3% | 5 | 9 | 14 | RISK |
-| Delphi.Lexer.Tests.pas | Delphi.Lexer.Tests.exe | 70.6% | 5 | 12 | 17 | WATCH |
+| Delphi.Lexer.Tests.dpr | Delphi.Lexer.Tests.exe | 70.6% | 5 | 12 | 17 | WATCH |
 | Delphi.Lexer.Scanner.pas | Delphi.Lexer.Tests.exe | 90.7% | 5 | 49 | 54 | PASS |
 | Test.Delphi.Lexer.MultiLineStrings.pas | Delphi.Lexer.Tests.exe | 99.0% | 3 | 299 | 302 | PASS |
 | Test.Delphi.Lexer.Golden.pas | Delphi.Lexer.Tests.exe | 99.1% | 1 | 115 | 116 | PASS |
@@ -52,7 +52,7 @@
 | Delphi.Lexer.pas | Delphi.Lexer.Tests.exe | 93.7% | 384 | 410 | PASS |
 | Delphi.Token.pas | Delphi.Lexer.Tests.exe | 4.3% | 1 | 23 | RISK |
 | Delphi.Token.TriviaSpan.pas | Delphi.Lexer.Tests.exe | 64.3% | 9 | 14 | RISK |
-| Delphi.Lexer.Tests.pas | Delphi.Lexer.Tests.exe | 70.6% | 12 | 17 | WATCH |
+| Delphi.Lexer.Tests.dpr | Delphi.Lexer.Tests.exe | 70.6% | 12 | 17 | WATCH |
 | Delphi.Lexer.Scanner.pas | Delphi.Lexer.Tests.exe | 90.7% | 49 | 54 | PASS |
 | Test.Delphi.Lexer.MultiLineStrings.pas | Delphi.Lexer.Tests.exe | 99.0% | 299 | 302 | PASS |
 | Test.Delphi.Lexer.Golden.pas | Delphi.Lexer.Tests.exe | 99.1% | 115 | 116 | PASS |
