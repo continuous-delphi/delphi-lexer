@@ -415,14 +415,22 @@ begin
     // Integer part.
     while CharInSet(Peek(Sc), ['0'..'9', '_']) do
       IncI(Sc);
-    // Fractional part: .digits -- guard against '..' range operator.
-    // The char after '.' must be a digit (not '_') to enter this branch.
-    if (Peek(Sc) = '.') and (Peek(Sc, 1) <> '.') and
-       CharInSet(Peek(Sc, 1), ['0'..'9']) then
+    // Fractional part: .digits -- guard against '..' range operator
+    // and member access on integer helpers (2.ToString).
+    // Three cases:
+    //   digit after '.'   -> consume '.' + digits  (2.5, 3.14)
+    //   non-ident after . -> consume '.' only       (2. ;  2.)  )
+    //   ident after '.'   -> leave '.' as symbol    (2.Method)
+    if (Peek(Sc) = '.') and (Peek(Sc, 1) <> '.') then
     begin
-      IncI(Sc); // consume '.'
-      while CharInSet(Peek(Sc), ['0'..'9', '_']) do
-        IncI(Sc);
+      if CharInSet(Peek(Sc, 1), ['0'..'9']) then
+      begin
+        IncI(Sc); // consume '.'
+        while CharInSet(Peek(Sc), ['0'..'9', '_']) do
+          IncI(Sc);
+      end
+      else if not CharInSet(Peek(Sc, 1), ['a'..'z', 'A'..'Z', '_']) then
+        IncI(Sc); // consume trailing '.' (e.g. 2. ;)
     end;
     // Exponent: e or E, optional +/-, one-or-more digits.
     // Save full scanner state before consuming 'e'/'E': if no digits follow
