@@ -48,7 +48,7 @@
     {
       "action": "Coverage",
       "jobs": [
-        { "name": "Parser Win64 Coverage",
+        { "name": "Win64 Coverage",
           "execute": "test/Win64/Debug/Delphi.Lexer.Tests.exe",
           "mapFile": "test/Win64/Debug/Delphi.Lexer.Tests.map",
           "sourceDir": ["/source", "/test"],
