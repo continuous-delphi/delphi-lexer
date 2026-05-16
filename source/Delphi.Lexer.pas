@@ -820,6 +820,13 @@ var
 begin
   Assert(OutTokens.Count = 0, 'TokenizeIntoEmptyList assumes list is empty'); //ApplyTriviaSpans walks entire list
 
+  // Pre-size the token list to reduce reallocation churn.  Typical Delphi
+  // source averages roughly one token per 3-4 characters (including trivia).
+  // Over-estimating slightly is cheap; repeated doubling fragments the heap
+  // in 32-bit processes scanning many files.
+  if OutTokens.Capacity < Len div 3 then
+    OutTokens.Capacity := Len div 3;
+
   Sc.P           := Buf;
   Sc.I           := 1;
   Sc.N           := Len;
