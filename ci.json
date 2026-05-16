@@ -6,6 +6,13 @@
       "enginePath": "radCodeCoverage.x64.exe",
       "formats!": ["md"], 
       "timeoutSeconds": 60
+    },
+    "callgraph": {
+      "engine": "radCallGraph",
+      "enginePath": "radCallGraph.exe",
+      "formats!": ["json", "dot", "txt"],
+      "outputDir": "assets/callgraph",
+      "timeoutSeconds": 60
     }
   },
   "pipeline": [
@@ -48,6 +55,13 @@
           "outputDir": "assets/coverage",
           "arguments": ["-b", "-cm:off"],
           "badge": "assets/coverage/coverage-badge.svg" }
+      ]
+    },
+    {
+      "action": "CallGraph",
+      "jobs": [
+        { "name": "Lexer Call Graph",
+          "path": ["/source", "/test"] }
       ]
     }
   ]
