@@ -4,7 +4,7 @@
     "coverage": {
       "engine": "radCodeCoverage",
       "enginePath": "radCodeCoverage.x64.exe",
-      "formats!": ["md"], 
+      "formats!": ["md","covdb"], 
       "timeoutSeconds": 60
     },
     "callgraph": {

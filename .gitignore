@@ -110,3 +110,7 @@ TestInsightSettings.ini
 /tools/*.ps1
 *.html
 *.xml
+*.dot
+*.json
+coverage.db
+.coverage-settings
