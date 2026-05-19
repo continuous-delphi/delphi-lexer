@@ -1,7 +1,7 @@
 radCallGraph 0.1.0
-Files: 34
+Files: 35
 Nodes: 389 (25 classes, 36 standalone)
-Edges: 1169
+Edges: 1168
 
 TAppServices (1 methods)
   GetAppVersion

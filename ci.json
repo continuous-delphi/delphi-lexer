@@ -24,6 +24,17 @@
       "jobs": [{"name": "Repo clean", "root": "./test" }]
     },
     {
+      "action": "IncVer",
+      "jobs": [{
+        "name": "Build version",
+        "file": "source/Delphi.Lexer.Info.pas",
+        "target": "Text",
+        "style": "WinVer",
+        "part": "build",
+        "pattern": "(\\d+\\.\\d+\\.\\d+\\.\\d+)"
+      }]
+    },
+    {
       "action": "build",
       "engine": "MSBuild",
       "toolchain": {"version": "Latest"},

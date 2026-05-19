@@ -7,9 +7,9 @@
 | Metric | Value |
 |---|---:|
 | Coverage | 95.5% |
-| Covered lines | 3110 |
-| Total lines | 3256 |
-| Missed lines | 146 |
+| Covered lines | 3113 |
+| Total lines | 3261 |
+| Missed lines | 148 |
 | Units | 27 |
 | Status | PASS |
 
@@ -17,7 +17,7 @@
 
 | Module | Coverage | Covered | Total | Status |
 |---|---:|---:|---:|---|
-| Delphi.Lexer.Tests.exe | 95.5% | 3110 | 3256 | PASS |
+| Delphi.Lexer.Tests.exe | 95.5% | 3113 | 3261 | PASS |
 
 ## Coverage Visuals
 
@@ -30,8 +30,8 @@
 | Unit | Module | Coverage | Missed | Covered | Total | Status |
 |---|---|---:|---:|---:|---:|---|
 | Delphi.Lexer.MyersDiff.pas | Delphi.Lexer.Tests.exe | 63.9% | 52 | 92 | 144 | RISK |
+| Delphi.Lexer.pas | Delphi.Lexer.Tests.exe | 93.3% | 28 | 387 | 415 | PASS |
 | Delphi.Token.List.pas | Delphi.Lexer.Tests.exe | 3.6% | 27 | 1 | 28 | RISK |
-| Delphi.Lexer.pas | Delphi.Lexer.Tests.exe | 93.7% | 26 | 384 | 410 | PASS |
 | Delphi.Token.pas | Delphi.Lexer.Tests.exe | 4.3% | 22 | 1 | 23 | RISK |
 | Delphi.Token.TriviaSpan.pas | Delphi.Lexer.Tests.exe | 64.3% | 5 | 9 | 14 | RISK |
 | Delphi.Lexer.Tests.dpr | Delphi.Lexer.Tests.exe | 70.6% | 5 | 12 | 17 | WATCH |
@@ -48,8 +48,8 @@
 | Unit | Module | Coverage | Covered | Total | Status |
 |---|---|---:|---:|---:|---|
 | Delphi.Lexer.MyersDiff.pas | Delphi.Lexer.Tests.exe | 63.9% | 92 | 144 | RISK |
+| Delphi.Lexer.pas | Delphi.Lexer.Tests.exe | 93.3% | 387 | 415 | PASS |
 | Delphi.Token.List.pas | Delphi.Lexer.Tests.exe | 3.6% | 1 | 28 | RISK |
-| Delphi.Lexer.pas | Delphi.Lexer.Tests.exe | 93.7% | 384 | 410 | PASS |
 | Delphi.Token.pas | Delphi.Lexer.Tests.exe | 4.3% | 1 | 23 | RISK |
 | Delphi.Token.TriviaSpan.pas | Delphi.Lexer.Tests.exe | 64.3% | 9 | 14 | RISK |
 | Delphi.Lexer.Tests.dpr | Delphi.Lexer.Tests.exe | 70.6% | 12 | 17 | WATCH |
