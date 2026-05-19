@@ -1,0 +1,11 @@
+#!/bin/sh
+pwsh -NoProfile -Command '
+  $result = Invoke-DelphiIncVer `
+    -File "source/Delphi.Lexer.Info.pas" `
+    -IncverTarget "Text" `
+    -IncverStyle "WinVer" `
+    -IncverPart "patch" `
+    -IncverPattern "(\d+\.\d+\.\d+\.\d+)"
+  if (-not $result.Success) { exit 1 }
+'
+git add source/Delphi.Lexer.Info.pas
