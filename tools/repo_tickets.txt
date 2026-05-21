@@ -1,0 +1,5 @@
+# Tickets for the delphi-lexer project
+# Repo remote url: https://github.com/continuous-delphi/delphi-lexer
+# File used by create-github-issues.ps1
+# dev-automation-tooling script & document reference: C:\code\dev-automation-tooling
+
