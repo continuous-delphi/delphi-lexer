@@ -72,7 +72,7 @@
       "action": "CallGraph",
       "jobs": [
         { "name": "Lexer Call Graph",
-          "path": ["/source", "/test"] }
+          "path": ["/source"] }
       ]
     }
   ]
