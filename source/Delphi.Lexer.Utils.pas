@@ -85,13 +85,21 @@ type
 implementation
 uses
   System.Classes,
-  System.IOUtils,
   {$IFDEF MSWINDOWS}
   Winapi.Windows,
-  {$ENDIF}
+  {$ELSE}
   FMX.Platform;
+  {$ENDIF}
+  System.IOUtils;
 
 
+{$IFDEF MSWINDOWS}
+class function TAppServices.GetAppVersion:string;
+begin
+  Result := TWinUtils.GetModuleVersion;
+end;
+
+{$ELSE}
 class function TAppServices.GetAppVersion:string;
 var
   AppService:IFMXApplicationService;
@@ -99,11 +107,8 @@ begin
   Result := '';
   if TPlatformServices.Current.SupportsPlatformService(IFMXApplicationService, IInterface(AppService)) then
     Result := AppService.AppVersion
-  {$IFDEF MSWINDOWS}
-  else
-    Result := TWinUtils.GetModuleVersion;
-  {$ENDIF}
 end;
+{$ENDIF}
 
 {$IFDEF MSWINDOWS}
 class function TWinUtils.GetModuleVersion(const AIncludeBuild:Boolean=False):string;
