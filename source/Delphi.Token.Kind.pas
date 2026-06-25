@@ -79,8 +79,7 @@ const
 function TokenKindName(K:TTokenKind):string;
 
 // Lexical trivia: tokens that do not participate in grammar structure
-// but are preserved for round-trip fidelity (whitespace, comments,
-// directives, inactive code, etc.)
+// but are preserved for round-trip fidelity (whitespace, comments, directives)
 function IsLexicalTrivia(Kind:TTokenKind):Boolean;
 
 implementation
@@ -92,6 +91,11 @@ begin
 end;
 
 
+
+//Reminder: tkInactiveCode is a parser-level concept, not used by the lexer.
+//IsLexicalTrivia lives in the lexer layer and classifies tokens the lexer itself produces
+//(whitespace, EOL, comments, directives). The lexer never emits tkInactiveCode and is only
+//set by Parser's TConditionalTokenizer, which sits between the lexer and the parser.
 function IsLexicalTrivia(Kind:TTokenKind):Boolean;
 begin
   Result := Kind in [tkWhitespace, tkEOL, tkComment, tkDirective, tkBOM];
