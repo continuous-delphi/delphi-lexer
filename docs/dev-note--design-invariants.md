@@ -325,7 +325,7 @@ Ownership totals might still appear valid while source fidelity is corrupted.
 
 ## TToken field summary
 
-`TToken` is defined in `Delphi.Lexer.Token.pas`. Current fields:
+`TToken` is defined in `Delphi.Token.pas`. Current fields:
 
 | Field | Type | Description |
 |---|---|---|

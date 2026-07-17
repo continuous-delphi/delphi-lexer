@@ -360,7 +360,7 @@ character after `.` is also `.`, the decimal point is not consumed.
 
 - 123 keywords are classified as `tkStrictKeyword` or `tkContextKeyword`.
 All others tokenize as `tkIdentifier`. The list is maintained in
-`Delphi.Lexer.Keywords.pas` and has been matched to Embarcadero's official
+`Delphi.Keywords.pas` and has been matched to Embarcadero's official
 documentation: [Embarcadero: Fundamental Syntactic Elements](https://docwiki.embarcadero.com/RADStudio/en/Fundamental_Syntactic_Elements_%28Delphi%29)
 
 
