@@ -108,6 +108,7 @@ modules/
 TestInsightSettings.ini
 
 /tools/*.ps1
+/tools/commit*.bat
 *.html
 *.xml
 *.dot

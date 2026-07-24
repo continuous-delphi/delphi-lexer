@@ -90,7 +90,8 @@ uses
   {$ELSE}
   FMX.Platform;
   {$ENDIF}
-  System.IOUtils;
+  System.IOUtils,
+  Delphi.SourceIO;
 
 
 {$IFDEF MSWINDOWS}
@@ -230,8 +231,6 @@ begin
     Result := TEncoding.ANSI
   else if Lower = 'ascii' then
     Result := TEncoding.ASCII
-  else if Lower = 'default' then
-    Result := TEncoding.Default
   else
     Result := nil;
 end;
@@ -258,32 +257,49 @@ begin
 end;
 
 class function TLexerUtils.ReadAllText(const FileName: string; const Encoding:TEncoding; const SkipAnsiFallback:Boolean): string;
+// Deterministic, lossless read. Bytes are read once, the BOM (if any) is
+// authoritative, and UTF-8 validity is decided by a pure-Pascal validator
+// rather than by which RTL version raises on invalid input. Only the UTF-8
+// default path gained behavior; explicitly-requested non-UTF-8 encodings keep
+// their prior byte-for-byte semantics. See ticket #22.
 var
-  Win1252:TEncoding;
+  Bytes: TBytes;
+  PreLen: Integer;
 begin
-  try
-    Result := TFile.ReadAllText(FileName, Encoding);
-  except
-    on E:EEncodingError do
+  Bytes := TFile.ReadAllBytes(FileName);
+
+  // 1. BOM authoritative: a UTF-8 / UTF-16LE / UTF-16BE BOM forces the
+  //    matching decode. UTF-16 is never routed through the UTF-8/ANSI path.
+  case TSourceIO.DetectBom(Bytes, PreLen) of
+    bomUtf8:
       begin
-        if SkipAnsiFallback then
-        begin
-          raise;
-        end
-        else
-        begin
-          Win1252 :=  TMBCSEncoding.Create(1252, {UseBOM=}False);
-          try
-            Result := TFile.ReadAllText(FileName, Win1252);
-          finally
-            Win1252.Free;
-          end;
-        end;
+        // Validate the body so a corrupt BOM'd file is reported deterministically
+        // rather than replaced (U+FFFD) or thrown by an RTL-version-dependent path.
+        if not TSourceIO.IsValidUtf8(Bytes, PreLen) then
+          raise EEncodingError.CreateFmt('Invalid UTF-8 data in file: %s', [FileName]);
+        Exit(TEncoding.UTF8.GetString(Bytes, PreLen, Length(Bytes) - PreLen));
       end;
+    bomUtf16LE:
+      Exit(TEncoding.Unicode.GetString(Bytes, PreLen, Length(Bytes) - PreLen));
+    bomUtf16BE:
+      Exit(TEncoding.BigEndianUnicode.GetString(Bytes, PreLen, Length(Bytes) - PreLen));
+  end;
+
+  // 2. No BOM, caller asked for UTF-8 (code page 65001): valid UTF-8 decodes as
+  //    UTF-8; otherwise fall back losslessly to CP1252 (or raise if suppressed).
+  if (Encoding <> nil) and (Encoding.CodePage = 65001) then
+  begin
+    if TSourceIO.IsValidUtf8(Bytes, 0) then
+      Result := TEncoding.UTF8.GetString(Bytes)
+    else if SkipAnsiFallback then
+      raise EEncodingError.CreateFmt('Invalid UTF-8 data in file: %s', [FileName])
     else
-    begin
-      raise;
-    end;
+      Result := TSourceIO.DecodeAnsiLossless(Bytes);
+  end
+  else
+  begin
+    // 3. No BOM, any explicitly-requested non-UTF-8 encoding: unchanged behavior.
+    Result := Encoding.GetString(Bytes);
   end;
 end;
 

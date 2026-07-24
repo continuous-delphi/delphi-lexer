@@ -4,7 +4,9 @@
 # dev-automation-tooling script & document reference: C:\code\dev-automation-tooling
 
 ---
-Title: Make TLexerUtils.ReadAllText deterministic in-place (pure Pascal, no new dependency)
+Title: Make TLexerUtils.ReadAllText deterministic in-place
+Issue: #22
+Status: closed
 Labels: enhancement, encoding, correctness
 Body:
 Convert the UTF-8 read path in `TLexerUtils.ReadAllText`
@@ -15,8 +17,7 @@ change to the public method signature.
 
 This implements Part A of a larger plan for lossless source read/writes
 The three helpers added here (`DetectBom`, `IsValidUtf8`, `DecodeAnsiLossless` + the
-`CP1252_High` table) are a self-contained subset of planned `Delphi.SourceIO` and are
-tracked separately. 
+`CP1252_High` table) are a self-contained subset of `Delphi.SourceIO` 
 
 ## Problem 
 
@@ -47,8 +48,8 @@ version variance only bites on INVALID input. So we only need a pure-Pascal
 validator and a pure-Pascal ANSI decoder; valid bytes can still go through
 `TEncoding.UTF8/Unicode.GetString`. No pure-Pascal UTF-8/UTF-16 decoder needed.
 
-Add three private helpers to the implementation section of
-`Delphi.Lexer.Utils.pas` (no interface change, no new unit):
+Lift three private helpers from the Delphi.SourceIO repo (C:\code\delphi-source-io)
+to a new Delphi.SourceIO.pas in the /source folder.
 
 - `DetectBom(const Bytes; out PreLen): TBomKind` -- real byte-prefix check.
 - `IsValidUtf8(const Bytes; StartIndex): Boolean` -- pure Pascal, OS-independent.
@@ -56,7 +57,6 @@ Add three private helpers to the implementation section of
   byte CP1252 (WHATWG windows-1252 index), five undefined slots map to their
   byte value; cannot throw, cannot drop a byte.
 
-Lift all three VERBATIM from the Delphi.SourceIO repo. (C:\code\delphi-source-io)
 
 Rewrite the body to read bytes once:
 
@@ -72,8 +72,8 @@ Rewrite the body to read bytes once:
 ## Scope decisions
 
 - Change is limited to the UTF-8 default path (the main real-world case and the
-  actual field problem: a legacy CP1252 file read under the default). No
-  observable change to any explicitly-requested encoding.
+  actual field problem: a legacy CP1252 file read under the default). There may
+  be some observable changes to current encoding handling.
 - BOM-less UTF-16 stays undetected (unchanged; assert `--encoding utf-16`).
 - BOM'd-UTF-8 with an invalid body: validate the body and raise a clear,
   deterministic `EEncodingError` rather than letting the RTL replace/throw.

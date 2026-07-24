@@ -118,6 +118,8 @@
         <DCCReference Include="..\source\Delphi.Token.pas"/>
         <DCCReference Include="..\source\Delphi.Tokenizer.pas"/>
         <DCCReference Include="..\source\Delphi.Token.TriviaSpan.pas"/>
+        <DCCReference Include="..\source\Delphi.SourceIO.pas"/>
+        <DCCReference Include="..\source\Delphi.Lexer.Utils.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.AsmBody.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.BOM.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.Core.pas"/>
@@ -135,6 +137,8 @@
         <DCCReference Include="Test.Delphi.Lexer.TokenPosition.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.TriviaSpans.pas"/>
         <DCCReference Include="Test.Delphi.Lexer.Directive.pas"/>
+        <DCCReference Include="Test.Delphi.SourceIO.pas"/>
+        <DCCReference Include="Test.Delphi.Lexer.ReadAllText.pas"/>
         <None Include="README.md"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>

@@ -23,6 +23,8 @@ uses
   Delphi.Token in '..\source\Delphi.Token.pas',
   Delphi.Tokenizer in '..\source\Delphi.Tokenizer.pas',
   Delphi.Token.TriviaSpan in '..\source\Delphi.Token.TriviaSpan.pas',
+  Delphi.SourceIO in '..\source\Delphi.SourceIO.pas',
+  Delphi.Lexer.Utils in '..\source\Delphi.Lexer.Utils.pas',
   Test.Delphi.Lexer.AsmBody in 'Test.Delphi.Lexer.AsmBody.pas',
   Test.Delphi.Lexer.BOM in 'Test.Delphi.Lexer.BOM.pas',
   Test.Delphi.Lexer.Core in 'Test.Delphi.Lexer.Core.pas',
@@ -39,7 +41,9 @@ uses
   Test.Delphi.Lexer.TokenMetadata in 'Test.Delphi.Lexer.TokenMetadata.pas',
   Test.Delphi.Lexer.TokenPosition in 'Test.Delphi.Lexer.TokenPosition.pas',
   Test.Delphi.Lexer.TriviaSpans in 'Test.Delphi.Lexer.TriviaSpans.pas',
-  Test.Delphi.Lexer.Directive in 'Test.Delphi.Lexer.Directive.pas';
+  Test.Delphi.Lexer.Directive in 'Test.Delphi.Lexer.Directive.pas',
+  Test.Delphi.SourceIO in 'Test.Delphi.SourceIO.pas',
+  Test.Delphi.Lexer.ReadAllText in 'Test.Delphi.Lexer.ReadAllText.pas';
 
 { keep comment here to protect the following conditional from being removed by the IDE when adding a unit }
 {$IFNDEF TESTINSIGHT}

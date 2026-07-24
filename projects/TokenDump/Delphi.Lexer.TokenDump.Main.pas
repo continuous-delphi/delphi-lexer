@@ -90,7 +90,7 @@ begin
   WriteLn('  ', ExtractFileName(ParamStr(0)), ' <file> [options]');
   WriteLn;
   WriteLn('Options:');
-  WriteLn('  --encoding:<name>       Source encoding: utf-8, utf-16, utf-16be, ansi, ascii, default');
+  WriteLn('  --encoding:<name>       Source encoding: utf-8, utf-16, utf-16be, ansi, ascii');
   WriteLn('  --format:<name>         Output format: text or json');
   WriteLn('  -a, --no-ansi-fallback  Do not retry file reads with ANSI/Windows-1252');
   WriteLn('  -?, --help              Show this help and exit');
@@ -153,7 +153,7 @@ begin
   if not Assigned(Result.Encoding) then
   begin
     WriteLn('error: unknown encoding: ', EncodingName);
-    WriteLn('Supported: utf-8, utf-16, utf-16be, ansi, ascii, default');
+    WriteLn('Supported: utf-8, utf-16, utf-16be, ansi, ascii');
     Result.ExitCode := ExitCode_Fatal;
     Exit;
   end;

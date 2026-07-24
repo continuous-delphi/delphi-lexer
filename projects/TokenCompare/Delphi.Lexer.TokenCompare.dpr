@@ -7,6 +7,7 @@ program Delphi.Lexer.TokenCompare;
 uses
   Delphi.Lexer.TokenCompare.Main in 'Delphi.Lexer.TokenCompare.Main.pas',
   Delphi.Lexer.Utils in '..\..\source\Delphi.Lexer.Utils.pas',
+  Delphi.SourceIO in '..\..\source\Delphi.SourceIO.pas',
   Delphi.Lexer.Scanner in '..\..\source\Delphi.Lexer.Scanner.pas',
   Delphi.Lexer in '..\..\source\Delphi.Lexer.pas',
   Delphi.Keywords in '..\..\source\Delphi.Keywords.pas',

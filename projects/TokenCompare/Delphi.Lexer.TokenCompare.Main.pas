@@ -76,7 +76,7 @@ begin
   WriteLn('  -c, --ignore-comments      Ignore comment tokens');
   WriteLn('  -x, --stop-after-first-diff  Stop after the first difference');
   WriteLn('      --max-diffs:<n>        Limit reported differences, 0 means unlimited');
-  WriteLn('  --encoding:<name>          Source encoding: utf-8, utf-16, utf-16be, ansi, ascii, default');
+  WriteLn('  --encoding:<name>          Source encoding: utf-8, utf-16, utf-16be, ansi, ascii');
   WriteLn('  --format:<name>            Output format: text or json');
   WriteLn('  -a, --no-ansi-fallback     Do not retry file reads with ANSI/Windows-1252');
   WriteLn('  -?, --help                 Show this help and exit');
@@ -163,7 +163,7 @@ begin
   if not Assigned(Result.BaseOptions.Encoding) then
   begin
     WriteLn('error: unknown encoding: ', EncodingName);
-    WriteLn('Supported: utf-8, utf-16, utf-16be, ansi, ascii, default');
+    WriteLn('Supported: utf-8, utf-16, utf-16be, ansi, ascii');
     Result.BaseOptions.ExitCode := ExitCode_OpFailure;
     Exit;
   end;

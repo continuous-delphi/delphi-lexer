@@ -98,6 +98,7 @@
         </DelphiCompile>
         <DCCReference Include="Delphi.Lexer.TokenCompare.Main.pas"/>
         <DCCReference Include="..\..\source\Delphi.Lexer.Utils.pas"/>
+        <DCCReference Include="..\..\source\Delphi.SourceIO.pas"/>
         <DCCReference Include="..\..\source\Delphi.Lexer.Scanner.pas"/>
         <DCCReference Include="..\..\source\Delphi.Lexer.pas"/>
         <DCCReference Include="..\..\source\Delphi.Keywords.pas"/>

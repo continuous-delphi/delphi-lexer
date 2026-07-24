@@ -9,6 +9,7 @@ uses
   Delphi.Token.TriviaSpan in '..\..\source\Delphi.Token.TriviaSpan.pas',
   Delphi.Token in '..\..\source\Delphi.Token.pas',
   Delphi.Lexer.Utils in '..\..\source\Delphi.Lexer.Utils.pas',
+  Delphi.SourceIO in '..\..\source\Delphi.SourceIO.pas',
   Delphi.Lexer.Scanner in '..\..\source\Delphi.Lexer.Scanner.pas',
   Delphi.Lexer in '..\..\source\Delphi.Lexer.pas',
   Delphi.Keywords in '..\..\source\Delphi.Keywords.pas';
