@@ -3,3 +3,134 @@
 # File used by create-github-issues.ps1
 # dev-automation-tooling script & document reference: C:\code\dev-automation-tooling
 
+---
+Title: Make TLexerUtils.ReadAllText deterministic in-place (pure Pascal, no new dependency)
+Labels: enhancement, encoding, correctness
+Body:
+Convert the UTF-8 read path in `TLexerUtils.ReadAllText`
+(`source/Delphi.Lexer.Utils.pas`) from "accidentally correct on the current
+RTL" to "guaranteed correct on every supported RTL/OS", using only self-
+contained pure-Pascal code. No new library dependency, no submodule, and no
+change to the public method signature.
+
+This implements Part A of a larger plan for lossless source read/writes
+The three helpers added here (`DetectBom`, `IsValidUtf8`, `DecodeAnsiLossless` + the
+`CP1252_High` table) are a self-contained subset of planned `Delphi.SourceIO` and are
+tracked separately. 
+
+## Problem 
+
+The current read:
+
+    Result := TFile.ReadAllText(FileName, Encoding);   // UTF-8 attempt
+    // on EEncodingError, retry with TMBCSEncoding.Create(1252)
+
+is lossless on Delphi 10.4->13 only by accident. It relies on three unguaranteed
+behaviors:
+
+1. Which RTL version RAISES EEncodingError vs. silently substitutes U+FFFD on
+   invalid UTF-8 -- this is the only thing that makes the ANSI fallback fire. A
+   lenient RTL corrupts a legacy file silently and the fallback never runs.
+2. Windows MultiByteToWideChar best-fit mapping of CP1252's five undefined bytes
+   (0x81/0x8D/0x8F/0x90/0x9D) -- not contracted by Microsoft, has varied across
+   Windows versions.
+3. The RTL reader's implicit BOM handling.
+
+Because RoundTripCheck compares tokens against the already-decoded string, a
+silent decode corruption is invisible (both sides carry the same U+FFFD); the
+damage only surfaces when a consumer re-emits the file.
+
+## Approach (minimal, UTF-8 path only)
+
+VALID UTF-8 and VALID UTF-16 decode identically on every RTL -- the
+version variance only bites on INVALID input. So we only need a pure-Pascal
+validator and a pure-Pascal ANSI decoder; valid bytes can still go through
+`TEncoding.UTF8/Unicode.GetString`. No pure-Pascal UTF-8/UTF-16 decoder needed.
+
+Add three private helpers to the implementation section of
+`Delphi.Lexer.Utils.pas` (no interface change, no new unit):
+
+- `DetectBom(const Bytes; out PreLen): TBomKind` -- real byte-prefix check.
+- `IsValidUtf8(const Bytes; StartIndex): Boolean` -- pure Pascal, OS-independent.
+- `DecodeAnsiLossless(const Bytes): string` + `CP1252_High` array -- total per-
+  byte CP1252 (WHATWG windows-1252 index), five undefined slots map to their
+  byte value; cannot throw, cannot drop a byte.
+
+Lift all three VERBATIM from the Delphi.SourceIO repo. (C:\code\delphi-source-io)
+
+Rewrite the body to read bytes once:
+
+1. BOM authoritative: UTF-8 / UTF-16LE / UTF-16BE BOM forces the matching decode
+   (UTF-16 never routed through the UTF-8/ANSI path). BOM presence recorded.
+2. No BOM, caller encoding is UTF-8 (`Encoding.CodePage = 65001`): if
+   `IsValidUtf8` -> `TEncoding.UTF8.GetString`; else if `SkipAnsiFallback` ->
+   raise `EEncodingError`; else -> `DecodeAnsiLossless`.
+3. No BOM, any explicitly-requested non-UTF-8 encoding (ansi/ascii/utf-16/
+   default): keep today's behavior (`Encoding.GetString`). Deliberately
+   UNCHANGED in this ticket -- see "Out of scope".
+
+## Scope decisions
+
+- Change is limited to the UTF-8 default path (the main real-world case and the
+  actual field problem: a legacy CP1252 file read under the default). No
+  observable change to any explicitly-requested encoding.
+- BOM-less UTF-16 stays undetected (unchanged; assert `--encoding utf-16`).
+- BOM'd-UTF-8 with an invalid body: validate the body and raise a clear,
+  deterministic `EEncodingError` rather than letting the RTL replace/throw.
+- Public signature `ReadAllText(FileName, Encoding, SkipAnsiFallback)` is
+  preserved for external MIT consumers.
+
+## Also in this ticket: drop `--encoding default`
+
+Remove the `default` encoding value. `ResolveEncoding('default')` maps to
+`TEncoding.Default` (the process active ANSI code page) -- locale/machine-
+dependent, so it produces non-reproducible reads and is redundant with `ansi`
+(both resolve to the ACP). 
+
+This is a breaking change for a public/MIT tool, but the degradation is clean:
+`ResolveEncoding` returns nil and every CLI already prints
+`error: unknown encoding` plus the supported list and exits, so a removed value
+becomes an actionable error rather than silent misbehavior.
+
+Edit sites (7):
+- `source/Delphi.Lexer.Utils.pas:233-234` -- remove the `default` case in
+  `ResolveEncoding`.
+- Help text `--encoding:<name> ...`: TokenDump `:93`, TokenStats `:110`,
+  TokenCompare `:79`.
+- `Supported: ...` error line: TokenDump `:156`, TokenStats `:175`,
+  TokenCompare `:166`.
+
+Keep `ansi` and `ascii`: `ascii` is a legitimate strict 7-bit assertion, and
+making `ansi` mean deterministic CP1252 is a separate follow-up (below).
+
+## Checks
+
+- [ ] `DecodeAnsiLossless`: all 0x00..0xFF decode without loss; the five CP1252-
+      undefined bytes map to their byte-value code points, not U+FFFD.
+- [ ] BOM detection is authoritative: UTF-8 / UTF-16LE / UTF-16BE BOMs force the
+      matching decode (UTF-16 decoded as UTF-16, never via the UTF-8/ANSI path).
+- [ ] BOM-less valid UTF-8 -> UTF-8; BOM-less non-UTF-8 -> lossless ANSI, never
+      silent U+FFFD, without relying on the RTL raising EEncodingError.
+- [ ] `SkipAnsiFallback = True` on invalid UTF-8 raises EEncodingError
+      (file name in the message); `= False` falls back losslessly.
+- [ ] UTF-8 validity uses a pure-Pascal validator (no MultiByteToWideChar, no
+      dependence on which RTL raises); unit builds on every targeted platform.
+- [ ] Public `ReadAllText` signature unchanged; all three CLIs (TokenDump,
+      TokenStats, TokenCompare) build and behave unchanged on their defaults.
+- [ ] Golden fixtures: the CP1252 byte->code-point table from the v3 doc
+      (0x80->U+20AC, 0x91/0x92->U+2018/U+2019, 0x96/0x97->U+2013/U+2014, the five
+      undefined bytes -> byte value, and 0xC3 0xA9 -> U+00E9 decoded as UTF-8 not
+      ANSI), plus BOM fixtures (UTF-8/UTF-16LE/UTF-16BE + BOM-less valid UTF-8).
+- [ ] Behavior is OS-/RTL-version independent for the UTF-8 path (no reliance on
+      MultiByteToWideChar undefined-byte handling, on which RTL raises, or on the
+      RTL reader's implicit BOM handling).
+- [ ] `--encoding default` removed from `ResolveEncoding` and from all six help/
+      `Supported:` strings; passing it yields the standard "unknown encoding"
+      error. `ansi` and `ascii` still resolve.
+
+## Follow-up
+
+- Deterministic `--encoding ansi` (today it maps to the locale ACP via
+  `TEncoding.ANSI`, not CP1252, and is inconsistent with the hardcoded-1252
+  fallback). Left unchanged here; follow-up ticket needed if we want ansi to mean
+  CP1252 deterministically.
